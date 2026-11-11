@@ -1,0 +1,218 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+library pravah.input;
+
+using zx;
+
+/// Visual display layout modes of the virtual touch keyboard.
+type KeyboardLayoutMode = strict enum : uint8 {
+    QWERTY_LOWER = 0;
+    QWERTY_UPPER = 1;
+    QWERTY_CAPS_LOCK = 2;
+    NUMERIC = 3;
+    SYMBOLS = 4;
+    VOICE_DICTATION = 5;
+};
+
+/// Semantic input types to tailor soft keyboard layout and suggestions.
+type TextInputType = strict enum : uint8 {
+    TEXT = 0;
+    NUMBER = 1;
+    PHONE = 2;
+    DATETIME = 3;
+    EMAIL = 4;
+    URL = 5;
+    PASSWORD = 6;
+    INTENT = 7;
+};
+
+/// Capitalization behavior requested by the text input field.
+type TextCapitalization = strict enum : uint8 {
+    NONE = 0;
+    CHARACTERS = 1;
+    WORDS = 2;
+    SENTENCES = 3;
+};
+
+/// Action performed when the primary action key (Enter/Return) is tapped.
+type InputMethodAction = strict enum : uint8 {
+    UNSPECIFIED = 0;
+    NONE = 1;
+    GO = 2;
+    SEARCH = 3;
+    SEND = 4;
+    NEXT = 5;
+    DONE = 6;
+    EXECUTE_INTENT = 7;
+};
+
+/// Cursor affinity relative to line breaks or bidi boundaries.
+type TextAffinity = strict enum : uint8 {
+    UPSTREAM = 0;
+    DOWNSTREAM = 1;
+};
+
+/// Virtual keyboard slide state.
+type KeyboardVisibility = strict enum : uint8 {
+    HIDDEN = 0;
+    SLIDING_UP = 1;
+    SHOWN = 2;
+    SLIDING_DOWN = 3;
+};
+
+/// Voice dictation pipeline states.
+type VoiceDictationState = strict enum : uint8 {
+    IDLE = 0;
+    LISTENING = 1;
+    TRANSCRIBING = 2;
+    COMMITTED = 3;
+    CANCELLED = 4;
+    ERROR = 5;
+};
+
+/// Bounding range within a string.
+type TextRange = struct {
+    start uint32;
+    end uint32;
+};
+
+/// Text cursor selection span.
+type Selection = struct {
+    base uint32;
+    extent uint32;
+    affinity TextAffinity;
+};
+
+/// Complete text input state snapshot maintained by client and IME.
+type TextInputState = struct {
+    text string:1024;
+    selection Selection;
+    composing_range ?TextRange;
+};
+
+/// Predictive word completion candidate item.
+type SuggestionItem = struct {
+    id string:32;
+    text string:128;
+    score float32;
+    is_intent bool;
+};
+
+/// Discrete frequency spectrum sample for dictation visualization.
+type AudioSpectrogramSample = struct {
+    timestamp_ns uint64;
+    amplitude_milli uint16;          // Normalized RMS amplitude 0..1000
+    frequency_bins array<uint8, 16>; // 16 frequency bands
+};
+
+/// Feedback event emitted when a virtual key is actuated.
+type KeyFeedbackEvent = struct {
+    keycode uint32;
+    label string:16;
+    show_bubble bool;
+    haptic_enabled bool;
+};
+
+/// Virtual keyboard client controller receiving state changes and updates.
+protocol VirtualKeyboardListener {
+    flexible OnVisibilityChanged(struct {
+        visibility KeyboardVisibility;
+        height_px uint32;
+    }) -> ();
+
+    flexible OnLayoutChanged(struct {
+        layout KeyboardLayoutMode;
+    }) -> ();
+
+    flexible OnSuggestionSelected(struct {
+        suggestion SuggestionItem;
+    }) -> ();
+
+    flexible OnVoiceStateChanged(struct {
+        state VoiceDictationState;
+        transcription string:512;
+    }) -> ();
+};
+
+/// Active text input editing session between an application and the IME host.
+protocol InputMethodEditor {
+    /// Update the current text and selection state from the focused client.
+    flexible SetState(struct {
+        state TextInputState;
+    }) -> ();
+
+    /// Insert or commit transcribed/typed text at current cursor position.
+    flexible CommitText(struct {
+        text string:512;
+        relative_cursor_position int32;
+    }) -> ();
+
+    /// Delete text surrounding cursor.
+    flexible DeleteSurroundingText(struct {
+        before_length_code_units uint32;
+        after_length_code_units uint32;
+    }) -> ();
+
+    /// Execute semantic action (e.g., Done, Search, Execute Intent).
+    flexible PerformAction(struct {
+        action InputMethodAction;
+    }) -> ();
+
+    /// Set composing range for in-flight predictions or phonetic composition.
+    flexible SetComposingText(struct {
+        text string:128;
+        relative_cursor_position int32;
+    }) -> ();
+
+    /// Finalize current composing span.
+    flexible FinishComposingText() -> ();
+};
+
+/// Virtual keyboard controller managing visibility, layout modes, and voice visualizer.
+@discoverable
+open protocol VirtualKeyboardManager {
+    /// Request the virtual keyboard to slide into view.
+    flexible RequestShow(struct {
+        input_type TextInputType;
+        action InputMethodAction;
+    }) -> () error zx.Status;
+
+    /// Request virtual keyboard dismissal.
+    flexible RequestHide() -> () error zx.Status;
+
+    /// Switch active keyboard layout mode (QWERTY, Numeric, Symbols, Voice).
+    flexible SetLayout(struct {
+        layout KeyboardLayoutMode;
+    }) -> () error zx.Status;
+
+    /// Provide contextual word completions to populate suggestion strip.
+    flexible SetSuggestions(struct {
+        suggestions vector<SuggestionItem>:8;
+    }) -> () error zx.Status;
+
+    /// Push audio spectrogram sample for real-time dictation waveform animation.
+    flexible PushAudioSample(struct {
+        sample AudioSpectrogramSample;
+    }) -> () error zx.Status;
+
+    /// Register a listener to observe keyboard visibility and events.
+    flexible RegisterListener(resource struct {
+        listener client_end:VirtualKeyboardListener;
+    }) -> () error zx.Status;
+};
+
+/// Discoverable service interface for acquiring an InputMethodEditor instance.
+@discoverable
+open protocol ImeService {
+    /// Bind an IME editing session to a text input target.
+    flexible BindEditor(resource struct {
+        editor_request server_end:InputMethodEditor;
+        listener client_end:VirtualKeyboardListener;
+        initial_state TextInputState;
+        input_type TextInputType;
+        action InputMethodAction;
+    }) -> () error zx.Status;
+
+    /// Close active editor session.
+    flexible CloseEditor() -> () error zx.Status;
+};

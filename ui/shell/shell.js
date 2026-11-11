@@ -220,6 +220,88 @@ const Scenarios = {
         })
       }
     ]
+  },
+
+  camera_note: {
+    intent: 'Take a photo of this document and save a private note',
+    goal: 'Master Scenario 6: Camera Document Capture & Smart Private Note Storage',
+    nodes: [
+      {
+        id: 'node_1',
+        capabilityId: 'media.camera.capture',
+        riskLevel: RiskLevel.CONSEQUENTIAL,
+        dependencies: [],
+        inputs: { sensorId: 'BACK_PRIMARY', captureMode: 'DOCUMENT', format: 'RGB888' },
+        execute: async () => ({
+          frameId: 1042,
+          sensorName: 'Sony IMX989 1-inch (Primary 50MP)',
+          format: 'RGB888',
+          resolution: '3840x2160 (4K UHD)',
+          stride: 11520,
+          sizeBytes: 24883200,
+          exposureTime: '1/120s @ ISO 100',
+          vmoHandle: '0xVMO_412A',
+          checksum: '8fa3b7c91e4d026f',
+          status: 'CAPTURED_FROM_CAMERA_HAL'
+        })
+      },
+      {
+        id: 'node_2',
+        capabilityId: 'notes.smart.create',
+        riskLevel: RiskLevel.REVERSIBLE,
+        dependencies: ['node_1'],
+        inputs: {
+          title: 'Document Note',
+          body: 'Quarterly financial statements and confidential disclosures.',
+          sensitivity: 'CONFIDENTIAL',
+          tags: ['#document', '#confidential', '#finance']
+        },
+        execute: async (prevOutput) => ({
+          noteId: 'NOTE-DOC-9821',
+          title: 'Document Note',
+          sensitivity: 'CONFIDENTIAL',
+          privacyLevel: 3,
+          tags: ['#document', '#confidential', '#finance', '#photo'],
+          attachedMedia: {
+            frameId: prevOutput?.frameId || 1042,
+            resolution: prevOutput?.resolution || '3840x2160',
+            vmoHandle: prevOutput?.vmoHandle || '0xVMO_412A'
+          },
+          episodicMemoryId: `ep_note_${Date.now()}`,
+          privacyStatus: 'ENCRYPTED_AT_REST',
+          status: 'SAVED_TO_EPISODIC_MEMORY'
+        })
+      }
+    ]
+  },
+
+  crypto: {
+    intent: 'Transfer 250 USDC to Bob on-chain with biometric confirmation',
+    goal: 'Irreversible On-Chain Crypto Remittance to Bob',
+    nodes: [
+      {
+        id: 'node_1',
+        capabilityId: 'crypto.wallet.transact',
+        riskLevel: RiskLevel.IRREVERSIBLE,
+        dependencies: [],
+        requiresGate: true,
+        gateReason: 'IRREVERSIBLE_ACTION_MANDATES_USER_CONFIRMATION',
+        inputs: { amount: 250, asset: 'USDC', recipient: 'Bob', network: 'PRAVAH_L1' },
+        execute: async () => ({
+          status: 'CONFIRMED',
+          transactionId: `tx_${Date.now()}`,
+          txHash: '0x7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069',
+          amount: 250,
+          asset: 'USDC',
+          recipient: 'Bob',
+          network: 'PRAVAH_L1',
+          blockHeight: 2840001,
+          auditHash: 'c4ca4238a0b923820dcc509a6f75849b',
+          biometricVerified: true,
+          settlement: 'IRREVERSIBLE_ON_CHAIN'
+        })
+      }
+    ]
   }
 };
 
@@ -569,7 +651,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const intentInput = document.getElementById('intent-input');
   submitBtn.addEventListener('click', () => {
     const raw = (intentInput.value || '').toLowerCase();
-    if (raw.includes('flight') || raw.includes('ai-202') || raw.includes('reminder')) {
+    if (raw.includes('photo') || raw.includes('document') || raw.includes('camera') || raw.includes('private note')) {
+      executeTask('camera_note');
+    } else if (raw.includes('usdc') || raw.includes('crypto') || raw.includes('sol') || raw.includes('bob')) {
+      executeTask('crypto');
+    } else if (raw.includes('flight') || raw.includes('ai-202') || raw.includes('reminder')) {
       executeTask('flight');
     } else if (raw.includes('send') || raw.includes('transfer') || raw.includes('5,000') || raw.includes('alice')) {
       executeTask('payment');
@@ -578,7 +664,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else if (raw.includes('ocr') || raw.includes('receipt') || raw.includes('expense')) {
       executeTask('ocr');
     } else {
-      // Default to flight
+      // Default to camera_note if document mentioned, else flight
       executeTask('flight');
     }
   });
@@ -587,22 +673,94 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (e.key === 'Enter') submitBtn.click();
   });
 
-  // Mic Button Simulation
+  // Mic Button & Native Voice Visualizer Pipeline
   const micBtn = document.getElementById('btn-mic');
-  micBtn.addEventListener('click', () => {
-    ShellState.isListeningVoice = !ShellState.isListeningVoice;
-    if (ShellState.isListeningVoice) {
-      micBtn.classList.add('listening');
-      intentInput.placeholder = 'Listening to voice stream (Air-gapped on-device Whisper)...';
-      setTimeout(() => {
-        intentInput.value = 'Send ₹5,000 to Alice from verified account';
-        micBtn.classList.remove('listening');
-        intentInput.placeholder = 'Describe your goal (e.g., "Check flight AI-202 and set reminder")...';
-        ShellState.isListeningVoice = false;
-        submitBtn.click();
-      }, 2200);
+  let voiceOverlay = null;
+  let softKeyboard = null;
+
+  function initKeyboardAndVoice() {
+    if (window.PravahVoice && !voiceOverlay) {
+      voiceOverlay = new window.PravahVoice.VoiceDictationOverlay({
+        targetInput: intentInput,
+        onCommit: (text) => {
+          if (text) {
+            intentInput.value = text;
+            submitBtn.click();
+            if (window.parent) {
+              window.parent.postMessage({
+                type: 'PRAVAH_IME_EVENT',
+                action: 'VOICE_COMMIT',
+                text
+              }, '*');
+            }
+          }
+        }
+      });
+      voiceOverlay.mount();
+      window.voiceOverlay = voiceOverlay;
+    }
+
+    if (window.PravahKeyboard && !softKeyboard) {
+      softKeyboard = new window.PravahKeyboard.SoftKeyboard({
+        targetInput: intentInput,
+        voiceHandler: () => {
+          softKeyboard.hide();
+          if (voiceOverlay) voiceOverlay.show();
+        },
+        onSubmit: (text) => {
+          submitBtn.click();
+          if (window.parent) {
+            window.parent.postMessage({
+              type: 'PRAVAH_IME_EVENT',
+              action: 'SUBMIT',
+              text
+            }, '*');
+          }
+        },
+        onKeyPress: (key) => {
+          if (window.parent) {
+            window.parent.postMessage({
+              type: 'PRAVAH_IME_EVENT',
+              action: 'KEY_PRESS',
+              key
+            }, '*');
+          }
+        }
+      });
+      softKeyboard.mount();
+      softKeyboard.attach(intentInput);
+      window.softKeyboard = softKeyboard;
+    }
+  }
+
+  // Attempt immediate or deferred initialization
+  if (window.PravahKeyboard && window.PravahVoice) {
+    initKeyboardAndVoice();
+  } else {
+    setTimeout(initKeyboardAndVoice, 100);
+  }
+
+  micBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (softKeyboard) softKeyboard.hide();
+    if (voiceOverlay) {
+      voiceOverlay.show();
     } else {
-      micBtn.classList.remove('listening');
+      // Fallback if modules still loading
+      ShellState.isListeningVoice = !ShellState.isListeningVoice;
+      if (ShellState.isListeningVoice) {
+        micBtn.classList.add('listening');
+        intentInput.placeholder = 'Listening to voice stream (Air-gapped on-device Whisper)...';
+        setTimeout(() => {
+          intentInput.value = 'Send ₹5,000 to Alice from verified account';
+          micBtn.classList.remove('listening');
+          intentInput.placeholder = 'Describe your goal (e.g., "Check flight AI-202 and set reminder")...';
+          ShellState.isListeningVoice = false;
+          submitBtn.click();
+        }, 2200);
+      } else {
+        micBtn.classList.remove('listening');
+      }
     }
   });
 
@@ -692,6 +850,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       case 'PRAVAH_DECISION':
         handleModalDecision(Boolean(data.approved));
+        break;
+
+      case 'PRAVAH_TOGGLE_KEYBOARD':
+        if (window.softKeyboard) {
+          if (window.softKeyboard.visibility === 'SHOWN') {
+            window.softKeyboard.hide();
+          } else {
+            window.softKeyboard.show();
+          }
+        }
+        break;
+
+      case 'PRAVAH_TRIGGER_VOICE':
+        if (window.softKeyboard) window.softKeyboard.hide();
+        if (window.voiceOverlay) window.voiceOverlay.show();
         break;
 
       case 'PRAVAH_QUERY_STATE':

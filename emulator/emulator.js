@@ -539,12 +539,20 @@ class HardwareHUD {
     const t = this.state.thermal.tempC;
     if (t < 48) {
       this.state.thermal.throttleState = 'NOMINAL';
+      this.state.thermal.precision = 'INT8';
+      this.state.thermal.warningActive = false;
     } else if (t < 62) {
       this.state.thermal.throttleState = 'WARM';
+      this.state.thermal.precision = 'INT8';
+      this.state.thermal.warningActive = false;
     } else if (t < 75) {
       this.state.thermal.throttleState = 'THROTTLING';
+      this.state.thermal.precision = 'INT4';
+      this.state.thermal.warningActive = false;
     } else {
       this.state.thermal.throttleState = 'CRITICAL';
+      this.state.thermal.precision = 'CPU_FALLBACK';
+      this.state.thermal.warningActive = true;
     }
   }
 
@@ -779,6 +787,20 @@ class PhoneEmulatorApp {
       onEventEmitted: (event) => this.renderEventLog(event)
     });
 
+    // Sensory Feeds & Mobile HAL Bridge
+    const Sensory = (typeof require === 'function')
+      ? (() => { try { return require('./sensory_bridge.js'); } catch (_) { return null; } })()
+      : (typeof window !== 'undefined' ? window.SensoryBridge : null);
+
+    if (Sensory && Sensory.SensoryBridge) {
+      this.sensory = new Sensory.SensoryBridge({
+        airgap: { initialState: this.hud.state.radio.airgap },
+        thermal: { initialTempC: this.hud.state.thermal.tempC }
+      });
+    } else {
+      this.sensory = null;
+    }
+
     // Touch visualization state
     this.touchTrails = [];
     this.simulatedPinch = false;
@@ -801,6 +823,12 @@ class PhoneEmulatorApp {
     this.volumePopup = this.container.querySelector('#volume-popup');
     this.powerModal = this.container.querySelector('#power-modal');
 
+    // Sensory DOM elements
+    this.cameraLayer = this.container.querySelector('#camera-viewfinder-layer');
+    this.cameraCanvas = this.container.querySelector('#camera-viewfinder-canvas');
+    this.audioCanvas = this.container.querySelector('#audio-visualizer-canvas');
+    this.thermalWarningHud = this.container.querySelector('#thermal-warning-hud');
+
     if (this.bridge && this.iframe) {
       this.bridge.targetIframe = this.iframe;
     }
@@ -811,6 +839,11 @@ class PhoneEmulatorApp {
     }
 
     this.initTouchCanvas();
+
+    // Start sensory feeds animation loops
+    if (this.sensory && (this.cameraCanvas || this.audioCanvas)) {
+      this.sensory.startAnimationLoops(this.cameraCanvas, this.audioCanvas);
+    }
   }
 
   initTouchCanvas() {
@@ -997,6 +1030,126 @@ class PhoneEmulatorApp {
       });
     }
 
+    // Sensory Feeds Bindings (Camera, Audio, Thermal, Air-Gap)
+    const btnToggleCam = this.container.querySelector('#btn-toggle-camera');
+    const btnOpenCam = this.container.querySelector('#btn-open-camera');
+    const btnCamClose = this.container.querySelector('#btn-cam-close');
+    const btnCamShutter = this.container.querySelector('#btn-camera-shutter');
+    const btnCamSnap = this.container.querySelector('#btn-cam-snap');
+    const btnCamFlip = this.container.querySelector('#btn-camera-flip');
+    const btnCamSwitchSensor = this.container.querySelector('#btn-cam-switch-sensor');
+    const selCamPattern = this.container.querySelector('#cam-pattern-select');
+    const btnCamPatternToggle = this.container.querySelector('#btn-cam-pattern-toggle');
+    const camSensorPill = this.container.querySelector('#cam-sensor-pill');
+    const valCamSensor = this.container.querySelector('#val-cam-sensor');
+    const valCamSnaps = this.container.querySelector('#val-cam-snaps');
+
+    const toggleCameraLayer = (force) => {
+      if (!this.cameraLayer) return;
+      const willShow = force !== undefined ? force : !this.cameraLayer.classList.contains('active');
+      this.cameraLayer.classList.toggle('active', willShow);
+      if (btnToggleCam) btnToggleCam.classList.toggle('active', willShow);
+    };
+
+    if (btnToggleCam) btnToggleCam.addEventListener('click', () => toggleCameraLayer());
+    if (btnOpenCam) btnOpenCam.addEventListener('click', () => toggleCameraLayer(true));
+    if (btnCamClose) btnCamClose.addEventListener('click', () => toggleCameraLayer(false));
+
+    const triggerShutter = () => {
+      if (!this.sensory) return;
+      const photo = this.sensory.camera.capturePhoto();
+      if (valCamSnaps) valCamSnaps.textContent = String(this.sensory.camera.capturedPhotos.length);
+      this.pulseDynamicIsland(`PHOTO: ${photo.photoId}`);
+      const thumb = this.container.querySelector('#gallery-thumb-placeholder');
+      if (thumb) thumb.textContent = `IMG #${photo.frameId}`;
+    };
+
+    if (btnCamShutter) btnCamShutter.addEventListener('click', triggerShutter);
+    if (btnCamSnap) btnCamSnap.addEventListener('click', triggerShutter);
+
+    const switchCameraSensor = () => {
+      if (!this.sensory) return;
+      this.sensory.camera.switchSensor();
+      const sName = this.sensory.camera.getCurrentSensorName();
+      if (camSensorPill) camSensorPill.textContent = sName;
+      if (valCamSensor) valCamSensor.textContent = sName.split(' ')[0] + ' ' + (this.sensory.camera.isFrontFacing() ? 'FRONT' : 'REAR');
+      this.pulseDynamicIsland(`LENS: ${this.sensory.camera.isFrontFacing() ? 'FRONT SELFIE' : 'REAR 50MP'}`);
+    };
+
+    if (btnCamFlip) btnCamFlip.addEventListener('click', switchCameraSensor);
+    if (btnCamSwitchSensor) btnCamSwitchSensor.addEventListener('click', switchCameraSensor);
+
+    if (selCamPattern) {
+      selCamPattern.addEventListener('change', (e) => {
+        if (this.sensory) this.sensory.camera.setPattern(e.target.value);
+      });
+    }
+
+    if (btnCamPatternToggle) {
+      btnCamPatternToggle.addEventListener('click', () => {
+        if (!this.sensory) return;
+        const current = this.sensory.camera.patternType;
+        const next = current === 'smpte' ? 'synthetic' : 'smpte';
+        this.sensory.camera.setPattern(next);
+        if (selCamPattern) selCamPattern.value = next;
+        this.pulseDynamicIsland(`PATTERN: ${next.toUpperCase()}`);
+      });
+    }
+
+    // Zoom pills
+    const zoomPills = this.container.querySelectorAll('.zoom-pill');
+    zoomPills.forEach((pill) => {
+      pill.addEventListener('click', () => {
+        zoomPills.forEach((p) => p.classList.remove('active'));
+        pill.classList.add('active');
+        const z = parseFloat(pill.getAttribute('data-zoom')) || 1.0;
+        if (this.sensory) this.sensory.camera.setZoom(z);
+      });
+    });
+
+    // Audio Visualizer Buttons
+    const btnAudioPlay = this.container.querySelector('#btn-audio-playback');
+    const btnAudioMic = this.container.querySelector('#btn-audio-mic');
+    const btnAudioMute = this.container.querySelector('#btn-audio-mute');
+    const sliderAudioVol = this.container.querySelector('#slider-audio-volume');
+    const valAudioVol = this.container.querySelector('#val-audio-volume');
+
+    if (btnAudioPlay) {
+      btnAudioPlay.addEventListener('click', () => {
+        if (!this.sensory) return;
+        this.sensory.audio.startPlayback(440);
+        btnAudioPlay.classList.add('active');
+        if (btnAudioMic) btnAudioMic.classList.remove('active');
+      });
+    }
+
+    if (btnAudioMic) {
+      btnAudioMic.addEventListener('click', () => {
+        if (!this.sensory) return;
+        this.sensory.audio.startCapture();
+        btnAudioMic.classList.add('active');
+        if (btnAudioPlay) btnAudioPlay.classList.remove('active');
+      });
+    }
+
+    if (btnAudioMute) {
+      btnAudioMute.addEventListener('click', () => {
+        if (!this.sensory) return;
+        const isMuted = this.sensory.audio.setMute(!this.sensory.audio.isMuted);
+        btnAudioMute.classList.toggle('active', isMuted);
+        btnAudioMute.textContent = isMuted ? '🔊 Unmute' : '🔇 Mute';
+      });
+    }
+
+    if (sliderAudioVol) {
+      sliderAudioVol.addEventListener('input', (e) => {
+        const vol = Number(e.target.value);
+        if (this.sensory) this.sensory.audio.setMasterVolume(vol);
+        this.hud.setVolume(vol);
+        if (valAudioVol) valAudioVol.textContent = `${vol}%`;
+      });
+    }
+
     // Bidirectional postMessage listener from PravahOS shell iframe
     window.addEventListener('message', (e) => {
       const data = e.data;
@@ -1015,6 +1168,27 @@ class PhoneEmulatorApp {
           this.hud.state.thermal.tempC = data.state.telemetry.temp;
         }
         this.renderHUD(this.hud.state);
+      }
+
+      if (data.type === 'PRAVAH_IME_EVENT') {
+        const timeStr = new Date().toLocaleTimeString();
+        const list = this.container.querySelector('#fidl-event-list');
+        if (list) {
+          const row = document.createElement('div');
+          row.className = 'event-log-item';
+          const summary = data.action === 'KEY_PRESS' 
+            ? `Key '${data.key?.value || data.key?.type}' actuated (pravah.input.InputMethodEditor)`
+            : (data.action === 'VOICE_COMMIT' ? `Voice Transcribed & Committed: "${data.text}"` : `IME Action: ${data.action}`);
+          row.innerHTML = `
+            <span class="event-time">${timeStr}</span>
+            <span class="event-badge badge-other" style="background: rgba(0, 240, 255, 0.15); color: #00f0ff; border-color: rgba(0, 240, 255, 0.3);">IME</span>
+            <span class="event-details">${summary}</span>
+          `;
+          list.insertBefore(row, list.firstChild);
+          while (list.children.length > 25) {
+            list.removeChild(list.lastChild);
+          }
+        }
       }
     });
   }
@@ -1204,6 +1378,66 @@ class PhoneEmulatorApp {
     if (valThrottle) {
       valThrottle.textContent = state.thermal.throttleState;
       valThrottle.className = `status-chip ${state.thermal.throttleState.toLowerCase()}`;
+    }
+
+    // 5. Thermal Warning HUD & Model Precision closed-loop
+    if (this.thermalWarningHud) {
+      const isCritical = state.thermal.tempC >= 75;
+      this.thermalWarningHud.classList.toggle('active', isCritical);
+      const warnPill = this.container.querySelector('#warn-temp-pill');
+      const warnText = this.container.querySelector('#warn-thermal-text');
+      if (warnPill) warnPill.textContent = `${state.thermal.tempC}°C`;
+      if (warnText) {
+        warnText.textContent = `SoC thermal limit (>75°C) exceeded. NPU clock-gated. Inference throttled from INT8 to ${state.thermal.precision || 'CPU_FALLBACK'}.`;
+      }
+    }
+
+    const valPrecision = this.container.querySelector('#val-precision');
+    const valPrecisionLabel = this.container.querySelector('#val-precision-label');
+    const valThroughput = this.container.querySelector('#val-throughput');
+
+    if (valPrecision) {
+      const p = state.thermal.precision || 'INT8';
+      valPrecision.textContent = p;
+      valPrecision.className = `status-chip precision-${p.toLowerCase().replace('_', '-')}`;
+    }
+    if (valPrecisionLabel) {
+      const p = state.thermal.precision || 'INT8';
+      const desc = p === 'CPU_FALLBACK' ? 'CPU Scalar Core Fallback' : (p === 'INT4' ? 'INT4 Quantized' : 'INT8 Full Precision');
+      valPrecisionLabel.textContent = `${p} (${desc})`;
+    }
+    if (valThroughput) {
+      const p = state.thermal.precision || 'INT8';
+      valThroughput.textContent = p === 'CPU_FALLBACK'
+        ? '18.5 Tensors/s (54.0ms)'
+        : (p === 'INT4' ? '72.0 Tensors/s (13.9ms)' : '128.0 Tensors/s (7.8ms)');
+    }
+
+    // 6. Air-Gap RF Power Rails & Sockets readout
+    const railModem = this.container.querySelector('#rail-modem-val');
+    const railWifi = this.container.querySelector('#rail-wifi-val');
+    const railBt = this.container.querySelector('#rail-bt-val');
+    const valSevered = this.container.querySelector('#val-severed-sockets');
+    const valSignal = this.container.querySelector('#val-radio-signal');
+
+    if (railModem) {
+      railModem.textContent = state.radio.airgap ? '0.0V (CUT)' : '3.3V (ACTIVE)';
+      railModem.className = `rail-val ${state.radio.airgap ? 'cut' : 'active'}`;
+    }
+    if (railWifi) {
+      railWifi.textContent = state.radio.airgap ? '0.0V (CUT)' : '1.8V (ACTIVE)';
+      railWifi.className = `rail-val ${state.radio.airgap ? 'cut' : 'active'}`;
+    }
+    if (railBt) {
+      railBt.textContent = state.radio.airgap ? '0.0V (CUT)' : '1.8V (ACTIVE)';
+      railBt.className = `rail-val ${state.radio.airgap ? 'cut' : 'active'}`;
+    }
+    if (valSevered && this.sensory?.airgap) {
+      valSevered.textContent = String(this.sensory.airgap.severedCount);
+    }
+    if (valSignal) {
+      valSignal.textContent = state.radio.airgap ? '✕ RADIO CUT' : '5G UW';
+      valSignal.style.color = state.radio.airgap ? 'var(--accent-danger)' : 'var(--accent-cyan)';
     }
 
     // SVG Dial circumference = 2 * PI * 34 = 213.6

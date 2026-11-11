@@ -956,3 +956,374 @@ body {
   background: rgba(0, 229, 255, 0.15);
   border-color: var(--accent-cyan);
 }
+
+/* ========================================================================== */
+/* 11. Sensory Feeds & Mobile HAL Bridge Styles                               */
+/* ========================================================================== */
+
+/* Camera Viewfinder Screen Layer */
+.camera-viewfinder-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  z-index: 35;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.camera-viewfinder-layer.active {
+  display: flex;
+}
+
+.camera-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 14px;
+  margin-top: 36px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  z-index: 10;
+}
+
+.camera-sensor-pill {
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--accent-cyan);
+  background: rgba(0, 229, 255, 0.12);
+  padding: 3px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 229, 255, 0.25);
+}
+
+.camera-top-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-cam-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-cam-icon:hover {
+  background: rgba(0, 229, 255, 0.2);
+  border-color: var(--accent-cyan);
+}
+
+.camera-canvas-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #03060b;
+}
+
+.camera-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.camera-zoom-controls {
+  position: absolute;
+  bottom: 12px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  z-index: 10;
+}
+
+.zoom-pill {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.zoom-pill.active {
+  background: rgba(0, 229, 255, 0.25);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+.camera-bottom-bar {
+  height: 110px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 24px;
+  z-index: 10;
+}
+
+.camera-gallery-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: #1e293b;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.camera-gallery-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.btn-shutter {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: transparent;
+  border: 4px solid #fff;
+  padding: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease;
+}
+
+.btn-shutter:active {
+  transform: scale(0.92);
+}
+
+.shutter-inner {
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  border-radius: 50%;
+  transition: background 0.15s ease;
+}
+
+.btn-shutter:hover .shutter-inner {
+  background: var(--accent-cyan);
+}
+
+.btn-camera-flip {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-camera-flip:hover {
+  background: rgba(0, 229, 255, 0.25);
+  border-color: var(--accent-cyan);
+  transform: rotate(180deg);
+}
+
+/* On-Screen Thermal Alert Banner HUD */
+.thermal-warning-hud {
+  position: absolute;
+  top: 70px;
+  left: 12px;
+  right: 12px;
+  background: rgba(220, 38, 38, 0.94);
+  backdrop-filter: blur(12px);
+  border: 1px solid #ef4444;
+  border-radius: 12px;
+  padding: 10px 14px;
+  color: #fff;
+  z-index: 50;
+  display: none;
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.45);
+  animation: thermal-pulse 2s infinite ease-in-out;
+}
+
+.thermal-warning-hud.active {
+  display: block;
+}
+
+@keyframes thermal-pulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+    border-color: #ef4444;
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(239, 68, 68, 0.85);
+    border-color: #fca5a5;
+  }
+}
+
+.thermal-warning-hud .warn-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 0.78rem;
+  letter-spacing: -0.01em;
+}
+
+.thermal-warning-hud .warn-body {
+  font-size: 0.68rem;
+  line-height: 1.35;
+  margin-top: 4px;
+  color: #fee2e2;
+  font-family: var(--font-sans);
+}
+
+.thermal-warning-hud .warn-pill {
+  display: inline-block;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+/* Audio PCM Visualizer Canvas & Controls */
+.audio-visualizer-canvas {
+  width: 100%;
+  height: 110px;
+  background: #090e17;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: block;
+}
+
+.audio-controls-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.audio-mode-btn {
+  flex: 1;
+  padding: 5px 8px;
+  font-size: 0.72rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.audio-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.audio-mode-btn.active {
+  background: rgba(0, 229, 255, 0.15);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  font-weight: 700;
+}
+
+.audio-mode-btn.active.mic {
+  background: rgba(0, 230, 118, 0.15);
+  border-color: var(--accent-emerald);
+  color: var(--accent-emerald);
+}
+
+/* RF Power Rails Status Grid */
+.rf-rails-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.rf-rail-card {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 6px 4px;
+  text-align: center;
+}
+
+.rf-rail-card .rail-label {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.rf-rail-card .rail-val {
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.rail-val.cut {
+  color: var(--accent-danger);
+}
+
+.rail-val.active {
+  color: var(--accent-emerald);
+}
+
+/* Model Precision Chip Colors */
+.status-chip.precision-int8 {
+  background: rgba(0, 229, 255, 0.15);
+  color: var(--accent-cyan);
+  border: 1px solid rgba(0, 229, 255, 0.35);
+}
+
+.status-chip.precision-int4 {
+  background: rgba(255, 171, 0, 0.15);
+  color: var(--accent-amber);
+  border: 1px solid rgba(255, 171, 0, 0.35);
+}
+
+.status-chip.precision-cpu {
+  background: rgba(255, 23, 68, 0.2);
+  color: var(--accent-danger);
+  border: 1px solid rgba(255, 23, 68, 0.45);
+}
+

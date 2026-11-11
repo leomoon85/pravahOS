@@ -8,5 +8,6 @@ export * from './task_engine.js';
 export * from './mock_capabilities.js';
 export * from './inference.js';
 export * from './offline_runner.js';
+export * from './capabilities/index.js';
 export * from './memory.js';
 export * from './planner.js';

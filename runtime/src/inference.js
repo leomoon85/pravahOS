@@ -153,12 +153,35 @@ export class IntentSpecialist extends SpecialistInferenceProvider {
     const raw = String(request.input || '').toLowerCase();
 
     // Flight and Travel
-    const hasPayment = /pay|transfer|send\s+\$|wallet|money|funds/i.test(raw);
+    const hasPayment = /pay|transfer|send\s+\$|wallet|money|funds|usdc|crypto|sol|btc|eth/i.test(raw);
     const hasFlight = /flight|fly|airline|departure|gate|terminal/i.test(raw);
     const hasReminder = /remind|reminder|schedule|calendar|alert/i.test(raw);
     const hasSummary = /summarize|summary|overview|digest/i.test(raw);
+    const hasCamera = /photo|camera|capture|picture|snapshot|scan|image/i.test(raw);
+    const hasNote = /note|memo|record/i.test(raw);
+    const hasCrypto = /crypto|usdc|sol|btc|eth|token|bitcoin|ethereum|solana/i.test(raw);
+
+    // Multi-step: Camera frame capture -> Smart private note
+    if (hasCamera && hasNote) {
+      return {
+        intent: 'CAMERA_CAPTURE_AND_NOTE',
+        confidence: 0.98,
+        categories: ['MEDIA', 'PRODUCTIVITY'],
+        isMultiStep: true,
+        summary: 'Capture photo via Camera HAL and generate smart private note'
+      };
+    }
 
     if (hasPayment) {
+      if (hasCrypto) {
+        return {
+          intent: 'CRYPTO_WALLET_TRANSACT',
+          confidence: 0.97,
+          categories: ['FINANCE', 'CRYPTO'],
+          isMultiStep: false,
+          summary: 'Execute irreversible crypto remittance on-chain'
+        };
+      }
       return {
         intent: 'WALLET_TRANSFER',
         confidence: 0.96,
@@ -183,6 +206,24 @@ export class IntentSpecialist extends SpecialistInferenceProvider {
         categories: ['TRAVEL'],
         isMultiStep: false,
         summary: 'Query flight itinerary and status'
+      };
+    }
+    if (hasCamera) {
+      return {
+        intent: 'CAMERA_CAPTURE',
+        confidence: 0.95,
+        categories: ['MEDIA'],
+        isMultiStep: false,
+        summary: 'Capture image frame from camera sensor'
+      };
+    }
+    if (hasNote) {
+      return {
+        intent: 'NOTE_CREATE',
+        confidence: 0.94,
+        categories: ['PRODUCTIVITY'],
+        isMultiStep: false,
+        summary: 'Create and persist smart note to memory'
       };
     }
     if (hasReminder) {
@@ -243,15 +284,21 @@ export class EntitySpecialist extends SpecialistInferenceProvider {
       entities.flightNumber = flightMatch[1].toUpperCase().replace(/\s+/, '-');
     }
 
-    // Currency amount: e.g. $50, 150 USD, $ 250.00
+    // Currency amount & crypto token: e.g. 250 USDC, 10 SOL, $50, 150 USD, $ 250.00
+    const cryptoMatch = raw.match(/(\d+(?:\.\d+)?)\s*(USDC|SOL|BTC|ETH|USDT|DAI)\b/i);
+    if (cryptoMatch) {
+      entities.amount = parseFloat(cryptoMatch[1]);
+      entities.asset = cryptoMatch[2].toUpperCase();
+    }
     const moneyMatch = raw.match(/(?:\$|usd\s*|inr\s*|rs\.?\s*)(\d+(?:\.\d{2})?)/i) ||
                        raw.match(/(\d+(?:\.\d{2})?)\s*(?:dollars|usd|inr|rupees)/i);
-    if (moneyMatch) {
+    if (moneyMatch && entities.amount === undefined) {
       entities.amount = parseFloat(moneyMatch[1]);
+      entities.asset = 'USD';
     }
 
-    // Recipient: e.g. to Alice, to Bob, transfer to Raj
-    const recipientMatch = raw.match(/\bto\s+([A-Z][a-z0-9_-]+)/i);
+    // Recipient: e.g. to Alice, to Bob, transfer to Raj, to 0x71C...
+    const recipientMatch = raw.match(/\bto\s+([A-Za-z0-9_-]+)/i);
     if (recipientMatch) {
       entities.recipient = recipientMatch[1];
     }
@@ -269,11 +316,42 @@ export class EntitySpecialist extends SpecialistInferenceProvider {
       entities.date = 'tomorrow';
     }
 
+    // Document, Media & Note Entities
+    const isDoc = /document|receipt|invoice|contract|passport|paper/i.test(raw);
+    if (isDoc) {
+      const docMatch = raw.match(/\b(document|receipt|invoice|contract|passport)\b/i);
+      entities.documentType = docMatch ? docMatch[1].toLowerCase() : 'document';
+      entities.captureMode = 'DOCUMENT';
+    }
+    const isPrivate = /private|confidential|secret|personal/i.test(raw);
+    if (isPrivate) {
+      entities.sensitivity = 'CONFIDENTIAL';
+      entities.isPrivate = true;
+    }
+    if (/note|memo/i.test(raw)) {
+      entities.title = entities.documentType
+        ? `${entities.documentType.charAt(0).toUpperCase() + entities.documentType.slice(1)} Note`
+        : (isPrivate ? 'Private Note' : 'Smart Note');
+      entities.body = raw;
+    }
+
+    // Camera sensor preference
+    if (/front|selfie/i.test(raw)) {
+      entities.sensor = 'FRONT_SELFIE';
+      entities.sensorId = 1;
+    } else if (/ultrawide|wide/i.test(raw)) {
+      entities.sensor = 'BACK_ULTRAWIDE';
+      entities.sensorId = 2;
+    } else {
+      entities.sensor = 'BACK_PRIMARY';
+      entities.sensorId = 0;
+    }
+
     // Title / Subject
     if (/flight/i.test(raw)) {
       entities.title = entities.flightNumber ? `Flight ${entities.flightNumber}` : 'Upcoming Flight';
     } else if (entities.recipient && entities.amount) {
-      entities.title = `Payment of $${entities.amount} to ${entities.recipient}`;
+      entities.title = `Payment of ${entities.amount} ${entities.asset || 'USD'} to ${entities.recipient}`;
     }
 
     return { entities };
@@ -305,6 +383,94 @@ export class PlanningSpecialist extends SpecialistInferenceProvider {
     const nodes = [];
 
     switch (intent) {
+      case 'CAMERA_CAPTURE_AND_NOTE': {
+        if (capIds.has('media.camera.capture')) {
+          nodes.push({
+            nodeId: 'capture_document_photo',
+            capabilityId: 'media.camera.capture',
+            dependencies: [],
+            inputs: {
+              sensorId: entities.sensorId ?? 0,
+              captureMode: entities.captureMode || 'DOCUMENT',
+              format: 'RGB888'
+            }
+          });
+        }
+        if (capIds.has('notes.smart.create')) {
+          nodes.push({
+            nodeId: 'save_smart_note',
+            capabilityId: 'notes.smart.create',
+            dependencies: nodes.length > 0 ? ['capture_document_photo'] : [],
+            inputs: {
+              title: entities.title || 'Document Note',
+              body: entities.body || 'Captured document photo',
+              sensitivity: entities.sensitivity || 'CONFIDENTIAL',
+              tags: [entities.documentType || 'document', entities.isPrivate ? 'private' : null].filter(Boolean)
+            }
+          });
+        }
+        break;
+      }
+
+      case 'CAMERA_CAPTURE': {
+        if (capIds.has('media.camera.capture')) {
+          nodes.push({
+            nodeId: 'capture_camera_frame',
+            capabilityId: 'media.camera.capture',
+            dependencies: [],
+            inputs: {
+              sensorId: entities.sensorId ?? 0,
+              captureMode: entities.captureMode || 'STANDARD',
+              format: 'RGB888'
+            }
+          });
+        }
+        break;
+      }
+
+      case 'NOTE_CREATE': {
+        if (capIds.has('notes.smart.create')) {
+          nodes.push({
+            nodeId: 'save_smart_note',
+            capabilityId: 'notes.smart.create',
+            dependencies: [],
+            inputs: {
+              title: entities.title || 'Smart Note',
+              body: entities.body || 'Quick note',
+              sensitivity: entities.sensitivity || 'PUBLIC'
+            }
+          });
+        }
+        break;
+      }
+
+      case 'CRYPTO_WALLET_TRANSACT': {
+        if (capIds.has('crypto.wallet.transact')) {
+          nodes.push({
+            nodeId: 'execute_crypto_transact',
+            capabilityId: 'crypto.wallet.transact',
+            dependencies: [],
+            inputs: {
+              amount: entities.amount || 0,
+              recipient: entities.recipient || 'Unknown',
+              asset: entities.asset || 'USDC',
+              memo: entities.title || 'Autonomous Remittance'
+            }
+          });
+        } else if (capIds.has('wallet.payment.transfer')) {
+          nodes.push({
+            nodeId: 'execute_wallet_transfer',
+            capabilityId: 'wallet.payment.transfer',
+            dependencies: [],
+            inputs: {
+              amount: entities.amount || 0,
+              recipient: entities.recipient || 'Unknown'
+            }
+          });
+        }
+        break;
+      }
+
       case 'TRAVEL_AND_REMINDER': {
         if (capIds.has('flight.info.get')) {
           nodes.push({
@@ -349,6 +515,18 @@ export class PlanningSpecialist extends SpecialistInferenceProvider {
             inputs: {
               amount: entities.amount || 0,
               recipient: entities.recipient || 'Unknown'
+            }
+          });
+        } else if (capIds.has('crypto.wallet.transact')) {
+          nodes.push({
+            nodeId: 'execute_crypto_transact',
+            capabilityId: 'crypto.wallet.transact',
+            dependencies: [],
+            inputs: {
+              amount: entities.amount || 0,
+              recipient: entities.recipient || 'Unknown',
+              asset: entities.asset || 'USDC',
+              memo: entities.title || 'Autonomous Remittance'
             }
           });
         }

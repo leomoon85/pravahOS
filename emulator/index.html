@@ -49,10 +49,27 @@
         </select>
       </div>
 
+      <!-- Camera Viewfinder Toggle -->
+      <div class="toolbar-group">
+        <button id="btn-toggle-camera" class="tb-btn" title="Toggle Interactive Camera Viewfinder">
+          📷 Camera
+        </button>
+      </div>
+
       <!-- Orientation Toggle -->
       <div class="toolbar-group">
         <button id="btn-orientation" class="tb-btn" title="Toggle Portrait / Landscape">
           ↺ Rotate
+        </button>
+      </div>
+
+      <!-- Touch Software Keyboard & Voice Pipeline Controls -->
+      <div class="toolbar-group">
+        <button id="btn-toggle-soft-kbd" class="tb-btn" title="Toggle On-Screen Mobile Touch Keyboard">
+          ⌨ Keyboard
+        </button>
+        <button id="btn-toggle-voice" class="tb-btn" title="Activate Neural Voice Dictation Visualizer">
+          🎤 Voice
         </button>
       </div>
 
@@ -139,6 +156,57 @@
                 <canvas id="framebuffer-canvas" class="framebuffer-canvas"></canvas>
               </div>
 
+              <!-- View Layer 2.5: Interactive Camera Viewfinder Modal / App -->
+              <div id="camera-viewfinder-layer" class="camera-viewfinder-layer">
+                <div class="camera-top-bar">
+                  <span id="cam-sensor-pill" class="camera-sensor-pill">IMX890 50MP [REAR]</span>
+                  <div class="camera-top-actions">
+                    <select id="cam-pattern-select" class="tb-select" style="padding:2px 6px; font-size:0.65rem;">
+                      <option value="smpte" selected>SMPTE Color Bars</option>
+                      <option value="synthetic">Synthetic Horizon</option>
+                      <option value="webcam">Live Webcam</option>
+                    </select>
+                    <button id="btn-cam-close" class="btn-cam-icon" title="Close Camera Viewfinder">✕</button>
+                  </div>
+                </div>
+
+                <div class="camera-canvas-wrap">
+                  <canvas id="camera-viewfinder-canvas" class="camera-canvas" width="412" height="600"></canvas>
+
+                  <div class="camera-zoom-controls">
+                    <button id="btn-zoom-06" class="zoom-pill" data-zoom="0.6">.6</button>
+                    <button id="btn-zoom-10" class="zoom-pill active" data-zoom="1.0">1x</button>
+                    <button id="btn-zoom-20" class="zoom-pill" data-zoom="2.0">2x</button>
+                  </div>
+                </div>
+
+                <div class="camera-bottom-bar">
+                  <div id="btn-camera-gallery" class="camera-gallery-thumb" title="Captured Photo Gallery">
+                    <span id="gallery-thumb-placeholder">IMG</span>
+                  </div>
+
+                  <button id="btn-camera-shutter" class="btn-shutter" title="Capture Photo">
+                    <div class="shutter-inner"></div>
+                  </button>
+
+                  <button id="btn-camera-flip" class="btn-camera-flip" title="Switch Front/Rear Camera Sensor">
+                    🔄
+                  </button>
+                </div>
+              </div>
+
+              <!-- Thermal Alert Banner HUD -->
+              <div id="thermal-warning-hud" class="thermal-warning-hud">
+                <div class="warn-header">
+                  <span>⚠️</span>
+                  <span>THERMAL THROTTLE WARNING</span>
+                  <span id="warn-temp-pill" class="warn-pill">80°C</span>
+                </div>
+                <div class="warn-body" id="warn-thermal-text">
+                  SoC thermal limit (>75°C) exceeded. NPU clock-gated. Inference throttled from INT8 to CPU Fallback.
+                </div>
+              </div>
+
               <!-- View Layer 3: High-DPI Transparent Touch & Gesture Canvas -->
               <canvas id="touch-overlay" class="touch-overlay-canvas"></canvas>
 
@@ -190,10 +258,28 @@
           <p style="font-size:0.75rem; color:var(--text-secondary); line-height:1.4;">
             Hardware circuit disconnect cuts 5G RF modems, Wi-Fi 7, and Bluetooth at the PHY layer.
           </p>
-          <div style="display:flex; gap:0.5rem;">
+          <div class="rf-rails-grid">
+            <div class="rf-rail-card">
+              <div class="rail-label">5G Modem</div>
+              <div id="rail-modem-val" class="rail-val cut">0.0V (CUT)</div>
+            </div>
+            <div class="rf-rail-card">
+              <div class="rail-label">Wi-Fi 7</div>
+              <div id="rail-wifi-val" class="rail-val cut">0.0V (CUT)</div>
+            </div>
+            <div class="rf-rail-card">
+              <div class="rail-label">Bluetooth</div>
+              <div id="rail-bt-val" class="rail-val cut">0.0V (CUT)</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:0.5rem; margin-top:0.6rem;">
             <button id="btn-toggle-airgap" class="btn-scenario" style="flex:1; justify-content:center;">
               ⚡ Toggle Physical Air-Gap Switch
             </button>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top:0.4rem; font-size:0.68rem; color:var(--text-muted);">
+            <span>Severed Sockets: <strong id="val-severed-sockets" style="color:var(--accent-danger);">0</strong></span>
+            <span>Signal: <strong id="val-radio-signal" style="color:var(--accent-danger);">✕ RADIO CUT</strong></span>
           </div>
         </div>
 
@@ -225,20 +311,32 @@
           </div>
         </div>
 
-        <!-- Thermal & Battery Sensors -->
+        <!-- Thermal & Battery Sensors: Closed-Loop Throttling -->
         <div class="telemetry-card">
           <div class="card-title">
-            <span>Thermal & Power Telemetry</span>
-            <span id="val-throttle" class="status-chip nominal">NOMINAL</span>
+            <span>Thermal Closed-Loop & Throttling</span>
+            <div style="display:flex; gap:4px;">
+              <span id="val-precision" class="status-chip precision-int8">INT8</span>
+              <span id="val-throttle" class="status-chip nominal">NOMINAL</span>
+            </div>
           </div>
 
           <div class="ctrl-row">
             <span class="label">SoC Temperature:</span>
             <span class="val" id="val-temp">41°C</span>
           </div>
-          <input type="range" id="slider-temp" class="ctrl-slider" min="30" max="85" value="41">
+          <input type="range" id="slider-temp" class="ctrl-slider" min="30" max="90" value="41">
 
-          <div class="ctrl-row" style="margin-top:0.4rem;">
+          <div class="ctrl-row" style="margin-top:0.3rem;">
+            <span class="label">Neural Precision:</span>
+            <span class="val" id="val-precision-label" style="font-family:var(--font-mono); color:var(--accent-cyan); font-size:0.75rem;">INT8 (Full Precision)</span>
+          </div>
+          <div class="ctrl-row" style="margin-top:0.2rem;">
+            <span class="label">Throughput:</span>
+            <span class="val" id="val-throughput" style="font-family:var(--font-mono); font-size:0.75rem;">128.0 Tensors/s (7.8ms)</span>
+          </div>
+
+          <div class="ctrl-row" style="margin-top:0.5rem;">
             <span class="label">Battery State of Charge:</span>
             <span class="val" id="val-battery">88%</span>
           </div>
@@ -249,6 +347,46 @@
               <input type="checkbox" id="check-charging" style="accent-color:var(--accent-emerald);">
               Simulate Fast Charging (USB-C PD 65W)
             </label>
+          </div>
+        </div>
+
+        <!-- Audio PCM Visualizer & HAL -->
+        <div class="telemetry-card">
+          <div class="card-title">
+            <span>Audio PCM Stream & Visualizer</span>
+            <span id="audio-hal-badge" class="status-chip nominal">48kHz STEREO</span>
+          </div>
+          <canvas id="audio-visualizer-canvas" class="audio-visualizer-canvas" width="320" height="110"></canvas>
+          <div class="audio-controls-row">
+            <button id="btn-audio-playback" class="audio-mode-btn active">▶ Tone (440Hz)</button>
+            <button id="btn-audio-mic" class="audio-mode-btn mic">● Voice Mic</button>
+            <button id="btn-audio-mute" class="audio-mode-btn">🔇 Mute</button>
+          </div>
+          <div class="ctrl-row" style="margin-top:0.5rem;">
+            <span class="label">Master Output Volume:</span>
+            <span class="val" id="val-audio-volume">75%</span>
+          </div>
+          <input type="range" id="slider-audio-volume" class="ctrl-slider" min="0" max="100" value="75">
+        </div>
+
+        <!-- Camera Sensory Feeds Card -->
+        <div class="telemetry-card">
+          <div class="card-title">
+            <span>Camera Sensory Feed</span>
+            <span id="cam-telemetry-badge" class="status-chip nominal">1080p60</span>
+          </div>
+          <p style="font-size:0.72rem; color:var(--text-secondary); line-height:1.4;">
+            SMPTE test pattern, synthetic scene, or webcam feed tied to Camera HAL frame queues.
+          </p>
+          <div class="scenario-grid">
+            <button id="btn-open-camera" class="btn-scenario">📷 Launch Viewfinder</button>
+            <button id="btn-cam-switch-sensor" class="btn-scenario">🔄 Switch Sensor</button>
+            <button id="btn-cam-snap" class="btn-scenario">⚡ Shutter Snap</button>
+            <button id="btn-cam-pattern-toggle" class="btn-scenario">🎨 Cycle Pattern</button>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top:0.4rem; font-size:0.68rem; color:var(--text-muted);">
+            <span>Sensor: <strong id="val-cam-sensor" style="color:var(--accent-cyan);">IMX890 50MP</strong></span>
+            <span>Photos Snapped: <strong id="val-cam-snaps" style="color:#fff;">0</strong></span>
           </div>
         </div>
 
@@ -273,8 +411,10 @@
         <div class="telemetry-card">
           <div class="card-title">Shell Intent Injection</div>
           <div class="scenario-grid">
+            <button class="btn-scenario" data-scenario="camera_note">📷 Doc Photo & Note (Sc. 6)</button>
             <button class="btn-scenario" data-scenario="flight">✈ Flight AI-202</button>
             <button class="btn-scenario" data-scenario="payment">💳 Transfer ₹5,000</button>
+            <button class="btn-scenario" data-scenario="crypto">🪙 250 USDC Transfer</button>
             <button class="btn-scenario" data-scenario="memory">⚡ Compact RAM</button>
             <button class="btn-scenario" data-scenario="ocr">📄 Receipt OCR</button>
           </div>
@@ -299,6 +439,7 @@
 
   </main>
 
+  <script src="sensory_bridge.js"></script>
   <script src="emulator.js"></script>
   <script>
     // Initialize Phone Emulator Application
@@ -378,6 +519,9 @@
       const airgapBadge = document.getElementById('airgap-badge');
       btnAirgap.addEventListener('click', () => {
         const offline = app.hud.toggleAirGap();
+        if (app.sensory?.airgap) {
+          app.sensory.airgap.setAirGap(offline);
+        }
         app.syncAirGapToShell(offline);
         airgapBadge.textContent = offline ? 'ISOLATED' : 'ONLINE';
         airgapBadge.className = `status-chip ${offline ? 'nominal' : 'warm'}`;
@@ -386,7 +530,11 @@
       // Temperature slider
       const sliderTemp = document.getElementById('slider-temp');
       sliderTemp.addEventListener('input', (e) => {
-        app.hud.setThermal(Number(e.target.value));
+        const val = Number(e.target.value);
+        app.hud.setThermal(val);
+        if (app.sensory?.thermal) {
+          app.sensory.thermal.setTemperature(val);
+        }
       });
 
       // Battery slider & charging
@@ -501,6 +649,23 @@
 
       document.getElementById('btn-pwr-cancel').addEventListener('click', () => {
         app.hidePowerModal();
+      });
+
+      // Virtual Keyboard & Voice Dictation toolbar toggles
+      const btnSoftKbd = document.getElementById('btn-toggle-soft-kbd');
+      btnSoftKbd?.addEventListener('click', () => {
+        if (app.iframe && app.iframe.contentWindow) {
+          app.iframe.contentWindow.postMessage({ type: 'PRAVAH_TOGGLE_KEYBOARD' }, '*');
+          app.pulseDynamicIsland('KEYBOARD TOGGLED');
+        }
+      });
+
+      const btnVoice = document.getElementById('btn-toggle-voice');
+      btnVoice?.addEventListener('click', () => {
+        if (app.iframe && app.iframe.contentWindow) {
+          app.iframe.contentWindow.postMessage({ type: 'PRAVAH_TRIGGER_VOICE' }, '*');
+          app.pulseDynamicIsland('VOICE PIPELINE ACTIVE');
+        }
       });
     });
   </script>

@@ -20,6 +20,14 @@ export class CapabilityRegistry {
     return this.capabilities.get(capabilityId);
   }
 
+  has(capabilityId) {
+    return this.capabilities.has(capabilityId);
+  }
+
+  unregister(capabilityId) {
+    return this.capabilities.delete(capabilityId);
+  }
+
   list() {
     return Array.from(this.capabilities.values()).map(c => c.descriptor);
   }

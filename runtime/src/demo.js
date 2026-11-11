@@ -72,6 +72,7 @@ async function main() {
     value: 'Bearer secret_token_xyz_9982',
     sensitivity: SensitivityLevel.CONFIDENTIAL
   });
+  CoreCapabilities.NotesSmartCreate.implementation.setMemoryEngine(memoryEngine);
   console.log('[INIT] Context & Episodic Memory Engine initialized with user profile facts.');
 
   // 5. Initialize Deterministic Policy Gate & Task Engine
@@ -231,6 +232,57 @@ async function main() {
     input: 'Summarize flight itinerary'
   });
   console.log(`[ROUTER] Request successfully completed via dynamic fallback to: HardwareAccelerator tier ${failoverRes.accelerator_used} (GPU)`);
+
+  // =========================================================================
+  // SCENARIO 6: Autonomous Document Capture & Confidential Smart Note (Master Scenario 6)
+  // =========================================================================
+  console.log('\n------------------------------------------------------------------------');
+  console.log('Scenario 6: Master Scenario 6: "Take a photo of this document and save a private note"');
+  console.log('------------------------------------------------------------------------');
+
+  const intent6 = 'Take a photo of this document and save a private note';
+  const docCaller = {
+    componentUrl: 'fuchsia-pkg://pravah.os/camera_assistant',
+    delegatedAuthority: AuthorityLevel.EXECUTE
+  };
+
+  console.log(`[INPUT] Intent: "${intent6}"`);
+  const planned6 = await planner.planIntent(intent6, { caller: docCaller });
+  console.log(`[PLANNER] Classified Intent: ${planned6.metadata.intent} (Confidence: ${planned6.metadata.confidence})`);
+  console.log(`[PLANNER] Extracted Entities:`, planned6.metadata.entities);
+  console.log(`[PLANNER] Verified Multi-Step DAG Nodes:`);
+  for (const n of planned6.nodes) {
+    console.log(`  - Node [${n.nodeId}] -> Cap: ${n.capabilityId} (Deps: [${n.dependencies.join(', ')}])`);
+  }
+
+  const exec6Result = await planner.planAndExecute(intent6, {
+    caller: docCaller,
+    contextSource: 'user_spoken_intent'
+  });
+
+  console.log(`[EXECUTION] Task Status: ${exec6Result.execution.state}`);
+  const cameraNodeOutput = exec6Result.execution.nodes.get('capture_document_photo').output;
+  const noteNodeOutput = exec6Result.execution.nodes.get('save_smart_note').output;
+
+  console.log(`[OUTPUT] Camera Capture Output:`, {
+    frameId: cameraNodeOutput.frameId,
+    format: cameraNodeOutput.format,
+    resolution: `${cameraNodeOutput.width}x${cameraNodeOutput.height}`,
+    sensor: cameraNodeOutput.sensorName,
+    frameHash: cameraNodeOutput.frameHash.substring(0, 16) + '...',
+    metadataCard: cameraNodeOutput.metadataCard.title
+  });
+
+  console.log(`[OUTPUT] Smart Note Output:`, {
+    noteId: noteNodeOutput.noteId,
+    title: noteNodeOutput.title,
+    sensitivity: noteNodeOutput.sensitivity,
+    tags: noteNodeOutput.tags,
+    episodicMemoryId: noteNodeOutput.episodicMemoryId,
+    attachedMedia: noteNodeOutput.attachedMedia ? `${noteNodeOutput.attachedMedia.resolution} (${noteNodeOutput.attachedMedia.sensor})` : null
+  });
+
+  console.log(`[MEMORY] Note persisted to episodic memory with privacy level: ${noteNodeOutput.sensitivity}`);
 
   // =========================================================================
   // METRICS & AUDIT LOGS

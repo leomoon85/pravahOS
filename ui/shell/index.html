@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PravahOS Dynamic Shell & Experience Composer</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../keyboard/keyboard.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -72,8 +73,10 @@
 
       <div class="scenario-chips">
         <span>Scenarios:</span>
+        <button class="chip" data-scenario="camera_note">📷 Document Photo & Note (Scenario 6)</button>
         <button class="chip" data-scenario="flight">✈ Flight AI-202 & Reminder</button>
         <button class="chip" data-scenario="payment">💳 Transfer ₹5,000 (Policy Gate Trigger)</button>
+        <button class="chip" data-scenario="crypto">🪙 250 USDC Remittance</button>
         <button class="chip" data-scenario="memory">⚡ Compact Secure Memory</button>
         <button class="chip" data-scenario="ocr">📄 Receipt OCR & Privacy Redact</button>
       </div>
@@ -173,6 +176,8 @@
     </div>
   </div>
 
+  <script type="module" src="../keyboard/voice.js"></script>
+  <script type="module" src="../keyboard/keyboard.js"></script>
   <script src="shell.js"></script>
 </body>
 </html>

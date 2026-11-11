@@ -90,7 +90,14 @@ export class TaskEngine {
         try {
           node.status = 'RUNNING';
           // Gather inputs from dependent nodes if requested
-          const inputs = node.inputs || {};
+          const dependencyOutputs = {};
+          for (const depId of (node.dependencies || [])) {
+            const depNode = task.nodes.get(depId);
+            if (depNode?.output) {
+              dependencyOutputs[depId] = depNode.output;
+            }
+          }
+          const inputs = { ...node.inputs, dependencyOutputs, caller: task.caller, contextSource: task.contextSource };
           const output = await cap.implementation.execute(inputs);
           node.output = output;
           node.status = 'COMPLETED';

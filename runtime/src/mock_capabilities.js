@@ -2,6 +2,18 @@
 // Use of this source code is governed by a BSD-style license.
 
 import { RiskLevel, AuthorityLevel } from './types.js';
+import { CameraCapability, CameraCapabilityDescriptor } from './capabilities/camera_capability.js';
+import { NotesCapability, NotesCapabilityDescriptor } from './capabilities/notes_capability.js';
+import { WalletCapability, WalletCapabilityDescriptor } from './capabilities/wallet_capability.js';
+
+export {
+  CameraCapability,
+  CameraCapabilityDescriptor,
+  NotesCapability,
+  NotesCapabilityDescriptor,
+  WalletCapability,
+  WalletCapabilityDescriptor
+};
 
 export const CoreCapabilities = {
   // Read-only system time
@@ -72,5 +84,23 @@ export const CoreCapabilities = {
         return { transactionId: `tx_${Date.now()}`, amount, recipient, status: 'PAID' };
       }
     }
+  },
+
+  // Pluggable Native Capability: Camera Capture (media.camera.capture)
+  CameraCapture: {
+    descriptor: CameraCapabilityDescriptor,
+    implementation: new CameraCapability()
+  },
+
+  // Pluggable Native Capability: Smart Note Creation (notes.smart.create)
+  NotesSmartCreate: {
+    descriptor: NotesCapabilityDescriptor,
+    implementation: new NotesCapability()
+  },
+
+  // Pluggable Native Capability: Irreversible Crypto Remittance (crypto.wallet.transact)
+  CryptoWalletTransact: {
+    descriptor: WalletCapabilityDescriptor,
+    implementation: new WalletCapability()
   }
 };
