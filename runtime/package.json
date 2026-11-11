@@ -1,0 +1,14 @@
+{
+  "name": "pravah-runtime",
+  "version": "0.1.0",
+  "description": "PravahOS Deterministic Unified Intelligence Authority & Capability Runtime Prototype",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "demo": "node src/demo.js"
+  },
+  "keywords": ["pravah-os", "runtime", "capability", "task-graph", "policy-gate"],
+  "author": "PravahOS Authors",
+  "license": "BSD-3-Clause"
+}
