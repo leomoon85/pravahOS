@@ -708,7 +708,11 @@ export class LivingDrawer {
   mount(container) {
     this.container = container;
     this.container.classList.add('living-drawer-root');
-    this.render();
+    if (!this.container.querySelector('.drawer-scroll-body')) {
+      this.render();
+    } else {
+      this._bindDomEvents();
+    }
     this.startLiveTickers();
     this.bindGestures();
   }

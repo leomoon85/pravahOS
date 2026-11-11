@@ -463,7 +463,962 @@
   </nav>
 
   <!-- 5. Living App Drawer Surface -->
-  <div id="living-drawer" class="living-drawer collapsed" aria-label="PravahOS Living Capability Drawer"></div>
+  <div id="living-drawer" class="living-drawer collapsed" aria-label="PravahOS Living Capability Drawer">
+
+      <!-- Metro Drawer Handle & Header -->
+      <div class="drawer-drag-header" id="drawer-drag-header" title="Drag down to collapse">
+        <div class="drawer-handle-bar"></div>
+        <div class="drawer-header-meta">
+          <div class="drawer-brand">
+            <span class="drawer-logo">⊞</span>
+            <span class="drawer-title">Living Drawer</span>
+          </div>
+          <button class="drawer-btn-dismiss" id="btn-drawer-dismiss" title="Close Drawer">✕</button>
+        </div>
+      </div>
+
+      <!-- Scrollable Drawer Content Surface -->
+      <div class="drawer-scroll-body" id="drawer-scroll-body">
+
+        <!-- Top Section: Dynamic Glanceable Live Tiles -->
+        <section class="drawer-live-tiles-section">
+          <div class="section-label-row">
+            <span class="section-title">GLANCEABLE LIVE TILES</span>
+            <button class="btn-flip-all" id="btn-flip-all" title="Flip all live tiles to reveal telemetry">🔄 Flip Tiles</button>
+          </div>
+          <div class="live-tiles-grid" id="live-tiles-grid">
+            
+      <!-- 1. Active Spotify Hero 2x1 Bento Tile with Floating Rotating Vinyl & Audio Wave Ribbon -->
+      <div class="live-tile bento-tile tile-wide tile-hero-2x1 tile-spotify " id="tile-spotify" data-tile-id="spotify">
+        <div class="tile-face tile-front">
+          <div class="tile-top-row">
+            <div class="tile-icon-group">
+              <span class="tile-glyph">🎵</span>
+              <span class="tile-badge">AUDIO HAL</span>
+              <span class="tile-dot-live"></span>
+            </div>
+            <div class="tile-eq-visualizer" id="spotify-eq-bars">
+              <div class="eq-bar" style="height:65%;"></div><div class="eq-bar" style="height:90%;"></div><div class="eq-bar" style="height:45%;"></div><div class="eq-bar" style="height:82%;"></div><div class="eq-bar" style="height:60%;"></div>
+            </div>
+          </div>
+          <div class="tile-middle-info tile-hero-middle">
+            <div class="spotify-hero-content">
+              <div class="tile-title" id="spotify-track-title">Midnight City</div>
+              <div class="tile-sub" id="spotify-artist">M83 • Hurry Up, We're Dreaming</div>
+              <!-- Animated Soundwave Ribbon -->
+              <div class="soundwave-ribbon" aria-hidden="true">
+                <span class="soundwave-line wave-1"></span>
+                <span class="soundwave-line wave-2"></span>
+                <span class="soundwave-line wave-3"></span>
+                <span class="soundwave-line wave-4"></span>
+                <span class="soundwave-line wave-5"></span>
+                <span class="soundwave-line wave-6"></span>
+                <span class="soundwave-line wave-7"></span>
+              </div>
+            </div>
+            <!-- Floating Rotating Vinyl Disc -->
+            <div class="spotify-vinyl-disc spinning" aria-hidden="true">
+              <div class="vinyl-groove groove-outer"></div>
+              <div class="vinyl-groove groove-inner"></div>
+              <div class="vinyl-center-label">
+                <span class="vinyl-spindle"></span>
+              </div>
+            </div>
+          </div>
+          <div class="tile-bottom-row">
+            <span class="tile-meta-tag">48kHz DIRECT DMA • ZERO JITTER</span>
+            <button class="tile-flip-btn" data-tile="spotify" title="Flip tile details">↻</button>
+          </div>
+        </div>
+        <div class="tile-face tile-back">
+          <div class="tile-top-row">
+            <span class="tile-badge">STREAM TELEMETRY</span>
+            <button class="tile-flip-btn" data-tile="spotify">↻</button>
+          </div>
+          <div class="tile-back-specs">
+            <div class="spec-row"><span>Codec:</span> <strong>ALAC Lossless 24-bit / 48kHz</strong></div>
+            <div class="spec-row"><span>Audio Sink:</span> <strong>Pravah Direct DMA HAL</strong></div>
+            <div class="spec-row"><span>Latency:</span> <strong>0.8 ms (Zero Jitter)</strong></div>
+            <div class="spec-row"><span>Buffer:</span> <strong>100% Locked</strong></div>
+          </div>
+          <div class="tile-bottom-row">
+            <span class="tile-action-hint">Tap to Launch Spotify DAG ➔</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Flight AI-202 Radar Bento Tile -->
+      <div class="live-tile bento-tile tile-medium tile-flight " id="tile-flight" data-tile-id="flight">
+        <div class="tile-face tile-front">
+          <div class="tile-top-row">
+            <div class="tile-icon-group">
+              <span class="tile-glyph">✈</span>
+              <span class="tile-badge">AI-202</span>
+            </div>
+            <span class="tile-status-pill pulse-amber">BOARDING</span>
+          </div>
+          <div class="tile-middle-info flight-bento-middle">
+            <div class="flight-route-display">DEL ➔ BLR</div>
+            <div class="flight-countdown-val" id="flight-countdown-val">42:15</div>
+            <!-- Flight Radar Sweep Graphic -->
+            <div class="flight-radar-scope" aria-hidden="true">
+              <div class="radar-ring ring-1"></div>
+              <div class="radar-ring ring-2"></div>
+              <div class="radar-sweep"></div>
+              <div class="radar-blip"></div>
+            </div>
+          </div>
+          <div class="tile-bottom-row">
+            <span class="tile-meta-tag">Gate 14B • Term T3</span>
+            <button class="tile-flip-btn" data-tile="flight">↻</button>
+          </div>
+        </div>
+        <div class="tile-face tile-back">
+          <div class="tile-top-row">
+            <span class="tile-badge">RADAR INTEL</span>
+            <button class="tile-flip-btn" data-tile="flight">↻</button>
+          </div>
+          <div class="tile-back-specs">
+            <div class="spec-row"><span>Aircraft:</span> <strong>Airbus A350-900</strong></div>
+            <div class="spec-row"><span>Dest:</span> <strong>BLR: 24°C • Fair</strong></div>
+            <div class="spec-row"><span>Baggage:</span> <strong>Belt 04</strong></div>
+            <div class="spec-row"><span>On-Time:</span> <strong>98.4%</strong></div>
+          </div>
+          <div class="tile-bottom-row">
+            <span class="tile-action-hint">Tap to Launch Flight Scenario ➔</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Battery / Power Fuel Gauge Bento Tile -->
+      <div class="live-tile bento-tile tile-medium tile-battery " id="tile-battery" data-tile-id="battery">
+        <div class="tile-face tile-front">
+          <div class="tile-top-row">
+            <div class="tile-icon-group">
+              <span class="tile-glyph">🔋</span>
+              <span class="tile-badge">SOC POWER</span>
+            </div>
+            <span class="battery-pct-pill" id="battery-pct-pill">88%</span>
+          </div>
+          <div class="tile-middle-info battery-bento-middle">
+            <div class="fuel-gauge-capsule">
+              <div class="fuel-gauge-bar-wrap">
+                <div class="fuel-gauge-fill" id="battery-fuel-fill" style="width: 88%;"></div>
+              </div>
+            </div>
+            <div class="fuel-gauge-meta">
+              <span id="battery-runtime-val">14h 20m</span>
+              <span>2.1 W</span>
+            </div>
+          </div>
+          <div class="tile-bottom-row">
+            <span class="tile-meta-tag">Neural Efficiency Mode</span>
+            <button class="tile-flip-btn" data-tile="battery">↻</button>
+          </div>
+        </div>
+        <div class="tile-face tile-back">
+          <div class="tile-top-row">
+            <span class="tile-badge">CELL HEALTH</span>
+            <button class="tile-flip-btn" data-tile="battery">↻</button>
+          </div>
+          <div class="tile-back-specs">
+            <div class="spec-row"><span>Anode:</span> <strong>99% Anode Nominal</strong></div>
+            <div class="spec-row"><span>Temp:</span> <strong>31.4°C</strong></div>
+            <div class="spec-row"><span>Cycles:</span> <strong>34</strong></div>
+            <div class="spec-row"><span>Fast Charge:</span> <strong>65W SuperVOOC Ready</strong></div>
+          </div>
+          <div class="tile-bottom-row">
+            <span class="tile-action-hint">Tap to Inspect Power HAL ➔</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Air-Gap Cryptographic Badge Bento Tile -->
+      <div class="live-tile bento-tile tile-wide tile-airgap " id="tile-airgap" data-tile-id="airgap">
+        <div class="tile-face tile-front">
+          <div class="tile-top-row">
+            <div class="tile-icon-group">
+              <span class="tile-glyph">🛡️</span>
+              <span class="tile-badge">AIR-GAP MESH</span>
+              <span class="crypto-quantum-badge">POST-QUANTUM</span>
+            </div>
+            <div class="airgap-secure-indicator">
+              <div class="pulse-dot-green"></div>
+              <span>SECURED OFFLINE</span>
+            </div>
+          </div>
+          <div class="tile-middle-info airgap-bento-middle">
+            <div class="airgap-badge-meta">
+              <div class="tile-title">Hardware RF Killswitch Enforced</div>
+              <div class="tile-sub">All 4 radios cut • Zero telemetry egress • Microkernel EL1 locked</div>
+            </div>
+            <div class="airgap-chip-graphic" aria-hidden="true">
+              <span class="chip-pin pin-1"></span>
+              <span class="chip-pin pin-2"></span>
+              <span class="chip-pin pin-3"></span>
+              <span class="chip-core">SEC</span>
+            </div>
+          </div>
+          <div class="tile-bottom-row">
+            <span class="tile-meta-tag">ML-KEM-768 / Ed448</span>
+            <button class="tile-flip-btn" data-tile="airgap">↻</button>
+          </div>
+        </div>
+        <div class="tile-face tile-back">
+          <div class="tile-top-row">
+            <span class="tile-badge">ENCLAVE AUDIT</span>
+            <button class="tile-flip-btn" data-tile="airgap">↻</button>
+          </div>
+          <div class="tile-back-specs">
+            <div class="spec-row"><span>Enforcement:</span> <strong>EL1 Hardware Register Lock</strong></div>
+            <div class="spec-row"><span>Net Stack:</span> <strong>Loopback 127.0.0.1 Only</strong></div>
+            <div class="spec-row"><span>Ledger:</span> <strong>Block #142 Sealed</strong></div>
+            <div class="spec-row"><span>Tamper State:</span> <strong>Zero Violations</strong></div>
+          </div>
+          <div class="tile-bottom-row">
+            <span class="tile-action-hint">Tap to Toggle Air-Gap Isolation ➔</span>
+          </div>
+        </div>
+      </div>
+    
+          </div>
+        </section>
+
+        <!-- Bottom Section: Windows Phone / Metro Alphabetical A-Z List -->
+        <section class="drawer-metro-list-section">
+          <div class="section-label-row">
+            <span class="section-title">CAPABILITY & APP CATALOG</span>
+            <span class="apps-count-badge" id="apps-count-badge">15 Capabilities</span>
+          </div>
+
+          <!-- Instant Search Bar -->
+          <div class="drawer-search-wrap">
+            <span class="search-icon">🔍</span>
+            <input 
+              type="text" 
+              id="drawer-search-input" 
+              class="drawer-search-input" 
+              placeholder="Search capabilities, apps, scenarios..."
+              value=""
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button id="btn-search-clear" class="btn-search-clear " title="Clear search">✕</button>
+          </div>
+
+          <!-- Fast-Jump Letter Index Bar & List Container -->
+          <div class="metro-list-container" id="metro-list-container">
+            
+        <div class="metro-letter-section" id="section-letter-A" data-letter="A">
+          <!-- Modern Neo-Metro Sleek Squircle Letter Ribbon -->
+          <div class="metro-letter-header-wrap">
+            <button class="metro-letter-header-tile" data-jump-trigger="A" title="Jump to letter [A]">
+              <span class="metro-letter-char">A</span>
+              <span class="metro-letter-beacon" aria-hidden="true"></span>
+            </button>
+            <div class="metro-letter-ribbon-info">
+              <span class="metro-letter-pill">3 capabilities</span>
+            </div>
+            <span class="metro-letter-count" style="display:none;">3 items</span>
+          </div>
+
+          <!-- Apps under this letter -->
+          <div class="metro-app-items-group">
+            
+              <div class="metro-app-item" data-app-id="airgap_app" data-launch-type="ephemeral" tabindex="0">
+                <div class="metro-app-icon-box" style="background:#00e5ff;">
+                  <span class="metro-glyph-inner">🛡️</span>
+                  <div class="icon-specular-sheen" aria-hidden="true"></div>
+                </div>
+                <div class="metro-app-content">
+                  <div class="metro-app-primary">
+                    <span class="metro-app-name">Air-Gap Matrix Killswitch</span>
+                    <span class="metro-launch-badge badge-ephemeral">
+                      <span class="badge-dot"></span>
+                      ZERO-TAX
+                    </span>
+                  </div>
+                  <div class="metro-app-desc">Hardware RF isolation toggle & physical radio power gating</div>
+                </div>
+                <div class="metro-app-arrow" aria-hidden="true">›</div>
+              </div>
+            
+              <div class="metro-app-item" data-app-id="android_bridge" data-launch-type="dag" tabindex="0">
+                <div class="metro-app-icon-box" style="background:#00e676;">
+                  <span class="metro-glyph-inner">🤖</span>
+                  <div class="icon-specular-sheen" aria-hidden="true"></div>
+                </div>
+                <div class="metro-app-content">
+                  <div class="metro-app-primary">
+                    <span class="metro-app-name">Android Bridge (Starnix)</span>
+                    <span class="metro-launch-badge badge-dag">
+                      <span class="badge-dot"></span>
+                      DAG
+                    </span>
+                  </div>
+                  <div class="metro-app-desc">POSIX translation layer & Linux ABI container for native APKs</div>
+                </div>
+                <div class="metro-app-arrow" aria-hidden="true">›</div>
+              </div>
+            
+              <div class="metro-app-item" data-app-id="audit_ledger" data-launch-type="ephemeral" tabindex="0">
+                <div class="metro-app-icon-box" style="background:#7c4dff;">
+                  <span class="metro-glyph-inner">📜</span>
+                  <div class="icon-specular-sheen" aria-hidden="true"></div>
+                </div>
+                <div class="metro-app-content">
+                  <div class="metro-app-primary">
+                    <span class="metro-app-name">Audit Ledger Inspector</span>
+                    <span class="metro-launch-badge badge-ephemeral">
+                      <span class="badge-dot"></span>
+                      ZERO-TAX
+                    </span>
+                  </div>
+                  <div class="metro-app-desc">Tamper-evident SHA-256 hash-chained capability audit trail</div>
+                </div>
+                <div class="metro-app-arrow" aria-hidden="true">›</div>
+              </div>
+            
+          </div>
+        </div>
+      
+        <div class="metro-letter-section" id="section-letter-C" data-letter="C">
+          <!-- Modern Neo-Metro Sleek Squircle Letter Ribbon -->
+          <div class="metro-letter-header-wrap">
+            <button class="metro-letter-header-tile" data-jump-trigger="C" title="Jump to letter [C]">
+              <span class="metro-letter-char">C</span>
+              <span class="metro-letter-beacon" aria-hidden="true"></span>
+            </button>
+            <div class="metro-letter-ribbon-info">
+              <span class="metro-letter-pill">2 capabilities</span>
+            </div>
+            <span class="metro-letter-count" style="display:none;">2 items</span>
+          </div>
+
+          <!-- Apps under this letter -->
+          <div class="metro-app-items-group">
+            
+              <div class="metro-app-item" data-app-id="camera_pro" data-launch-type="dag" tabindex="0">
+                <div class="metro-app-icon-box" style="background:#ff4081;">
+                  <span class="metro-glyph-inner">📷</span>
+                  <div class="icon-specular-sheen" aria-hidden="true"></div>
+                </div>
+                <div class="metro-app-content">
+                  <div class="metro-app-primary">
+                    <span class="metro-app-name">Camera IMX890 Pro</span>
+                    <span class="metro-launch-badge badge-dag">
+                      <span class="badge-dot"></span>
+                      DAG
+                    </span>
+                  </div>
+                  <div class="metro-app-desc">50MP RAW capture pipeline with zero-copy VMO buffer bridge</div>
+                </div>
+                <div class="metro-app-arrow" aria-hidden="true">›</div>
+              </div>
+            
+              <div class="metro-app-item" data-app-id="crypto_remit" data-launch-type="dag" tabindex="0">
+                <div class="metro-app-icon-box" style="background:#ffab00;">
+                  <span class="metro-glyph-inner">🪙</span>
+                  <div class="icon-specular-sheen" aria-hidden="true"></div>
+                </div>
+                <div class="metro-app-content">
+                  <div class="metro-app-primary">
+                    <span class="metro-app-name">Crypto Remittance (USDC)</span>
+                    <span class="metro-launch-badge badge-dag">
+                      <span class="badge-dot"></span>
+                      DAG
+                    </span>
+                  </div>
+                  <div class="metro-app-desc">Zero-knowledge cross-border 250 USDC remittance on Pravah L1</div>
+                </div>
+                <div class="metro-app-arrow" aria-hidden="true">›</div>
+              </div>
+            
+          </div>
+        </div>
+      
+        <div class="metro-letter-section" id="section-letter-M" data-letter="M">
+          <!-- Modern Neo-Metro Sleek Squircle Letter Ribbon -->
+          <div class="metro-letter-header-wrap">
+            <button class="metro-letter-header-tile" data-jump-trigger="M" title="Jump to letter [M]">
+              <span class="metro-letter-char">M</span>
+              <span class="metro-letter-beacon" aria-hidden="true"></span>
+            </button>
+            <div class="metro-letter-ribbon-info">
+              <span class="metro-letter-pill">2 capabilities</span>
+            </div>
+            <span class="metro-letter-count" style="display:none;">2 items</span>
+          </div>
+
+          <!-- Apps under this letter -->
+          <div class="metro-app-items-group">
+            
+              <div class="metro-app-item" data-app-id="maps_offline" data-launch-type="dag" tabindex="0">
+                <div class="metro-app-icon-box" style="background:#00b0ff;">
+                  <span class="metro-glyph-inner">🗺️</span>
+                  <div class="icon-specular-sheen" aria-hidden="true"></div>
+                </div>
+                <div class="metro-app-content">
+                  <div class="metro-app-primary">
+                    <span class="metro-app-name">Maps & GNSS Navigation</span>
+                    <span class="metro-launch-badge badge-dag">
+                      <span class="badge-dot"></span>
+                      DAG
+                    </span>
+                  </div>
+                  <div class="metro-app-desc">Offline vector map tiles with dead-reckoning IMU sensor fusion</div>
+                </div>
+                <div class="metro-app-arrow" aria-hidden="true">›</div>
+              </div>
+            
+              <div class="metro-app-item" data-app-id="memory_compactor" data-launch-type="dag" tabindex="0">
+                <div class="metro-app-icon-box" style="background:#ffd600;">
+                  <span class="metro-glyph-inner">⚡</span>
+                  <div class="icon-specular-sheen" aria-hidden="true"></div>
+                </div>
+                <div class="metro-app-content">
+                  <div class="metro-app-primary">
+                    <span class="metro-app-name">Memory Compactor</span>
+                    <span class="metro-launch-badge badge-dag">
+                      <span class="badge-dot"></span>
+                      DAG
+                    </span>
+                  </div>
+                  <div class="metro-app-desc">Zircon zero-tax working set compaction & secure cache flush</div>
+                </div>
+                <div class="metro-app-arrow" aria-hidden="true">›</div>
+              </div>
+            
+          </div>
+        </div>
+      
+        <div class="metro-letter-section" id="section-letter-N" data-letter="N">
+          <!-- Modern Neo-Metro Sleek Squircle Letter Ribbon -->
+          <div class="metro-letter-header-wrap">
+            <button class="metro-letter-header-tile" data-jump-trigger="N" title="Jump to letter [N]">
+              <span class="metro-letter-char">N</span>
+              <span class="metro-letter-beacon" aria-hidden="true"></span>
+            </button>
+            <div class="metro-letter-ribbon-info">
+              <span class="metro-letter-pill">2 capabilities</span>
+            </div>
+            <span class="metro-letter-count" style="display:none;">2 items</span>
+          </div>
+
+          <!-- Apps under this letter -->
+          <div class="metro-app-items-group">
+            
+              <div class="metro-app-item" data-app-id="neural_voice" data-launch-type="ephemeral" tabindex="0">
+                <div class="metro-app-icon-box" style="background:#e040fb;">
+                  <span class="metro-glyph-inner">🎤</span>
+                  <div class="icon-specular-sheen" aria-hidden="true"></div>
+                </div>
+                <div class="metro-app-content">
+                  <div class="metro-app-primary">
+                    <span class="metro-app-name">Neural Voice Dictation</span>
+                    <span class="metro-launch-badge badge-ephemeral">
+                      <span class="badge-dot"></span>
+                      ZERO-TAX
+                    </span>
+                  </div>
+                  <div class="metro-app-desc">Air-gapped on-device spectrogram speech transformer with real-time audio FFT</div>
+                </div>
+                <div class="metro-app-arrow" aria-hidden="true">›</div>
+              </div>
+            
+              <div class="metro-app-item" data-app-id="notes_vault" data-launch-type="dag" tabindex="0">
+                <div class="metro-app-icon-box" style="background:#69f0ae;">
+                  <span class="metro-glyph-inner">📄</span>
+                  <div class="icon-specular-sheen" aria-hidden="true"></div>
+                </div>
+                <div class="metro-app-content">
+                  <div class="metro-app-primary">
+                    <span class="metro-app-name">Notes & Vault</span>
+                    <span class="metro-launch-badge badge-dag">
+                      <span class="badge-dot"></span>
+                      DAG
+                    </span>
+                  </div>
+                  <div class="metro-app-desc">Encrypted document vault with localized OCR & privacy redaction</div>
+                </div>
+                <div class="metro-app-arrow" aria-hidden="true">›</div>
+              </div>
+            
+          </div>
+        </div>
+      
+        <div class="metro-letter-section" id="section-letter-S" data-letter="S">
+          <!-- Modern Neo-Metro Sleek Squircle Letter Ribbon -->
+          <div class="metro-letter-header-wrap">
+            <button class="metro-letter-header-tile" data-jump-trigger="S" title="Jump to letter [S]">
+              <span class="metro-letter-char">S</span>
+              <span class="metro-letter-beacon" aria-hidden="true"></span>
+            </button>
+            <div class="metro-letter-ribbon-info">
+              <span class="metro-letter-pill">2 capabilities</span>
+            </div>
+            <span class="metro-letter-count" style="display:none;">2 items</span>
+          </div>
+
+          <!-- Apps under this letter -->
+          <div class="metro-app-items-group">
+            
+              <div class="metro-app-item" data-app-id="settings_mesh" data-launch-type="ephemeral" tabindex="0">
+                <div class="metro-app-icon-box" style="background:#90a4ae;">
+                  <span class="metro-glyph-inner">⚙️</span>
+                  <div class="icon-specular-sheen" aria-hidden="true"></div>
+                </div>
+                <div class="metro-app-content">
+                  <div class="metro-app-primary">
+                    <span class="metro-app-name">Settings & Security Mesh</span>
+                    <span class="metro-launch-badge badge-ephemeral">
+                      <span class="badge-dot"></span>
+                      ZERO-TAX
+                    </span>
+                  </div>
+                  <div class="metro-app-desc">Kernel authority level, capability router & biometric policies</div>
+                </div>
+                <div class="metro-app-arrow" aria-hidden="true">›</div>
+              </div>
+            
+              <div class="metro-app-item" data-app-id="spotify_audio" data-launch-type="dag" tabindex="0">
+                <div class="metro-app-icon-box" style="background:#1db954;">
+                  <span class="metro-glyph-inner">🎵</span>
+                  <div class="icon-specular-sheen" aria-hidden="true"></div>
+                </div>
+                <div class="metro-app-content">
+                  <div class="metro-app-primary">
+                    <span class="metro-app-name">Spotify Lossless Audio</span>
+                    <span class="metro-launch-badge badge-dag">
+                      <span class="badge-dot"></span>
+                      DAG
+                    </span>
+                  </div>
+                  <div class="metro-app-desc">Direct 48kHz audio HAL streaming with real-time floating equalizers</div>
+                </div>
+                <div class="metro-app-arrow" aria-hidden="true">›</div>
+              </div>
+            
+          </div>
+        </div>
+      
+        <div class="metro-letter-section" id="section-letter-U" data-letter="U">
+          <!-- Modern Neo-Metro Sleek Squircle Letter Ribbon -->
+          <div class="metro-letter-header-wrap">
+            <button class="metro-letter-header-tile" data-jump-trigger="U" title="Jump to letter [U]">
+              <span class="metro-letter-char">U</span>
+              <span class="metro-letter-beacon" aria-hidden="true"></span>
+            </button>
+            <div class="metro-letter-ribbon-info">
+              <span class="metro-letter-pill">2 capabilities</span>
+            </div>
+            <span class="metro-letter-count" style="display:none;">2 items</span>
+          </div>
+
+          <!-- Apps under this letter -->
+          <div class="metro-app-items-group">
+            
+              <div class="metro-app-item" data-app-id="uber_dispatch" data-launch-type="dag" tabindex="0">
+                <div class="metro-app-icon-box" style="background:#ffffff;">
+                  <span class="metro-glyph-inner">🚗</span>
+                  <div class="icon-specular-sheen" aria-hidden="true"></div>
+                </div>
+                <div class="metro-app-content">
+                  <div class="metro-app-primary">
+                    <span class="metro-app-name">Uber Ride Dispatch</span>
+                    <span class="metro-launch-badge badge-dag">
+                      <span class="badge-dot"></span>
+                      DAG
+                    </span>
+                  </div>
+                  <div class="metro-app-desc">Ride hailing dispatch protected by Policy Gate Level 3 check</div>
+                </div>
+                <div class="metro-app-arrow" aria-hidden="true">›</div>
+              </div>
+            
+              <div class="metro-app-item" data-app-id="upi_transfer" data-launch-type="dag" tabindex="0">
+                <div class="metro-app-icon-box" style="background:#ff5252;">
+                  <span class="metro-glyph-inner">💳</span>
+                  <div class="icon-specular-sheen" aria-hidden="true"></div>
+                </div>
+                <div class="metro-app-content">
+                  <div class="metro-app-primary">
+                    <span class="metro-app-name">UPI Fast Transfer (₹5,000)</span>
+                    <span class="metro-launch-badge badge-dag">
+                      <span class="badge-dot"></span>
+                      DAG
+                    </span>
+                  </div>
+                  <div class="metro-app-desc">Instant banking transfer requiring deterministic biometric approval</div>
+                </div>
+                <div class="metro-app-arrow" aria-hidden="true">›</div>
+              </div>
+            
+          </div>
+        </div>
+      
+        <div class="metro-letter-section" id="section-letter-W" data-letter="W">
+          <!-- Modern Neo-Metro Sleek Squircle Letter Ribbon -->
+          <div class="metro-letter-header-wrap">
+            <button class="metro-letter-header-tile" data-jump-trigger="W" title="Jump to letter [W]">
+              <span class="metro-letter-char">W</span>
+              <span class="metro-letter-beacon" aria-hidden="true"></span>
+            </button>
+            <div class="metro-letter-ribbon-info">
+              <span class="metro-letter-pill">2 capabilities</span>
+            </div>
+            <span class="metro-letter-count" style="display:none;">2 items</span>
+          </div>
+
+          <!-- Apps under this letter -->
+          <div class="metro-app-items-group">
+            
+              <div class="metro-app-item" data-app-id="weather_telemetry" data-launch-type="ephemeral" tabindex="0">
+                <div class="metro-app-icon-box" style="background:#00e5ff;">
+                  <span class="metro-glyph-inner">⛅</span>
+                  <div class="icon-specular-sheen" aria-hidden="true"></div>
+                </div>
+                <div class="metro-app-content">
+                  <div class="metro-app-primary">
+                    <span class="metro-app-name">Weather & Barometer</span>
+                    <span class="metro-launch-badge badge-ephemeral">
+                      <span class="badge-dot"></span>
+                      ZERO-TAX
+                    </span>
+                  </div>
+                  <div class="metro-app-desc">Localized atmospheric barometric sensor stream & microclimate radar</div>
+                </div>
+                <div class="metro-app-arrow" aria-hidden="true">›</div>
+              </div>
+            
+              <div class="metro-app-item" data-app-id="whatsapp_im" data-launch-type="dag" tabindex="0">
+                <div class="metro-app-icon-box" style="background:#25d366;">
+                  <span class="metro-glyph-inner">💬</span>
+                  <div class="icon-specular-sheen" aria-hidden="true"></div>
+                </div>
+                <div class="metro-app-content">
+                  <div class="metro-app-primary">
+                    <span class="metro-app-name">WhatsApp Messenger</span>
+                    <span class="metro-launch-badge badge-dag">
+                      <span class="badge-dot"></span>
+                      DAG
+                    </span>
+                  </div>
+                  <div class="metro-app-desc">Sandboxed end-to-end messaging bridged via Starnix VMO pipeline</div>
+                </div>
+                <div class="metro-app-arrow" aria-hidden="true">›</div>
+              </div>
+            
+          </div>
+        </div>
+      
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Neo-Metro Floating Glass Prism Modal -->
+      <div class="metro-jump-modal-backdrop" id="metro-jump-modal">
+        <div class="metro-jump-card glass-prism-card">
+          <div class="glass-prism-sheen" aria-hidden="true"></div>
+          <div class="metro-jump-header">
+            <div class="prism-header-title">
+              <span class="prism-beacon-dot"></span>
+              <span>Capability Index Jump</span>
+            </div>
+            <button class="btn-jump-close" id="btn-jump-close" title="Close Index Picker">✕</button>
+          </div>
+          <div class="metro-jump-grid" id="metro-jump-grid">
+            
+      <button 
+        class="metro-jump-tile tile-active" 
+        data-letter="A"
+        
+        title="3 capabilities under [A]"
+      >
+        <span class="jump-char">A</span>
+        
+          <span class="jump-beacon-dot" aria-hidden="true"></span>
+          <span class="jump-count">3</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-inactive" 
+        data-letter="B"
+        disabled
+        title="No capabilities under [B]"
+      >
+        <span class="jump-char">B</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-active" 
+        data-letter="C"
+        
+        title="2 capabilities under [C]"
+      >
+        <span class="jump-char">C</span>
+        
+          <span class="jump-beacon-dot" aria-hidden="true"></span>
+          <span class="jump-count">2</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-inactive" 
+        data-letter="D"
+        disabled
+        title="No capabilities under [D]"
+      >
+        <span class="jump-char">D</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-inactive" 
+        data-letter="E"
+        disabled
+        title="No capabilities under [E]"
+      >
+        <span class="jump-char">E</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-inactive" 
+        data-letter="F"
+        disabled
+        title="No capabilities under [F]"
+      >
+        <span class="jump-char">F</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-inactive" 
+        data-letter="G"
+        disabled
+        title="No capabilities under [G]"
+      >
+        <span class="jump-char">G</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-inactive" 
+        data-letter="H"
+        disabled
+        title="No capabilities under [H]"
+      >
+        <span class="jump-char">H</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-inactive" 
+        data-letter="I"
+        disabled
+        title="No capabilities under [I]"
+      >
+        <span class="jump-char">I</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-inactive" 
+        data-letter="J"
+        disabled
+        title="No capabilities under [J]"
+      >
+        <span class="jump-char">J</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-inactive" 
+        data-letter="K"
+        disabled
+        title="No capabilities under [K]"
+      >
+        <span class="jump-char">K</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-inactive" 
+        data-letter="L"
+        disabled
+        title="No capabilities under [L]"
+      >
+        <span class="jump-char">L</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-active" 
+        data-letter="M"
+        
+        title="2 capabilities under [M]"
+      >
+        <span class="jump-char">M</span>
+        
+          <span class="jump-beacon-dot" aria-hidden="true"></span>
+          <span class="jump-count">2</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-active" 
+        data-letter="N"
+        
+        title="2 capabilities under [N]"
+      >
+        <span class="jump-char">N</span>
+        
+          <span class="jump-beacon-dot" aria-hidden="true"></span>
+          <span class="jump-count">2</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-inactive" 
+        data-letter="O"
+        disabled
+        title="No capabilities under [O]"
+      >
+        <span class="jump-char">O</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-inactive" 
+        data-letter="P"
+        disabled
+        title="No capabilities under [P]"
+      >
+        <span class="jump-char">P</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-inactive" 
+        data-letter="Q"
+        disabled
+        title="No capabilities under [Q]"
+      >
+        <span class="jump-char">Q</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-inactive" 
+        data-letter="R"
+        disabled
+        title="No capabilities under [R]"
+      >
+        <span class="jump-char">R</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-active" 
+        data-letter="S"
+        
+        title="2 capabilities under [S]"
+      >
+        <span class="jump-char">S</span>
+        
+          <span class="jump-beacon-dot" aria-hidden="true"></span>
+          <span class="jump-count">2</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-inactive" 
+        data-letter="T"
+        disabled
+        title="No capabilities under [T]"
+      >
+        <span class="jump-char">T</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-active" 
+        data-letter="U"
+        
+        title="2 capabilities under [U]"
+      >
+        <span class="jump-char">U</span>
+        
+          <span class="jump-beacon-dot" aria-hidden="true"></span>
+          <span class="jump-count">2</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-inactive" 
+        data-letter="V"
+        disabled
+        title="No capabilities under [V]"
+      >
+        <span class="jump-char">V</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-active" 
+        data-letter="W"
+        
+        title="2 capabilities under [W]"
+      >
+        <span class="jump-char">W</span>
+        
+          <span class="jump-beacon-dot" aria-hidden="true"></span>
+          <span class="jump-count">2</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-inactive" 
+        data-letter="X"
+        disabled
+        title="No capabilities under [X]"
+      >
+        <span class="jump-char">X</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-inactive" 
+        data-letter="Y"
+        disabled
+        title="No capabilities under [Y]"
+      >
+        <span class="jump-char">Y</span>
+        
+      </button>
+    
+      <button 
+        class="metro-jump-tile tile-inactive" 
+        data-letter="Z"
+        disabled
+        title="No capabilities under [Z]"
+      >
+        <span class="jump-char">Z</span>
+        
+      </button>
+    
+          </div>
+          <div class="metro-jump-footer">
+            <span class="jump-footer-tip">Select letter to navigate instantly</span>
+          </div>
+        </div>
+      </div>
+    
+  </div>
 
   <!-- 6. Ephemeral Capability Overlay Window Host -->
   <div id="ephemeral-window-host" class="ephemeral-window-host"></div>

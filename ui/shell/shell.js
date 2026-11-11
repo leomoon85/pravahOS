@@ -1423,6 +1423,110 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // Resilient event bindings for pre-rendered Living Drawer elements
+  function bindPreRenderedDrawerEvents() {
+    const drawerEl = document.getElementById('living-drawer');
+    if (!drawerEl) return;
+
+    // 1. Dismiss button
+    drawerEl.querySelector('#btn-drawer-dismiss')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleLivingDrawer(false);
+    });
+
+    // 2. Flip individual tiles
+    drawerEl.querySelectorAll('.tile-flip-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const tileId = btn.getAttribute('data-tile');
+        const tile = drawerEl.querySelector(`#tile-${tileId}`);
+        if (tile) tile.classList.toggle('flipped');
+        try { window.hapticEngine?.triggerLight(); } catch (_) {}
+      });
+    });
+
+    // 3. Flip all tiles
+    drawerEl.querySelector('#btn-flip-all')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const tiles = drawerEl.querySelectorAll('.live-tile');
+      const anyFlipped = Array.from(tiles).some(t => t.classList.contains('flipped'));
+      tiles.forEach(t => t.classList.toggle('flipped', !anyFlipped));
+      try { window.hapticEngine?.triggerMedium(); } catch (_) {}
+    });
+
+    // 4. Reactive Search filtering
+    const searchInput = drawerEl.querySelector('#drawer-search-input');
+    const searchClear = drawerEl.querySelector('#btn-search-clear');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase().trim();
+        searchClear?.classList.toggle('visible', Boolean(q));
+        const appCards = drawerEl.querySelectorAll('.metro-app-card');
+        appCards.forEach(card => {
+          const title = card.querySelector('.app-card-title')?.textContent.toLowerCase() || '';
+          const cat = card.querySelector('.app-card-category')?.textContent.toLowerCase() || '';
+          const match = !q || title.includes(q) || cat.includes(q);
+          card.style.display = match ? 'flex' : 'none';
+        });
+
+        // Hide empty letter sections
+        drawerEl.querySelectorAll('.metro-letter-section').forEach(sec => {
+          const visibleCards = sec.querySelectorAll('.metro-app-card:not([style*="display: none"])');
+          sec.style.display = visibleCards.length > 0 ? 'block' : 'none';
+        });
+      });
+    }
+
+    searchClear?.addEventListener('click', () => {
+      if (searchInput) {
+        searchInput.value = '';
+        searchInput.dispatchEvent(new Event('input'));
+        searchInput.focus();
+      }
+    });
+
+    // 5. App card clicks to execute scenarios
+    drawerEl.querySelectorAll('.metro-app-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const scenario = card.getAttribute('data-scenario');
+        toggleLivingDrawer(false);
+        try { window.hapticEngine?.triggerLight(); } catch (_) {}
+        if (scenario && Scenarios[scenario]) {
+          const input = document.getElementById('intent-input');
+          if (input) input.value = Scenarios[scenario].intent;
+          executeTask(scenario);
+        }
+      });
+    });
+
+    // 6. Fast Jump Alphabet Modal
+    const jumpModal = drawerEl.querySelector('#metro-jump-modal');
+    drawerEl.querySelectorAll('.metro-letter-header-tile').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (jumpModal) jumpModal.classList.add('active');
+        try { window.hapticEngine?.triggerLight(); } catch (_) {}
+      });
+    });
+
+    drawerEl.querySelector('#btn-jump-close')?.addEventListener('click', () => {
+      if (jumpModal) jumpModal.classList.remove('active');
+    });
+
+    drawerEl.querySelectorAll('.metro-jump-tile:not([disabled])').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const letter = btn.getAttribute('data-letter');
+        if (jumpModal) jumpModal.classList.remove('active');
+        const targetSection = drawerEl.querySelector(`#section-letter-${letter}`);
+        if (targetSection) {
+          targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        try { window.hapticEngine?.triggerLight(); } catch (_) {}
+      });
+    });
+  }
+
+  bindPreRenderedDrawerEvents();
   initDrawerIfReady();
 
   // Initialize Control Center & Hardware Shade
