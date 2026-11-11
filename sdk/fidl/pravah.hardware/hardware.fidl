@@ -1,0 +1,438 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+library pravah.hardware;
+
+using zx;
+
+// ============================================================================
+// Camera Subsystem Interfaces
+// ============================================================================
+
+/// Supported sensor pixel formats.
+type CameraPixelFormat = strict enum : uint32 {
+    NV12     = 1; // Semi-planar YUV420 (Y plane + interleaved UV)
+    RGB888   = 2; // 24-bit packed RGB
+    ARGB8888 = 3; // 32-bit ARGB (display compositor native)
+    RAW10    = 4; // 10-bit Raw Bayer
+};
+
+/// Camera sensor physical IDs.
+type CameraSensorId = strict enum : uint32 {
+    BACK_PRIMARY   = 0;
+    FRONT_SELFIE   = 1;
+    BACK_ULTRAWIDE = 2;
+};
+
+/// Camera sensor hardware metadata.
+type CameraSensorInfo = struct {
+    sensor_id uint32;
+    name string:32;
+    max_width uint32;
+    max_height uint32;
+    supported_formats_mask uint32;
+    max_fps uint32;
+    has_flash bool;
+    has_autofocus bool;
+    focal_length_mm float32;
+};
+
+/// Camera stream runtime configuration.
+type CameraConfig = struct {
+    sensor_id uint32;
+    width uint32;
+    height uint32;
+    format CameraPixelFormat;
+    target_fps uint32;
+    exposure_time_us uint32;
+    iso_gain uint32;
+};
+
+/// Frame capture buffer descriptor backed by a shared VMO.
+type CameraFrameDescriptor = resource struct {
+    frame_id uint32;
+    timestamp_ns uint64;
+    width uint32;
+    height uint32;
+    stride uint32;
+    format CameraPixelFormat;
+    vmo zx.Handle:VMO;
+    size_bytes uint64;
+    exposure_time_us uint32;
+    iso_gain uint32;
+};
+
+/// Client listener receiving camera frame notifications.
+protocol CameraFrameListener {
+    flexible OnFrameAvailable(resource struct {
+        frame CameraFrameDescriptor;
+    }) -> ();
+};
+
+/// Mobile Camera Device Control Protocol.
+@discoverable
+open protocol CameraDevice {
+    /// Retrieve total count of available camera sensors.
+    flexible GetSensorCount() -> (struct {
+        count uint32;
+    }) error zx.Status;
+
+    /// Retrieve static hardware profile of a specific sensor.
+    flexible GetSensorInfo(struct {
+        sensor_id uint32;
+    }) -> (struct {
+        info CameraSensorInfo;
+    }) error zx.Status;
+
+    /// Configure sensor capture pipeline parameters.
+    flexible Configure(struct {
+        config CameraConfig;
+    }) -> () error zx.Status;
+
+    /// Start continuous frame acquisition.
+    flexible StartStream(struct {
+        sensor_id uint32;
+    }) -> () error zx.Status;
+
+    /// Stop frame acquisition.
+    flexible StopStream(struct {
+        sensor_id uint32;
+    }) -> () error zx.Status;
+
+    /// Adjust sensor exposure duration and analog ISO gain.
+    flexible SetExposure(struct {
+        sensor_id uint32;
+        exposure_time_us uint32;
+        iso_gain uint32;
+    }) -> () error zx.Status;
+
+    /// Register a frame listener client end.
+    flexible RegisterFrameListener(resource struct {
+        sensor_id uint32;
+        listener client_end:CameraFrameListener;
+    }) -> () error zx.Status;
+};
+
+// ============================================================================
+// Audio Subsystem Interfaces
+// ============================================================================
+
+/// Audio output routing destination.
+type AudioEndpointOut = strict enum : uint32 {
+    SPEAKER   = 0;
+    EARPIECE  = 1;
+    HEADSET   = 2;
+    BLUETOOTH = 3;
+};
+
+/// Audio input microphone routing source.
+type AudioEndpointIn = strict enum : uint32 {
+    MIC_MAIN = 0;
+    MIC_TOP  = 1;
+    HEADSET  = 2;
+};
+
+/// PCM audio stream execution state.
+type AudioStreamState = strict enum : uint32 {
+    STOPPED = 0;
+    RUNNING = 1;
+    PAUSED  = 2;
+    STANDBY = 3;
+};
+
+/// Telemetry and health metrics for the audio pipeline.
+type AudioTelemetry = struct {
+    playback_frames_submitted uint64;
+    playback_frames_consumed uint64;
+    playback_buffer_underruns uint32;
+    capture_frames_recorded uint64;
+    capture_frames_read uint64;
+    capture_buffer_overruns uint32;
+    master_volume uint8;
+    is_muted bool;
+    current_output AudioEndpointOut;
+    current_input AudioEndpointIn;
+    playback_state AudioStreamState;
+    capture_state AudioStreamState;
+};
+
+/// Mobile PCM Audio Device & Mixer Protocol.
+@discoverable
+open protocol AudioDevice {
+    /// Set master output volume (0 - 100%).
+    flexible SetMasterVolume(struct {
+        volume_percent uint8;
+    }) -> () error zx.Status;
+
+    /// Query master output volume.
+    flexible GetMasterVolume() -> (struct {
+        volume_percent uint8;
+    }) error zx.Status;
+
+    /// Toggle master output mute.
+    flexible SetMute(struct {
+        muted bool;
+    }) -> () error zx.Status;
+
+    /// Switch active audio output route.
+    flexible SetOutputEndpoint(struct {
+        endpoint AudioEndpointOut;
+    }) -> () error zx.Status;
+
+    /// Switch active audio input route.
+    flexible SetInputEndpoint(struct {
+        endpoint AudioEndpointIn;
+    }) -> () error zx.Status;
+
+    /// Start playback stream pacing.
+    flexible StartPlayback() -> () error zx.Status;
+
+    /// Stop playback stream.
+    flexible StopPlayback() -> () error zx.Status;
+
+    /// Write 16-bit 48kHz stereo PCM buffer.
+    flexible WritePcm(struct {
+        samples vector<int16>:8192;
+    }) -> (struct {
+        frames_written uint64;
+    }) error zx.Status;
+
+    /// Start capture stream.
+    flexible StartCapture() -> () error zx.Status;
+
+    /// Stop capture stream.
+    flexible StopCapture() -> () error zx.Status;
+
+    /// Read recorded 16-bit 48kHz stereo PCM buffer.
+    flexible ReadPcm(struct {
+        max_frames uint32;
+    }) -> (struct {
+        samples vector<int16>:8192;
+        frames_read uint64;
+    }) error zx.Status;
+
+    /// Query audio subsystem telemetry.
+    flexible GetTelemetry() -> (struct {
+        telemetry AudioTelemetry;
+    }) error zx.Status;
+};
+
+// ============================================================================
+// Power & Thermal Subsystem Interfaces
+// ============================================================================
+
+/// Battery chemical health status.
+type BatteryHealth = strict enum : uint32 {
+    GOOD         = 0;
+    OVERHEAT     = 1;
+    DEAD         = 2;
+    OVER_VOLTAGE = 3;
+    COLD         = 4;
+    UNKNOWN      = 5;
+};
+
+/// Battery charging mechanism and status.
+type ChargingStatus = strict enum : uint32 {
+    DISCHARGING      = 0;
+    CHARGING_USB     = 1;
+    CHARGING_FAST_PD = 2;
+    CHARGING_WIRELESS= 3;
+    FULL             = 4;
+    NOT_CHARGING     = 5;
+};
+
+/// Battery fuel gauge telemetry.
+type BatteryInfo = struct {
+    percentage uint8;
+    voltage_mv uint32;
+    current_ma int32;
+    remaining_mah uint32;
+    design_capacity_mah uint32;
+    temperature_mdeg_c int32;
+    health BatteryHealth;
+    charging_status ChargingStatus;
+    is_present bool;
+};
+
+/// Thermal zone identification.
+type ThermalZoneId = strict enum : uint32 {
+    CPU_CLUSTER0 = 0;
+    GPU          = 1;
+    BATTERY      = 2;
+    SKIN_SURFACE = 3;
+};
+
+/// Thermal trip mitigation levels.
+type ThermalTripLevel = strict enum : uint32 {
+    NORMAL             = 0;
+    PASSIVE            = 1;
+    WARNING            = 2;
+    CRITICAL           = 3;
+    EMERGENCY_SHUTDOWN = 4;
+};
+
+/// Thermal zone status descriptor.
+type ThermalZoneInfo = struct {
+    zone_id ThermalZoneId;
+    zone_name string:24;
+    current_temp_mdeg_c int32;
+    trip_level ThermalTripLevel;
+    passive_trip_mdeg_c int32;
+    warning_trip_mdeg_c int32;
+    critical_trip_mdeg_c int32;
+    emergency_trip_mdeg_c int32;
+};
+
+/// Dynamic system power states.
+type PowerState = strict enum : uint32 {
+    ACTIVE  = 0;
+    IDLE    = 1;
+    SUSPEND = 2;
+};
+
+/// Power, Battery, and Thermal Coordinator Protocol.
+@discoverable
+open protocol PowerCoordinator {
+    /// Read battery fuel gauge status.
+    flexible GetBatteryInfo() -> (struct {
+        info BatteryInfo;
+    }) error zx.Status;
+
+    /// Query status for a specific thermal zone.
+    flexible GetThermalZone(struct {
+        zone_id ThermalZoneId;
+    }) -> (struct {
+        info ThermalZoneInfo;
+    }) error zx.Status;
+
+    /// Request transition to dynamic power state.
+    flexible SetPowerState(struct {
+        state PowerState;
+    }) -> () error zx.Status;
+
+    /// Query current dynamic power state.
+    flexible GetPowerState() -> (struct {
+        state PowerState;
+    });
+
+    /// Acquire a kernel wake lock preventing suspend.
+    flexible AcquireWakeLock(struct {
+        name string:32;
+    }) -> (struct {
+        lock_id uint32;
+    }) error zx.Status;
+
+    /// Release a previously acquired wake lock.
+    flexible ReleaseWakeLock(struct {
+        lock_id uint32;
+    }) -> () error zx.Status;
+
+    /// Query total number of active wake locks.
+    flexible GetActiveWakeLocks() -> (struct {
+        count uint32;
+    });
+};
+
+// ============================================================================
+// Cellular Telephony Subsystem Interfaces
+// ============================================================================
+
+/// Modem power state.
+type ModemPowerState = strict enum : uint32 {
+    POWER_OFF = 0;
+    LOW_POWER = 1;
+    ONLINE    = 2;
+    AIRGAP    = 3;
+};
+
+/// SIM card state.
+type SimState = strict enum : uint32 {
+    ABSENT       = 0;
+    NOT_READY    = 1;
+    READY        = 2;
+    PIN_REQUIRED = 3;
+    PUK_REQUIRED = 4;
+    ERROR        = 5;
+};
+
+/// Radio Access Technology.
+type RadioAccessTech = strict enum : uint32 {
+    NONE         = 0;
+    GSM_2G       = 1;
+    UMTS_3G      = 2;
+    LTE_4G       = 3;
+    NR_5G_SUB6   = 4;
+    NR_5G_MMWAVE = 5;
+};
+
+/// Network registration state.
+type NetworkRegState = strict enum : uint32 {
+    NOT_REGISTERED      = 0;
+    REGISTERED_HOME     = 1;
+    SEARCHING           = 2;
+    REGISTRATION_DENIED = 3;
+    REGISTERED_ROAMING  = 4;
+};
+
+/// Cellular RF signal quality.
+type CellularSignalInfo = struct {
+    rssi_dbm int32;
+    rsrp_dbm int32;
+    rsrq_db int32;
+    snr_db int32;
+    signal_bars uint8;
+    rat RadioAccessTech;
+};
+
+/// SIM slot metadata and connection status.
+type SimCardInfo = struct {
+    slot_id uint32;
+    sim_state SimState;
+    iccid string:24;
+    imsi string:16;
+    operator_name string:32;
+    reg_state NetworkRegState;
+    signal CellularSignalInfo;
+};
+
+/// Overall modem telemetry.
+type ModemInfo = struct {
+    power_state ModemPowerState;
+    air_gap_mode bool;
+    modem_model string:32;
+    firmware_version string:32;
+    imei string:16;
+    active_sim_slots uint32;
+};
+
+/// Mobile Cellular Telephony & Modem Coordinator Protocol.
+@discoverable
+open protocol TelephonyCoordinator {
+    /// Query baseband modem operational profile.
+    flexible GetModemInfo() -> (struct {
+        info ModemInfo;
+    }) error zx.Status;
+
+    /// Retrieve state and subscriber information for a SIM slot (0 or 1).
+    flexible GetSimInfo(struct {
+        slot_id uint32;
+    }) -> (struct {
+        info SimCardInfo;
+    }) error zx.Status;
+
+    /// Retrieve real-time signal strength for a SIM slot.
+    flexible GetSignalStrength(struct {
+        slot_id uint32;
+    }) -> (struct {
+        signal CellularSignalInfo;
+    }) error zx.Status;
+
+    /// Toggle hardware baseband offline air-gap / airplane mode.
+    flexible SetAirplaneMode(struct {
+        enable bool;
+    }) -> () error zx.Status;
+
+    /// Query current offline air-gap status.
+    flexible GetAirplaneMode() -> (struct {
+        enabled bool;
+    });
+};

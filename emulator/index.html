@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PravahOS Mobile Phone Emulator & Device Shell</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- 1. Emulator Header Toolbar -->
+  <header class="emulator-toolbar">
+    <div class="brand-badge">
+      <div class="logo">P</div>
+      <span class="title">PravahOS Phone Emulator</span>
+      <span class="subtitle">AARCH64 DEVICE EMULATION</span>
+    </div>
+
+    <div class="toolbar-controls">
+      <!-- Device Preset -->
+      <div class="toolbar-group">
+        <select id="preset-select" class="tb-select" title="Switch phone hardware profile">
+          <option value="pixel8" selected>Flagship Phone (412 × 915 • 20:9)</option>
+          <option value="iphone15">Compact Flagship (390 × 844 • 19.5:9)</option>
+          <option value="hdplus">Mobile HD+ Panel (720 × 1600 • 20:9)</option>
+        </select>
+      </div>
+
+      <!-- Mode Switcher -->
+      <div class="toolbar-group">
+        <button id="btn-mode-shell" class="tb-btn active" title="Interactive PravahOS Dynamic Experience Shell">
+          ✧ DEC Shell
+        </button>
+        <button id="btn-mode-fb" class="tb-btn" title="Bare-Metal AArch64 Framebuffer Diagnostics">
+          ⊞ Framebuffer
+        </button>
+      </div>
+
+      <!-- Scale Control -->
+      <div class="toolbar-group">
+        <select id="scale-select" class="tb-select" title="Display Scale">
+          <option value="1.0">100%</option>
+          <option value="0.9" selected>90%</option>
+          <option value="0.8">80%</option>
+          <option value="0.7">70%</option>
+        </select>
+      </div>
+
+      <!-- Orientation Toggle -->
+      <div class="toolbar-group">
+        <button id="btn-orientation" class="tb-btn" title="Toggle Portrait / Landscape">
+          ↺ Rotate
+        </button>
+      </div>
+
+      <!-- Reset Input -->
+      <button id="btn-reset-input" class="tb-btn" title="Reset touch & gesture states">
+        ↺ Reset State
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. Main Workspace Layout -->
+  <main class="emulator-workspace">
+
+    <!-- Stage: Centered Authentic Phone Body -->
+    <div class="stage-area" id="stage-area">
+      <div class="phone-wrapper" id="phone-wrapper" style="transform: scale(0.9);">
+
+        <!-- Left Hardware Buttons -->
+        <!-- Air-Gap Physical Toggle Switch -->
+        <div id="btn-hw-airgap" class="hw-button hw-btn-airgap" title="Hardware Air-Gap Kill Switch (Disconnects RF & Radios)">
+          <div id="airgap-hw-led" class="airgap-led green-active"></div>
+        </div>
+
+        <!-- Volume Up -->
+        <div id="btn-hw-vol-up" class="hw-button hw-btn-vol-up" title="Hardware Volume Up (+)"></div>
+
+        <!-- Volume Down -->
+        <div id="btn-hw-vol-down" class="hw-button hw-btn-vol-down" title="Hardware Volume Down (-)"></div>
+
+        <!-- Right Hardware Button: Power / Lock -->
+        <div id="btn-hw-power" class="hw-button hw-btn-power" title="Hardware Power / Lock Button (Click: Sleep/Wake, Long Press: Power Menu)"></div>
+
+        <!-- Phone Chassis -->
+        <div class="phone-chassis" id="phone-chassis">
+          <div class="screen-frame">
+
+            <!-- Mobile Display Viewport (412 x 915) -->
+            <div class="phone-viewport" id="phone-viewport">
+
+              <!-- Dynamic Island Pill Cutout -->
+              <div class="dynamic-island" id="dynamic-island" title="Interactive Dynamic Island (Click to expand)">
+                <div class="island-collapsed-view">
+                  <div class="camera-lens"></div>
+                  <div class="pill-badge">AIR-GAP ACTIVE</div>
+                  <div class="ir-dot"></div>
+                </div>
+                <div class="island-expanded-view">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:0.75rem; font-weight:700; color:#fff;">PravahOS Security Mesh</span>
+                    <span style="font-size:0.65rem; color:var(--accent-cyan); font-family:var(--font-mono);">EL1 ACTIVE</span>
+                  </div>
+                  <div style="font-size:0.68rem; color:#94a3b8;">
+                    Hardware air-gap enforced. Local neural model active. Zero telemetry egress.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Mobile Status Bar (Top) -->
+              <div class="mobile-status-bar">
+                <div class="status-left">
+                  <span id="status-time">12:00</span>
+                  <div id="status-signal-bars">
+                    <span class="signal-offline">✕ RADIO CUT</span>
+                  </div>
+                </div>
+                <div class="status-right">
+                  <span id="status-airgap-pill" class="status-airgap-pill active">AIR-GAP SECURED</span>
+                  <div class="status-battery-wrap">
+                    <span id="status-battery-pct">88%</span>
+                    <div class="status-battery-icon">
+                      <div id="status-battery-fill" class="status-battery-fill"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- View Layer 1: Embedded PravahOS Dynamic Experience Shell -->
+              <div id="shell-frame-wrap" style="width: 100%; height: 100%;">
+                <iframe id="shell-frame" class="shell-iframe" src="../ui/shell/index.html"></iframe>
+              </div>
+
+              <!-- View Layer 2: AArch64 Framebuffer Canvas (ramfb bootscreen) -->
+              <div id="framebuffer-wrap" style="width: 100%; height: 100%; display: none;">
+                <canvas id="framebuffer-canvas" class="framebuffer-canvas"></canvas>
+              </div>
+
+              <!-- View Layer 3: High-DPI Transparent Touch & Gesture Canvas -->
+              <canvas id="touch-overlay" class="touch-overlay-canvas"></canvas>
+
+              <!-- View Layer 4: Screen Sleep / Off Overlay -->
+              <div id="screen-overlay" class="screen-overlay">
+                <span class="off-text">PRESS POWER BUTTON TO WAKE</span>
+              </div>
+
+              <!-- View Layer 5: On-Screen Volume HUD Popup -->
+              <div id="volume-popup" class="volume-popup">
+                <div class="vol-bar-fill"></div>
+              </div>
+
+              <!-- View Layer 6: Power Modal Sheet -->
+              <div id="power-modal" class="power-modal">
+                <div class="power-card">
+                  <span style="font-weight:700; color:#fff; font-size:0.95rem; text-align:center;">PravahOS Power Menu</span>
+                  <button id="btn-pwr-lock" class="power-btn">Lock Device</button>
+                  <button id="btn-pwr-restart" class="power-btn">Reboot Microkernel</button>
+                  <button id="btn-pwr-airgap" class="power-btn danger">Emergency Air-Gap Disconnect</button>
+                  <button id="btn-pwr-cancel" class="power-btn" style="background:transparent;">Cancel</button>
+                </div>
+              </div>
+
+              <!-- Pinch Guide Visual Hint -->
+              <div id="pinch-hint" class="pinch-hint">MULTI-TOUCH PINCH SIMULATION ACTIVE</div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Sidebar: Hardware Telemetry HUD & FIDL Event Inspector -->
+    <aside class="emulator-sidebar">
+      <div class="sidebar-tabs">
+        <button id="tab-btn-telemetry" class="sidebar-tab active">Hardware Telemetry & HUD</button>
+        <button id="tab-btn-events" class="sidebar-tab">FIDL Event Stream</button>
+      </div>
+
+      <div class="sidebar-content" id="sidebar-telemetry">
+
+        <!-- Physical Air-Gap Disconnect Card -->
+        <div class="telemetry-card">
+          <div class="card-title">
+            <span>Air-Gap Physical Isolation</span>
+            <span id="airgap-badge" class="status-chip nominal">ISOLATED</span>
+          </div>
+          <p style="font-size:0.75rem; color:var(--text-secondary); line-height:1.4;">
+            Hardware circuit disconnect cuts 5G RF modems, Wi-Fi 7, and Bluetooth at the PHY layer.
+          </p>
+          <div style="display:flex; gap:0.5rem;">
+            <button id="btn-toggle-airgap" class="btn-scenario" style="flex:1; justify-content:center;">
+              ⚡ Toggle Physical Air-Gap Switch
+            </button>
+          </div>
+        </div>
+
+        <!-- Live NPU / CPU Workload Dials -->
+        <div class="telemetry-card">
+          <div class="card-title">Compute Engines Load</div>
+          <div class="dials-grid">
+            <div class="dial-box">
+              <div class="dial-svg-wrap">
+                <svg class="dial-svg" viewBox="0 0 80 80">
+                  <circle class="dial-circle-bg" cx="40" cy="40" r="34"></circle>
+                  <circle id="dial-npu-fill" class="dial-circle-fill dial-npu" cx="40" cy="40" r="34"></circle>
+                </svg>
+                <div class="dial-center-val" id="val-npu">42%</div>
+              </div>
+              <span class="dial-label">NPU Tensor Engine</span>
+            </div>
+
+            <div class="dial-box">
+              <div class="dial-svg-wrap">
+                <svg class="dial-svg" viewBox="0 0 80 80">
+                  <circle class="dial-circle-bg" cx="40" cy="40" r="34"></circle>
+                  <circle id="dial-cpu-fill" class="dial-circle-fill dial-cpu" cx="40" cy="40" r="34"></circle>
+                </svg>
+                <div class="dial-center-val" id="val-cpu">19%</div>
+              </div>
+              <span class="dial-label">ARM Cortex-A78</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Thermal & Battery Sensors -->
+        <div class="telemetry-card">
+          <div class="card-title">
+            <span>Thermal & Power Telemetry</span>
+            <span id="val-throttle" class="status-chip nominal">NOMINAL</span>
+          </div>
+
+          <div class="ctrl-row">
+            <span class="label">SoC Temperature:</span>
+            <span class="val" id="val-temp">41°C</span>
+          </div>
+          <input type="range" id="slider-temp" class="ctrl-slider" min="30" max="85" value="41">
+
+          <div class="ctrl-row" style="margin-top:0.4rem;">
+            <span class="label">Battery State of Charge:</span>
+            <span class="val" id="val-battery">88%</span>
+          </div>
+          <input type="range" id="slider-battery" class="ctrl-slider" min="0" max="100" value="88">
+
+          <div class="ctrl-row" style="margin-top:0.4rem;">
+            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.75rem; color:var(--text-secondary);">
+              <input type="checkbox" id="check-charging" style="accent-color:var(--accent-emerald);">
+              Simulate Fast Charging (USB-C PD 65W)
+            </label>
+          </div>
+        </div>
+
+        <!-- Touch & Gesture Multi-Touch Simulation -->
+        <div class="telemetry-card">
+          <div class="card-title">
+            <span>Touch & Gesture Simulator</span>
+            <span class="status-chip nominal">FIDL V2</span>
+          </div>
+          <p style="font-size:0.72rem; color:var(--text-secondary); line-height:1.4;">
+            Drag on screen for touch/swipe. Hold <strong>Alt</strong> or <strong>Shift</strong> while dragging or use mouse wheel to simulate <strong>Two-Finger Pinch-to-Zoom</strong>.
+          </p>
+          <div class="scenario-grid">
+            <button id="btn-pinch-mode" class="btn-scenario">🔍 Toggle Pinch Mode</button>
+            <button id="btn-trigger-doubletap" class="btn-scenario">👆 Trigger Double-Tap</button>
+            <button id="btn-trigger-swipe-up" class="btn-scenario">⬆ Swipe Up (App Switch)</button>
+            <button id="btn-trigger-swipe-down" class="btn-scenario">⬇ Swipe Down (Notifs)</button>
+          </div>
+        </div>
+
+        <!-- Dynamic Shell Intent Quick Runner -->
+        <div class="telemetry-card">
+          <div class="card-title">Shell Intent Injection</div>
+          <div class="scenario-grid">
+            <button class="btn-scenario" data-scenario="flight">✈ Flight AI-202</button>
+            <button class="btn-scenario" data-scenario="payment">💳 Transfer ₹5,000</button>
+            <button class="btn-scenario" data-scenario="memory">⚡ Compact RAM</button>
+            <button class="btn-scenario" data-scenario="ocr">📄 Receipt OCR</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tab Content 2: FIDL Event Stream Inspector -->
+      <div class="sidebar-content" id="sidebar-events" style="display:none;">
+        <div class="telemetry-card" style="flex:1;">
+          <div class="card-title">
+            <span>Live FIDL Input Ring Stream</span>
+            <button id="btn-clear-events" class="tb-btn" style="padding:2px 8px;">Clear</button>
+          </div>
+          <div class="event-log-container" id="fidl-event-list" style="max-height: calc(100vh - 180px); height: 100%;">
+            <!-- Streaming event log items -->
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+  </main>
+
+  <script src="emulator.js"></script>
+  <script>
+    // Initialize Phone Emulator Application
+    document.addEventListener('DOMContentLoaded', () => {
+      const app = new PhoneEmulator.PhoneEmulatorApp(document.body, {
+        preset: 'pixel8',
+        scale: 0.9
+      });
+
+      // UI Controls Binding
+      const presetSelect = document.getElementById('preset-select');
+      const scaleSelect = document.getElementById('scale-select');
+      const btnModeShell = document.getElementById('btn-mode-shell');
+      const btnModeFb = document.getElementById('btn-mode-fb');
+      const btnOrientation = document.getElementById('btn-orientation');
+      const btnResetInput = document.getElementById('btn-reset-input');
+      const phoneWrapper = document.getElementById('phone-wrapper');
+
+      presetSelect.addEventListener('change', (e) => {
+        app.switchPreset(e.target.value);
+      });
+
+      scaleSelect.addEventListener('change', (e) => {
+        const s = parseFloat(e.target.value);
+        app.scale = s;
+        phoneWrapper.style.transform = `scale(${s})`;
+      });
+
+      btnModeShell.addEventListener('click', () => {
+        btnModeShell.classList.add('active');
+        btnModeFb.classList.remove('active');
+        app.switchDisplayMode('shell');
+      });
+
+      btnModeFb.addEventListener('click', () => {
+        btnModeFb.classList.add('active');
+        btnModeShell.classList.remove('active');
+        app.switchDisplayMode('framebuffer');
+      });
+
+      btnOrientation.addEventListener('click', () => {
+        app.orientation = app.orientation === 'portrait' ? 'landscape' : 'portrait';
+        if (app.orientation === 'landscape') {
+          phoneWrapper.style.transform = `scale(${app.scale}) rotate(-90deg)`;
+        } else {
+          phoneWrapper.style.transform = `scale(${app.scale}) rotate(0deg)`;
+        }
+      });
+
+      btnResetInput.addEventListener('click', () => {
+        app.gestureDecoder.reset();
+        app.drawTouchIndicators();
+      });
+
+      // Sidebar Tab Switching
+      const tabTelemetry = document.getElementById('tab-btn-telemetry');
+      const tabEvents = document.getElementById('tab-btn-events');
+      const viewTelemetry = document.getElementById('sidebar-telemetry');
+      const viewEvents = document.getElementById('sidebar-events');
+
+      tabTelemetry.addEventListener('click', () => {
+        tabTelemetry.classList.add('active');
+        tabEvents.classList.remove('active');
+        viewTelemetry.style.display = 'flex';
+        viewEvents.style.display = 'none';
+      });
+
+      tabEvents.addEventListener('click', () => {
+        tabEvents.classList.add('active');
+        tabTelemetry.classList.remove('active');
+        viewEvents.style.display = 'flex';
+        viewTelemetry.style.display = 'none';
+      });
+
+      // Airgap button in sidebar
+      const btnAirgap = document.getElementById('btn-toggle-airgap');
+      const airgapBadge = document.getElementById('airgap-badge');
+      btnAirgap.addEventListener('click', () => {
+        const offline = app.hud.toggleAirGap();
+        app.syncAirGapToShell(offline);
+        airgapBadge.textContent = offline ? 'ISOLATED' : 'ONLINE';
+        airgapBadge.className = `status-chip ${offline ? 'nominal' : 'warm'}`;
+      });
+
+      // Temperature slider
+      const sliderTemp = document.getElementById('slider-temp');
+      sliderTemp.addEventListener('input', (e) => {
+        app.hud.setThermal(Number(e.target.value));
+      });
+
+      // Battery slider & charging
+      const sliderBattery = document.getElementById('slider-battery');
+      const checkCharging = document.getElementById('check-charging');
+      sliderBattery.addEventListener('input', (e) => {
+        app.hud.setBatteryLevel(Number(e.target.value), checkCharging.checked);
+        document.getElementById('val-battery').textContent = `${e.target.value}%`;
+      });
+      checkCharging.addEventListener('change', (e) => {
+        app.hud.setBatteryLevel(Number(sliderBattery.value), e.target.checked);
+      });
+
+      // Pinch mode toggle
+      const btnPinchMode = document.getElementById('btn-pinch-mode');
+      btnPinchMode.addEventListener('click', () => {
+        app.simulatedPinch = !app.simulatedPinch;
+        btnPinchMode.style.borderColor = app.simulatedPinch ? 'var(--accent-cyan)' : '';
+        btnPinchMode.style.background = app.simulatedPinch ? 'rgba(0, 229, 255, 0.15)' : '';
+        app.updatePinchVisuals();
+      });
+
+      // Trigger synthetic gestures
+      document.getElementById('btn-trigger-doubletap').addEventListener('click', () => {
+        const g = {
+          type: PhoneEmulator.GestureType.DOUBLE_TAP,
+          name: 'DOUBLE_TAP',
+          centerX: Math.round(app.preset.width / 2),
+          centerY: Math.round(app.preset.height / 2),
+          deltaX: 0,
+          deltaY: 0,
+          velocityPxSec: 0,
+          durationMs: 80,
+          scaleMilli: 1000,
+          touchCount: 1,
+          timestamp: Date.now()
+        };
+        app.handleGestureRecognized(g);
+      });
+
+      document.getElementById('btn-trigger-swipe-up').addEventListener('click', () => {
+        const g = {
+          type: PhoneEmulator.GestureType.SWIPE_UP,
+          name: 'SWIPE_UP',
+          centerX: Math.round(app.preset.width / 2),
+          centerY: Math.round(app.preset.height * 0.8),
+          deltaX: 0,
+          deltaY: -220,
+          velocityPxSec: 1400,
+          durationMs: 160,
+          scaleMilli: 1000,
+          touchCount: 1,
+          timestamp: Date.now()
+        };
+        app.handleGestureRecognized(g);
+      });
+
+      document.getElementById('btn-trigger-swipe-down').addEventListener('click', () => {
+        const g = {
+          type: PhoneEmulator.GestureType.SWIPE_DOWN,
+          name: 'SWIPE_DOWN',
+          centerX: Math.round(app.preset.width / 2),
+          centerY: 80,
+          deltaX: 0,
+          deltaY: 220,
+          velocityPxSec: 1400,
+          durationMs: 160,
+          scaleMilli: 1000,
+          touchCount: 1,
+          timestamp: Date.now()
+        };
+        app.handleGestureRecognized(g);
+      });
+
+      // Quick Shell Scenario triggers
+      document.querySelectorAll('[data-scenario]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const sc = btn.getAttribute('data-scenario');
+          if (app.iframe && app.iframe.contentWindow) {
+            app.iframe.contentWindow.postMessage({
+              type: 'PRAVAH_TRIGGER_SCENARIO',
+              scenario: sc
+            }, '*');
+            app.pulseDynamicIsland(`Scenario: ${sc.toUpperCase()}`);
+          }
+        });
+      });
+
+      // Clear events
+      document.getElementById('btn-clear-events').addEventListener('click', () => {
+        document.getElementById('fidl-event-list').innerHTML = '';
+      });
+
+      // Power Modal actions
+      document.getElementById('btn-pwr-lock').addEventListener('click', () => {
+        app.hud.toggleScreenPower();
+        app.hidePowerModal();
+      });
+
+      document.getElementById('btn-pwr-restart').addEventListener('click', () => {
+        app.hidePowerModal();
+        app.pulseDynamicIsland('REBOOTING...');
+        if (app.iframe) app.iframe.src = app.iframe.src;
+      });
+
+      document.getElementById('btn-pwr-airgap').addEventListener('click', () => {
+        app.hud.setAirGap(true);
+        app.syncAirGapToShell(true);
+        app.hidePowerModal();
+        app.pulseDynamicIsland('EMERGENCY AIR-GAP CUT');
+      });
+
+      document.getElementById('btn-pwr-cancel').addEventListener('click', () => {
+        app.hidePowerModal();
+      });
+    });
+  </script>
+</body>
+</html>

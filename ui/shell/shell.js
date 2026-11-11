@@ -244,6 +244,21 @@ function renderAmbientHeader() {
   if (npuVal) npuVal.textContent = `${ShellState.telemetry.npu}%`;
   if (cpuVal) cpuVal.textContent = `${ShellState.telemetry.cpu}% • ${ShellState.telemetry.temp}°C`;
   if (memVal) memVal.textContent = `${ShellState.telemetry.memUsed} MB / ${ShellState.telemetry.memTotal} MB`;
+
+  // Synchronize telemetry with parent phone emulator if embedded
+  if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+    try {
+      window.parent.postMessage({
+        type: 'PRAVAH_SHELL_TELEMETRY',
+        state: {
+          offline: ShellState.offline,
+          authority: ShellState.authority,
+          telemetry: { ...ShellState.telemetry },
+          currentTask: ShellState.currentTask ? ShellState.currentTask.goal : null
+        }
+      }, '*');
+    } catch (_) {}
+  }
 }
 
 function renderWorkspace() {
@@ -635,4 +650,63 @@ document.addEventListener('DOMContentLoaded', async () => {
     ShellState.telemetry.cpu = Math.min(80, Math.max(8, ShellState.telemetry.cpu + Math.floor(Math.random() * 5 - 2)));
     renderAmbientHeader();
   }, 2500);
+
+  // Hardware Emulator Bridge Listener
+  window.addEventListener('message', async (event) => {
+    const data = event.data;
+    if (!data || typeof data !== 'object') return;
+
+    switch (data.type) {
+      case 'PRAVAH_SET_AIRGAP':
+        ShellState.offline = Boolean(data.offline);
+        renderAmbientHeader();
+        break;
+
+      case 'PRAVAH_SET_AUTHORITY':
+        if (data.authority) {
+          ShellState.authority = data.authority;
+          renderAmbientHeader();
+        }
+        break;
+
+      case 'PRAVAH_SET_TELEMETRY':
+        if (data.telemetry) {
+          Object.assign(ShellState.telemetry, data.telemetry);
+          renderAmbientHeader();
+        }
+        break;
+
+      case 'PRAVAH_TRIGGER_SCENARIO':
+        if (data.scenario && Scenarios[data.scenario]) {
+          loadScenario(data.scenario);
+        }
+        break;
+
+      case 'PRAVAH_EXECUTE_INTENT':
+        const input = document.getElementById('intent-input');
+        if (input && data.intent) {
+          input.value = data.intent;
+          document.getElementById('btn-submit-intent')?.click();
+        }
+        break;
+
+      case 'PRAVAH_DECISION':
+        handleModalDecision(Boolean(data.approved));
+        break;
+
+      case 'PRAVAH_QUERY_STATE':
+        if (window.parent) {
+          window.parent.postMessage({
+            type: 'PRAVAH_SHELL_TELEMETRY',
+            state: {
+              offline: ShellState.offline,
+              authority: ShellState.authority,
+              telemetry: { ...ShellState.telemetry },
+              currentTask: ShellState.currentTask ? ShellState.currentTask.goal : null
+            }
+          }, '*');
+        }
+        break;
+    }
+  });
 });

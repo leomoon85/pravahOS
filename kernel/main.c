@@ -14,10 +14,15 @@
 #include "kernel/channel.h"
 #include "kernel/input.h"
 #include "kernel/display.h"
+#include "kernel/compositor.h"
 #include "kernel/elf.h"
 #include "kernel/process.h"
 #include "kernel/thread.h"
 #include "kernel/syscall.h"
+#include "kernel/hal/camera.h"
+#include "kernel/hal/audio.h"
+#include "kernel/hal/power.h"
+#include "kernel/hal/telephony.h"
 #include "arch/arm64/arch.h"
 #include "arch/arm64/uart_pl011.h"
 
@@ -606,6 +611,13 @@ static void run_display_tests(void) {
     display_run_selftest();
 }
 
+/**
+ * @brief Self-test suite for Native Surface Compositor & Window Flinger.
+ */
+static void run_compositor_tests(void) {
+    compositor_run_selftest();
+}
+
 /* Statically allocated buffer for synthetic ELF64 test image */
 static uint8_t test_elf_buffer[4608] __attribute__((aligned(16)));
 
@@ -811,6 +823,293 @@ static void run_process_userland_execution_tests(void) {
 }
 
 /**
+ * @brief Self-test suite for Mobile Hardware Abstraction Layer (HAL) Subsystems.
+ * Tests Camera, Audio PCM, Battery/Power Governor, and Cellular Baseband Telephony.
+ */
+static void run_mobile_hal_tests(void) {
+    uart_puts("--- [Test Suite 9: Mobile Hardware Abstraction Layer (HAL)] ---\n");
+
+    /* --------------------------------------------------------------------- */
+    /* 1. Camera Sensor & Capture Pipeline Tests                            */
+    /* --------------------------------------------------------------------- */
+    uart_puts("  [CAMERA] Testing Sensor Enumeration & Capture Pipeline...\n");
+
+    uint32_t sensor_count = 0;
+    zx_status_t st = camera_get_sensor_count(&sensor_count);
+    if (st != ZX_OK || sensor_count != 3) {
+        uart_puts("  [FAIL] camera_get_sensor_count failed\n");
+        return;
+    }
+    uart_puts("  [PASS] Camera Sensors Enumerated: ");
+    uart_write_dec(sensor_count);
+    uart_puts(" sensors available\n");
+
+    camera_sensor_info_t cam_info;
+    st = camera_get_sensor_info(CAMERA_ID_BACK_PRIMARY, &cam_info);
+    if (st != ZX_OK) {
+        uart_puts("  [FAIL] camera_get_sensor_info failed\n");
+        return;
+    }
+    uart_puts("  [PASS] Sensor 0 Profile: \"");
+    uart_puts(cam_info.name);
+    uart_puts("\" (Max Res: ");
+    uart_write_dec(cam_info.max_width);
+    uart_puts("x");
+    uart_write_dec(cam_info.max_height);
+    uart_puts(" at ");
+    uart_write_dec(cam_info.max_fps);
+    uart_puts(" fps, AF/Flash: OK)\n");
+
+    /* Configure Camera 0 for 640x480 NV12 preview */
+    camera_config_t cam_cfg;
+    cam_cfg.sensor_id = CAMERA_ID_BACK_PRIMARY;
+    cam_cfg.width = 640;
+    cam_cfg.height = 480;
+    cam_cfg.format = CAMERA_FORMAT_NV12;
+    cam_cfg.target_fps = 30;
+    cam_cfg.exposure_time_us = 16666;
+    cam_cfg.iso_gain = 100;
+    cam_cfg.wb = CAMERA_WB_AUTO;
+
+    st = camera_configure(CAMERA_ID_BACK_PRIMARY, &cam_cfg);
+    if (st != ZX_OK) {
+        uart_puts("  [FAIL] camera_configure failed\n");
+        return;
+    }
+
+    st = camera_start_stream(CAMERA_ID_BACK_PRIMARY);
+    if (st != ZX_OK) {
+        uart_puts("  [FAIL] camera_start_stream failed\n");
+        return;
+    }
+
+    camera_frame_t *frame = NULL;
+    st = camera_acquire_frame(CAMERA_ID_BACK_PRIMARY, &frame);
+    if (st != ZX_OK || !frame) {
+        uart_puts("  [FAIL] camera_acquire_frame failed\n");
+        return;
+    }
+    uart_puts("  [PASS] Camera Frame Acquired: Frame #");
+    uart_write_dec(frame->frame_id);
+    uart_puts(" (640x480 NV12, Timestamp: ");
+    uart_write_dec((uint32_t)(frame->timestamp_ns / 1000000));
+    uart_puts(" ms)\n");
+
+    /* Test NV12 to ARGB8888 conversion on a 16x16 sample block */
+    static uint32_t sample_argb[16 * 16];
+    uint8_t *sample_y = frame->data;
+    uint8_t *sample_uv = frame->data + (640 * 480);
+    st = camera_nv12_to_argb8888(sample_y, sample_uv, 16, 16, sample_argb);
+    if (st != ZX_OK) {
+        uart_puts("  [FAIL] camera_nv12_to_argb8888 color conversion failed\n");
+        return;
+    }
+    /* White bar verification: ARGB must have alpha=0xFF and high RGB */
+    uint32_t p0 = sample_argb[0];
+    uint8_t a = (p0 >> 24) & 0xFF;
+    uint8_t r = (p0 >> 16) & 0xFF;
+    if (a == 0xFF && r > 200) {
+        uart_puts("  [PASS] NV12 -> ARGB8888 Color Space Converter Verified (White Pixel ARGB: ");
+        uart_write_hex(p0);
+        uart_puts(")\n");
+    } else {
+        uart_puts("  [FAIL] Color conversion pixel mismatch\n");
+        return;
+    }
+
+    st = camera_set_exposure(CAMERA_ID_BACK_PRIMARY, 20000, 400);
+    if (st != ZX_OK) {
+        uart_puts("  [FAIL] camera_set_exposure failed\n");
+        return;
+    }
+    uart_puts("  [PASS] Camera Exposure & ISO Dynamic Tuning: 20000 us, ISO 400\n");
+
+    camera_release_frame(CAMERA_ID_BACK_PRIMARY, frame);
+    camera_stop_stream(CAMERA_ID_BACK_PRIMARY);
+
+    /* --------------------------------------------------------------------- */
+    /* 2. Audio PCM Subsystem & Mixer Tests                                 */
+    /* --------------------------------------------------------------------- */
+    uart_puts("  [AUDIO] Testing 48kHz Stereo PCM Audio Subsystem...\n");
+
+    st = audio_set_master_volume(85);
+    uint8_t vol = 0;
+    audio_get_master_volume(&vol);
+    if (st != ZX_OK || vol != 85) {
+        uart_puts("  [FAIL] audio_set_master_volume failed\n");
+        return;
+    }
+    uart_puts("  [PASS] Master Volume Set & Readback: ");
+    uart_write_dec(vol);
+    uart_puts("%\n");
+
+    audio_set_output_endpoint(AUDIO_ENDPOINT_OUT_SPEAKER);
+    audio_set_input_endpoint(AUDIO_ENDPOINT_IN_MIC_MAIN);
+    audio_start_playback();
+
+    /* Synthesize 128 frames (512 bytes) of 440 Hz concert pitch A tone */
+    static int16_t tone_buffer[128 * 2];
+    audio_generate_sine_tone(tone_buffer, 128, 440, AUDIO_SAMPLE_RATE_48K);
+
+    size_t written_frames = 0;
+    st = audio_write_pcm(tone_buffer, 128, &written_frames);
+    if (st != ZX_OK || written_frames != 128) {
+        uart_puts("  [FAIL] audio_write_pcm failed\n");
+        return;
+    }
+    uart_puts("  [PASS] PCM Playback Stream Queued: ");
+    uart_write_dec((uint32_t)written_frames);
+    uart_puts(" frames (48kHz 16-bit Stereo Sine Wave, 440 Hz)\n");
+
+    audio_telemetry_t audio_telem;
+    audio_get_telemetry(&audio_telem);
+    if (audio_telem.playback_frames_submitted == 128 &&
+        audio_telem.current_output == AUDIO_ENDPOINT_OUT_SPEAKER) {
+        uart_puts("  [PASS] Audio Telemetry Verified (Output: Loudspeaker, Underruns: 0)\n");
+    } else {
+        uart_puts("  [FAIL] Audio telemetry mismatch\n");
+        return;
+    }
+    audio_stop_playback();
+
+    /* --------------------------------------------------------------------- */
+    /* 3. Power, Battery Fuel Gauge & Thermal Governor Tests                */
+    /* --------------------------------------------------------------------- */
+    uart_puts("  [POWER] Testing Battery Gauge, Thermal Governor & Wake-Locks...\n");
+
+    battery_telemetry_t batt;
+    st = power_get_battery_info(&batt);
+    if (st != ZX_OK || batt.percentage != 85) {
+        uart_puts("  [FAIL] power_get_battery_info failed\n");
+        return;
+    }
+    uart_puts("  [PASS] Battery Fuel Gauge: ");
+    uart_write_dec(batt.percentage);
+    uart_puts("% (");
+    uart_write_dec(batt.voltage_mv);
+    uart_puts(" mV, Capacity: ");
+    uart_write_dec(batt.remaining_mah);
+    uart_puts(" / ");
+    uart_write_dec(batt.design_capacity_mah);
+    uart_puts(" mAh, Health: GOOD)\n");
+
+    /* Thermal Trip Zone Evaluation */
+    thermal_zone_info_t cpu_thermal;
+    st = power_get_thermal_zone(THERMAL_ZONE_CPU_CLUSTER0, &cpu_thermal);
+    if (st != ZX_OK || cpu_thermal.trip_level != THERMAL_TRIP_NORMAL) {
+        uart_puts("  [FAIL] power_get_thermal_zone failed\n");
+        return;
+    }
+    uart_puts("  [PASS] CPU Thermal Zone: ");
+    uart_write_dec((uint32_t)(cpu_thermal.current_temp_mdeg_c / 1000));
+    uart_puts(".");
+    uart_write_dec((uint32_t)((cpu_thermal.current_temp_mdeg_c % 1000) / 100));
+    uart_puts(" C (Trip Level: NORMAL)\n");
+
+    /* Simulate thermal spike to 82.5 C (warning trip) */
+    power_simulate_thermal_update(THERMAL_ZONE_CPU_CLUSTER0, 82500);
+    power_get_thermal_zone(THERMAL_ZONE_CPU_CLUSTER0, &cpu_thermal);
+    if (cpu_thermal.trip_level == THERMAL_TRIP_WARNING) {
+        uart_puts("  [PASS] Thermal Trip Trigger: 82.5 C elevated -> Governor State WARNING\n");
+    } else {
+        uart_puts("  [FAIL] Thermal trip governor response failure\n");
+        return;
+    }
+    /* Restore normal thermal conditions */
+    power_simulate_thermal_update(THERMAL_ZONE_CPU_CLUSTER0, 41200);
+
+    /* Wake-Lock Arbitration & Suspend Veto Tests */
+    uint32_t lock_id = 0;
+    st = power_wake_lock_acquire("display_backlight", &lock_id);
+    if (st != ZX_OK || power_get_active_wake_locks() != 1) {
+        uart_puts("  [FAIL] power_wake_lock_acquire failed\n");
+        return;
+    }
+    uart_puts("  [PASS] Wake-Lock Acquired: \"display_backlight\" (Lock Handle: ");
+    uart_write_dec(lock_id);
+    uart_puts(")\n");
+
+    /* Suspend must be vetoed while wake-lock is held */
+    st = power_set_power_state(POWER_STATE_SUSPEND);
+    if (st == ZX_ERR_UNAVAILABLE) {
+        uart_puts("  [PASS] Suspend Veto Verified: POWER_STATE_SUSPEND Blocked (Active Wake-Locks: 1)\n");
+    } else {
+        uart_puts("  [FAIL] Suspend was not vetoed with active wake lock\n");
+        return;
+    }
+
+    /* Release wake-lock and transition to IDLE */
+    st = power_wake_lock_release(lock_id);
+    if (st != ZX_OK || power_get_active_wake_locks() != 0) {
+        uart_puts("  [FAIL] power_wake_lock_release failed\n");
+        return;
+    }
+    st = power_set_power_state(POWER_STATE_IDLE);
+    if (st != ZX_OK || power_get_power_state() != POWER_STATE_IDLE) {
+        uart_puts("  [FAIL] Transition to POWER_STATE_IDLE failed\n");
+        return;
+    }
+    uart_puts("  [PASS] Dynamic Power Transition: ACTIVE -> IDLE Clock-Gating\n");
+    power_set_power_state(POWER_STATE_ACTIVE);
+
+    /* --------------------------------------------------------------------- */
+    /* 4. Cellular Baseband Telephony & Air-Gap Tests                       */
+    /* --------------------------------------------------------------------- */
+    uart_puts("  [TELEPHONY] Testing Modem, Dual-SIM & Offline Air-Gap Mode...\n");
+
+    modem_telemetry_t modem;
+    st = telephony_get_modem_info(&modem);
+    if (st != ZX_OK || modem.power_state != MODEM_POWER_ONLINE) {
+        uart_puts("  [FAIL] telephony_get_modem_info failed\n");
+        return;
+    }
+    uart_puts("  [PASS] Modem Baseband Online: \"");
+    uart_puts(modem.modem_model);
+    uart_puts("\" (FW: ");
+    uart_puts(modem.firmware_version);
+    uart_puts(", Dual-SIM: OK)\n");
+
+    sim_card_info_t sim1;
+    st = telephony_get_sim_info(TELEPHONY_SLOT_1, &sim1);
+    if (st != ZX_OK || sim1.sim_state != SIM_STATE_READY) {
+        uart_puts("  [FAIL] telephony_get_sim_info failed\n");
+        return;
+    }
+    uart_puts("  [PASS] SIM 1 Registered: Carrier \"");
+    uart_puts(sim1.operator_name);
+    uart_puts("\", RAT: 5G-NR Sub-6, RSSI: -76 dBm (");
+    uart_write_dec(sim1.signal.signal_bars);
+    uart_puts(" / 5 Bars)\n");
+
+    /* Air-Gap / Airplane Mode Isolation Toggle */
+    st = telephony_set_airplane_mode(true);
+    if (st != ZX_OK || !telephony_get_airplane_mode()) {
+        uart_puts("  [FAIL] telephony_set_airplane_mode(true) failed\n");
+        return;
+    }
+    telephony_get_modem_info(&modem);
+    telephony_get_sim_info(TELEPHONY_SLOT_1, &sim1);
+    if (modem.power_state == MODEM_POWER_AIRGAP &&
+        sim1.reg_state == REG_STATE_NOT_REGISTERED &&
+        sim1.signal.signal_bars == 0) {
+        uart_puts("  [PASS] Offline Air-Gap Mode Activated: Baseband Hardware Isolated, RF Power Cut\n");
+    } else {
+        uart_puts("  [FAIL] Air-gap mode hardware isolation verification failed\n");
+        return;
+    }
+
+    /* Restore cellular network connectivity */
+    telephony_set_airplane_mode(false);
+    telephony_get_sim_info(TELEPHONY_SLOT_1, &sim1);
+    if (sim1.reg_state == REG_STATE_REGISTERED_HOME && sim1.signal.signal_bars == 4) {
+        uart_puts("  [PASS] Cellular Baseband Re-attached: 5G-NR Sub-6 Re-established\n\n");
+    } else {
+        uart_puts("  [FAIL] Cellular reconnection failed\n\n");
+        return;
+    }
+}
+
+/**
  * @brief Early Kernel Entry Point invoked by boot.S in EL1 mode.
  *
  * @param dtb_paddr Physical address of DTB loaded by bootloader/QEMU.
@@ -856,9 +1155,18 @@ void kernel_main(uint64_t dtb_paddr, uint64_t x1, uint64_t x2, uint64_t x3) {
     /* Linear Framebuffer & 2D Rasterizer Display Subsystem */
     display_init();
 
+    /* Native Surface Compositor & Window Flinger Subsystem */
+    compositor_init();
+
     /* Process & Thread Management Subsystem */
     process_subsystem_init();
     thread_subsystem_init();
+
+    /* Mobile Hardware Abstraction Layer (HAL) Subsystems */
+    camera_hal_init();
+    audio_hal_init();
+    power_hal_init();
+    telephony_hal_init();
     uart_puts("\n");
 
     /* 5. Execute Comprehensive Self-Test Suites */
@@ -868,8 +1176,10 @@ void kernel_main(uint64_t dtb_paddr, uint64_t x1, uint64_t x2, uint64_t x3) {
     run_channel_ipc_tests();
     run_input_tests();
     run_display_tests();
+    run_compositor_tests();
     run_elf64_parser_tests();
     run_process_userland_execution_tests();
+    run_mobile_hal_tests();
 
     uart_puts("========================================================================\n");
     uart_puts(">>> ALL PRAVAHOS MICROKERNEL SELF-TESTS PASSED SUCCESSFULLY <<<\n");

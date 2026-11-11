@@ -1,0 +1,162 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+library pravah.compositor;
+
+using zx;
+using pravah.display;
+
+/// Surface layer hierarchy classifications for Z-ordered scene composition.
+/// Defines visual stacking semantics in the PravahOS presentation pipeline.
+type LayerType = strict enum : uint8 {
+    BACKGROUND = 0;   // Base obsidian void / clearing canvas (Z: 0)
+    WALLPAPER  = 1;   // Ambient system wallpaper, live visuals, gradients (Z: 100)
+    WORKSPACE  = 2;   // DEC task workspace cards, agent execution DAGs, apps (Z: 200)
+    MODAL      = 3;   // High-priority modal gates, capability approval dialogs (Z: 300)
+    STATUS_BAR = 4;   // Persistent top mobile ambient status bar & system overlays (Z: 400)
+};
+
+/// 2D rectangle representation for surface positioning and dirty region damage.
+type Rect = struct {
+    x int32;
+    y int32;
+    width uint32;
+    height uint32;
+};
+
+/// 32-bit ARGB8888 Color representation.
+type ColorARGB = struct {
+    a uint8;
+    r uint8;
+    g uint8;
+    b uint8;
+};
+
+/// Comprehensive surface layer configuration descriptor.
+type LayerDescriptor = struct {
+    layer_id uint32;
+    name string:32;
+    type LayerType;
+    z_index int32;
+    rect Rect;
+    alpha uint8;
+    visible bool;
+    buffer_width uint32;
+    buffer_height uint32;
+    stride uint32;
+};
+
+/// Performance telemetry and timing counters for the compositor engine.
+type CompositorTelemetry = struct {
+    frames_rendered uint64;
+    layers_blended_total uint64;
+    dirty_rects_composited uint64;
+    full_redraws_count uint64;
+    last_frame_ticks uint64;
+    vsync_interval_ns uint64;
+};
+
+/// Error codes returned by compositor operations.
+type CompositorError = strict enum : uint32 {
+    INTERNAL = 1;
+    INVALID_LAYER_ID = 2;
+    MAX_LAYERS_EXCEEDED = 3;
+    BUFFER_ALLOCATION_FAILED = 4;
+    INVALID_GEOMETRY = 5;
+    ACCESS_DENIED = 6;
+    OUT_OF_BOUNDS = 7;
+    DEVICE_BUSY = 8;
+};
+
+/// Native Surface Compositor & Window Flinger Protocol.
+/// Mediates hardware-accelerated, Z-ordered surface layer hierarchy,
+/// dirty rectangle damage tracking, and VSync-aligned presentation between
+/// the userspace Dynamic Experience Composer (DEC) / Shell and kernel display scanout.
+@discoverable
+open protocol Compositor {
+    /// Create a new surface layer in the compositor hierarchy.
+    /// Allocates an ARGB8888 backing buffer and assigns the default Z-index for the layer type.
+    flexible CreateLayer(struct {
+        name string:32;
+        type LayerType;
+        rect Rect;
+        initial_alpha uint8;
+    }) -> (struct {
+        layer_id uint32;
+    }) error CompositorError;
+
+    /// Destroy an active surface layer and release its physical resources.
+    flexible DestroyLayer(struct {
+        layer_id uint32;
+    }) -> () error CompositorError;
+
+    /// Adjust the Z-index sorting position of a layer.
+    flexible SetLayerZ(struct {
+        layer_id uint32;
+        z_index int32;
+    }) -> () error CompositorError;
+
+    /// Reposition and/or resize a layer surface.
+    /// Accumulates dirty damage regions for both vacated and newly occupied screen space.
+    flexible SetLayerRect(struct {
+        layer_id uint32;
+        rect Rect;
+    }) -> () error CompositorError;
+
+    /// Adjust per-layer global opacity alpha (0 = transparent, 255 = fully opaque).
+    flexible SetLayerAlpha(struct {
+        layer_id uint32;
+        alpha uint8;
+    }) -> () error CompositorError;
+
+    /// Toggle visibility state of a layer in the active scene graph.
+    flexible SetLayerVisibility(struct {
+        layer_id uint32;
+        visible bool;
+    }) -> () error CompositorError;
+
+    /// Bind a shared userland Virtual Memory Object (VMO) to a layer for zero-copy composition.
+    flexible AttachLayerBuffer(resource struct {
+        layer_id uint32;
+        buffer_vmo zx.Handle:VMO;
+        width uint32;
+        height uint32;
+        stride uint32;
+    }) -> () error CompositorError;
+
+    /// Mark a localized dirty region within a layer as damaged.
+    flexible DamageLayer(struct {
+        layer_id uint32;
+        damage_rect Rect;
+    }) -> () error CompositorError;
+
+    /// Accumulate an arbitrary screen-space dirty rectangle into the pending scene damage.
+    flexible DamageScreen(struct {
+        dirty_rect Rect;
+    }) -> () error CompositorError;
+
+    /// Force full display redraw invalidating the entire screen canvas.
+    flexible DamageAll() -> () error CompositorError;
+
+    /// Execute Porter-Duff Source-Over alpha composition of damaged regions,
+    /// synchronize with hardware VSync, and atomically swap front/back buffers.
+    flexible RenderFrame() -> (struct {
+        telemetry CompositorTelemetry;
+    }) error CompositorError;
+
+    /// Enumerate all currently active surface layers in the compositor hierarchy.
+    flexible GetLayers() -> (struct {
+        layers vector<LayerDescriptor>:16;
+    }) error CompositorError;
+
+    /// Query runtime performance metrics and frame pacing telemetry.
+    flexible GetTelemetry() -> (struct {
+        telemetry CompositorTelemetry;
+    }) error CompositorError;
+
+    /// Hardware VSync frame presentation timing notification event.
+    flexible -> OnFramePresented(struct {
+        frame_counter uint64;
+        timestamp_ns uint64;
+        blended_layer_count uint32;
+    });
+};

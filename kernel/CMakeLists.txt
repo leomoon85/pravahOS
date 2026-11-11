@@ -54,6 +54,11 @@ set(KERNEL_SRCS
     process/syscall.c
     drivers/display/display.c
     drivers/input/input.c
+    compositor/compositor.c
+    hal/camera_hal.c
+    hal/audio_hal.c
+    hal/power_hal.c
+    hal/telephony_hal.c
     main.c
 )
 

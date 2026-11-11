@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PravahOS Phone Emulator Launcher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070b12;
+      --card-bg: rgba(15, 23, 42, 0.75);
+      --border: rgba(255, 255, 255, 0.1);
+      --cyan: #00e5ff;
+      --violet: #7c4dff;
+      --emerald: #00e676;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(0, 229, 255, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(124, 77, 255, 0.08) 0%, transparent 40%);
+    }
+    .launcher-container {
+      max-width: 860px;
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2.5rem;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.5rem;
+    }
+    .os-logo {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--cyan), var(--violet));
+      color: #030712;
+      font-size: 2rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 24px rgba(0, 229, 255, 0.35);
+    }
+    .header-text h1 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .header-text p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+    .badge {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: rgba(0, 229, 255, 0.12);
+      color: var(--cyan);
+      border: 1px solid rgba(0, 229, 255, 0.3);
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-top: 6px;
+    }
+    .presets-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+    }
+    .preset-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      text-decoration: none;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      transition: all 0.2s ease;
+    }
+    .preset-card:hover {
+      background: rgba(0, 229, 255, 0.06);
+      border-color: var(--cyan);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 229, 255, 0.15);
+    }
+    .preset-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .preset-dim {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--cyan);
+    }
+    .preset-desc {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .btn-launch {
+      margin-top: auto;
+      padding: 0.6rem 1rem;
+      background: linear-gradient(135deg, var(--cyan), #00b0ff);
+      color: #030712;
+      font-weight: 700;
+      font-size: 0.82rem;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .footer-bar {
+      border-top: 1px solid var(--border);
+      padding-top: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .footer-links a {
+      color: var(--cyan);
+      text-decoration: none;
+      margin-left: 1rem;
+    }
+    .footer-links a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="launcher-container">
+    <div class="header">
+      <div class="os-logo">P</div>
+      <div class="header-text">
+        <h1>PravahOS Phone Emulator Studio</h1>
+        <p>Interactive Flagship Smartphone Window Emulator & Device Shell</p>
+        <span class="badge">AARCH64 SECURE MICROKERNEL • FIDL V2 INPUT</span>
+      </div>
+    </div>
+
+    <div>
+      <h3 style="font-size:0.95rem; font-weight:700; margin-bottom:1rem; color:var(--text);">Select Device Profile & Aspect Ratio:</h3>
+      <div class="presets-grid">
+        <a href="index.html" class="preset-card">
+          <div class="preset-title">
+            <span>Pravah Phone 1</span>
+            <span class="preset-dim">412 × 915</span>
+          </div>
+          <p class="preset-desc">
+            Flagship 20:9 viewport. Sleek titanium rim, Dynamic Island pill cutout, physical air-gap kill switch, and high-DPI touch digitizer.
+          </p>
+          <div class="btn-launch">Launch Default Emulator ➔</div>
+        </a>
+
+        <a href="index.html#preset=iphone15" class="preset-card">
+          <div class="preset-title">
+            <span>Pravah Mini</span>
+            <span class="preset-dim">390 × 844</span>
+          </div>
+          <p class="preset-desc">
+            Compact 19.5:9 flagship format with narrow ceramic bezels and high portability profile.
+          </p>
+          <div class="btn-launch" style="background: linear-gradient(135deg, var(--violet), #9c27b0); color:#fff;">Launch Compact ➔</div>
+        </a>
+
+        <a href="index.html#preset=hdplus" class="preset-card">
+          <div class="preset-title">
+            <span>Pravah HD+ Panel</span>
+            <span class="preset-dim">720 × 1600</span>
+          </div>
+          <p class="preset-desc">
+            Physical linear framebuffer panel matching bare-metal AArch64 bootscreen specification from DISPLAY.md.
+          </p>
+          <div class="btn-launch" style="background: linear-gradient(135deg, var(--emerald), #00c853); color:#030712;">Launch HD+ Panel ➔</div>
+        </a>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      <div>PravahOS System Engineering • EL1 Kernel & User-Space Compositor</div>
+      <div class="footer-links">
+        <a href="../ui/shell/index.html" target="_blank">Direct DEC Shell</a>
+        <a href="../EMULATOR.md" target="_blank">EMULATOR.md</a>
+        <a href="../INPUT.md" target="_blank">INPUT.md</a>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
