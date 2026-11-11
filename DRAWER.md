@@ -1,29 +1,34 @@
-# Living App Drawer & Metro UI Subsystem
+# Living App Drawer & Neo-Metro UI Subsystem
 
-## 1. Architectural Overview & Philosophy
+## 1. Neo-Metro Architectural Philosophy & Evolution
 
-The **Living App Drawer** brings the iconic typography, clean geometry, and glanceable dynamism of Windows Phone (Metro UI) into **PravahOS**, fusing it with modern multi-pass liquid glassmorphism, spring physics, and deterministic microkernel capability execution.
+The **Living App Drawer** in PravahOS modernizes the flat, 2012 Windows Phone (Metro UI) aesthetic into a fresh, luxury **"Neo-Metro"** design language. Neo-Metro synthesizes the strongest visual philosophies in modern interface design:
 
-Rather than treating the app launcher as a static grid of passive icons, PravahOS establishes a **Dual-Surface Navigation Model**:
-1. **Surface 1: Active Shell Workspace** &mdash; Displays ambient system telemetry, Dynamic Island, natural-language Intent Bar, topological DAG execution canvas, and tamper-evident cryptographic audit stream.
-2. **Surface 2: Living Capability Drawer** &mdash; Houses dynamic glanceable Live Tiles with real-time tickers and 3D card flips, coupled with a Windows Phone-style alphabetical A-Z catalog featuring fast-jump letter headers and instantaneous search filtering.
+1. **Windows Phone / Metro UI (Glanceability & Typography)** &mdash; Preserves the bold, typography-first hierarchy, A-Z index navigation, zero-chrome efficiency, and live informative surfaces that made Metro iconic.
+2. **Apple iOS Dynamic Widgets & Glassmorphism** &mdash; Introduces organic super-ellipse squircle geometry (20px&ndash;26px radii), multi-pass liquid frosted glassmorphism (`backdrop-filter: blur(32px) saturate(210%)`), and subtle specular inner edge borders (`inset 0 1px 1px rgba(255, 255, 255, 0.28)`).
+3. **Nothing OS Minimalist Aesthetics** &mdash; Integrates monochromatic glyphs, glowing status dot matrix beacons, and cryptographic hardware badges.
+4. **Japanese Bento Grid Architecture** &mdash; Replaces monotonous rectangular grids with harmonious, variable-proportion modular bento cells: wide 2x1 hero tiles, medium status squares, and compact telemetry widgets.
 
 ```mermaid
 flowchart TD
-    subgraph DualSurface ["PravahOS Dual-Surface Navigation"]
-        S1["Surface 1: DEC Shell Workspace<br/>(Ambient Telemetry • Dynamic Island • Task DAG • Audit Ledger)"]
-        S2["Surface 2: Living App Drawer<br/>(Live Tiles • Metro A-Z List • Fast-Jump Picker)"]
+    subgraph NeoMetroDesign ["Neo-Metro Design Synthesis"]
+        WP["Windows Phone Metro<br/>(Glanceable Live Tiles • A-Z Index • Bold Typography)"]
+        Apple["Apple iOS Glass & Squircles<br/>(24px Squircles • Liquid Blur 32px • Specular Inner Borders)"]
+        Nothing["Nothing OS Minimalism<br/>(Pulsing Dot Beacons • Monochromatic Glyphs • Hardware Badges)"]
+        Bento["Japanese Bento Grid<br/>(Hero 2x1 Cells • Balanced Rhythms • Variable Hierarchy)"]
         
-        S1 <-- "Swipe Up / Pill Click / SWIPE_UP Fling" --> S2
-        S2 <-- "Swipe Down / Pull Handle / Dismiss ✕" --> S1
+        WP --> NeoMetro["PravahOS Neo-Metro UI"]
+        Apple --> NeoMetro
+        Nothing --> NeoMetro
+        Bento --> NeoMetro
     end
 
-    subgraph LaunchModels ["Dual Capability Execution Models"]
-        S2 -->|Tap DAG App| DAGLaunch["Native PravahOS DAG Card<br/>(Flight Radar • Spotify HAL • UPI Transfer • USDC Remit)"]
-        S2 -->|Tap Ephemeral App| WinLaunch["Ephemeral Zero-Tax Window<br/>(Air-Gap Switches • Barometer • Audit Inspector • Enclave Voice)"]
+    subgraph DualSurfaces ["PravahOS Dual-Surface Architecture"]
+        NeoMetro --> Surface1["Surface 1: Shell Workspace<br/>(Dynamic Island • Task DAG Canvas • Audit Ledger)"]
+        NeoMetro --> Surface2["Surface 2: Living App Drawer<br/>(Bento Live Tiles • A-Z Index • Prism Jump Modal)"]
         
-        DAGLaunch --> S1
-        WinLaunch --> S1
+        Surface1 <-- "Swipe Up / Pill Click / Gesture Fling" --> Surface2
+        Surface2 <-- "Pull Drag Handle / Swipe Down / ✕ Dismiss" --> Surface1
     end
 ```
 
@@ -31,20 +36,20 @@ flowchart TD
 
 ## 2. Dual-Surface Navigation & Gesture Physics
 
-### 2.1 Navigation Triggers
-The Living Drawer can be invoked seamlessly through multiple coordinated interfaces:
-- **Bottom Navigation Pill Bar (`#shell-drawer-nav`)**: A frosted glass pill with an animated glowing neon handle that floats at the bottom of the shell. Tapping it smoothly slides the Living Drawer into view.
-- **Phone Chassis Home Bar (`#phone-nav-bar`)**: The physical phone emulator chassis features a tactile navigation indicator (`.phone-home-pill`) at the base of the viewport that mirrors native gesture navigation.
+### 2.1 Coordinated Triggers
+The Living Drawer operates as a persistent, high-performance slide surface that can be invoked from multiple shell entry points:
+- **Bottom Navigation Pill Bar (`.shell-drawer-nav`)**: A frosted glass floating pill (`backdrop-filter: blur(28px) saturate(200%)`) with an animated glowing neon handle that rests at the base of the viewport. Tapping it smoothly slides the Living Drawer into view.
+- **Phone Chassis Home Bar (`.phone-home-pill`)**: Mirrors native hardware chassis gestures on mobile viewports.
 - **Vertical Swipe-Up Gestures**:
-  - Direct touch/pointer swipe up from the bottom 160px of the viewport.
-  - Directional fling events (`SWIPE_UP`) forwarded through the emulator FIDL input bridge (`PRAVAH_GESTURE_FLING`).
+  - Touch or pointer drag upward from the bottom 160px edge of the display.
+  - Fling gesture recognition (`PRAVAH_GESTURE_FLING` with velocity $> 500\text{px/s}$).
 - **Dismiss Gestures**:
-  - Pulling down on the top grab handle (`#drawer-drag-header`) with displacement $> 120\text{px}$ or downward fling velocity $> 500\text{px/s}$.
+  - Pulling down on the top grab handle (`#drawer-drag-header`) past the 120px threshold or with downward fling velocity $> 500\text{px/s}$.
   - Tapping the dismiss button (`#btn-drawer-dismiss`).
-  - Swiping down (`SWIPE_DOWN`) recognized by the gesture engine.
+  - Pressing the hardware back/escape action.
 
 ### 2.2 Spring-Damped Slide Physics
-The drawer surface employs CSS 3D transforms (`translateY(0%)` for expanded, `translateY(100%)` for collapsed) governed by liquid easing (`cubic-bezier(0.16, 1, 0.3, 1)`) and interactive rubber-band clamping via `window.PravahMotion`:
+The drawer slide motion is computed via damped spring equations (`cubic-bezier(0.16, 1, 0.3, 1)`) and interactive rubber-banding via `window.PravahMotion`:
 ```js
 // Interactive downward drag tracking
 const deltaY = Math.max(0, this.currentY - this.startY);
@@ -63,176 +68,152 @@ if (deltaY > 120 || velocity > 500) {
 
 ---
 
-## 3. Dynamic Glanceable Live Tiles
+## 3. Bento-Grid Dynamic Live Tiles
 
-The top section of the Living Drawer features four dynamic glanceable Live Tiles that display live, ticking state without requiring the user to open full applications. Each tile is a 3D dual-sided flip card (`transform-style: preserve-3d; perspective: 1200px`) revealing operational telemetry on its reverse face.
+The top section of the Living Drawer features four dynamic glanceable Live Tiles structured as a luxury Japanese Bento Grid. Each tile is an interactive 3D card (`transform-style: preserve-3d; perspective: 1200px`) featuring real-time data engines and reverse-side microkernel telemetry.
 
 ```
 +--------------------------------------------------------------------------+
-|  TOP SECTION: GLANCEABLE LIVE TILES                      [🔄 Flip Tiles] |
+|  GLANCEABLE LIVE TILES (BENTO GRID)                      [🔄 Flip Tiles] |
 +--------------------------------------------------------------------------+
-|  [🎵 SPOTIFY AUDIO HAL]  48kHz DIRECT DMA       [ ✈ FLIGHT AI-202 ]       |
-|  Midnight City - M83                            DEL ➔ BLR  •  Gate 14B   |
-|  ||||| (5-Bar Live Equalizer)                   Boards in: 00:42:15       |
+|  [🎵 AUDIO HAL (●)]  48kHz DIRECT DMA           [ 💽 ROTATING VINYL ]    |
+|  Midnight City - M83                            (((~ soundwave ~)))      |
+|  ||||| (5-Bar Real-Time Equalizer)              Lossless 24-bit Stream   |
 +-------------------------------------------------+------------------------+
-|  [🔋 SOC POWER FUEL]     88% [====|    ]        | [🛡️ AIR-GAP MESH]      |
-|  14h 20m remaining • 2.1W Neural Governor       | SECURED OFFLINE (●)    |
-|  Cell temp: 31.4°C • FastCharge Ready           | 4 Radios Cut • Zero Net|
+|  [✈ FLIGHT AI-202]  BOARDING (●)                | [🔋 SOC POWER] 88%     |
+|  DEL ➔ BLR  •  Gate 14B                         | [================|   ] |
+|  Countdown: 00:42:15  •  ((Radar Sweep))        | 14h 20m • 2.1W Neural  |
++-------------------------------------------------+------------------------+
+|  [🛡️ AIR-GAP MESH]   [POST-QUANTUM]            [SEC] [Microchip Core]   |
+|  SECURED OFFLINE (●)  •  ML-KEM-768 / Ed448     Hardware RF Killswitch   |
+|  All 4 Radios Cut • Zero Telemetry Egress • EL1 Microkernel Locked       |
 +--------------------------------------------------------------------------+
 ```
 
-### 3.1 Tile Specifications & Live Tickers
+### 3.1 Tile Specifications & Dynamic Engines
 
-| Tile ID | Title | Accent | Front Face Content | Reverse Face Telemetry | Dynamic Engine |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **`spotify`** | Spotify Audio HAL | `#1db954` | Track name, artist, 48kHz Direct DMA badge, **5-Bar Real-Time Equalizer**. | ALAC Lossless 24-bit/48kHz, Starnix DMA Sink, 0.8ms latency, 100% buffer locked. | Randomized 450ms frequency tick generating normalized bar heights $[0.15, 0.98]$. |
-| **`flight`** | Flight AI-202 | `#00e5ff` | Route (`DEL ➔ BLR`), Gate `14B`, Terminal `T3`, Boarding pulse, **Second-by-Second Countdown**. | Airbus A350-900, BLR: 24°C Fair, Baggage Belt 04, 98.4% on-time record. | 1000ms countdown interval decrements flight departure time in real-time. |
-| **`battery`** | Power Fuel Gauge | `#00e676` | Battery level percentage, **Dynamic Fuel Gauge Fill Bar**, remaining runtime, power governor. | Anode nominal health (99%), cell temperature (31.4°C), cycle count (34), 65W SuperVOOC ready. | Synced with PravahOS shell telemetry and hardware emulator HUD. |
-| **`airgap`** | Air-Gap Security Mesh | `#7c4dff` | Pulsing green cryptographic integrity dot, Hardware RF Killswitch status, ML-KEM-768/Ed448 badge. | EL1 microkernel register lock, loopback intranet (127.0.0.1) only, block hash sealed. | Synced directly with physical hardware air-gap kill switch. |
+| Tile ID | Layout Proportion | Title | Accent | Front Face Features | Reverse Face Telemetry | Dynamic Animation Engine |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **`spotify`** | **Hero 2x1 Wide Bento** | Spotify Audio HAL | `#1db954` | Track title, artist, 48kHz Direct DMA badge, **Floating Rotating Vinyl Disc**, **7-Band Animated Soundwave Ribbon**, **5-Bar Hardware EQ**. | ALAC Lossless 24-bit/48kHz, Starnix DMA Sink, 0.8ms latency, 100% buffer locked. | Vinyl spins at 7s/rev; soundwave ribbon undulates continuously; equalizer bars tick every 450ms across normalized frequency range $[0.15, 0.98]$. |
+| **`flight`** | **Square 1x1 Bento** | Flight AI-202 Radar | `#00e5ff` | Route (`DEL ➔ BLR`), Gate `14B`, Terminal `T3`, Boarding pulse pill, **Flight Radar Scope with 360° Sweep & Radar Blip**, **Second-by-Second Countdown**. | Airbus A350-900, BLR: 24°C Fair, Baggage Belt 04, 98.4% on-time record. | Radar sweep rotates at 3s/rev; radar blip pulses every 1.5s; departure countdown updates every 1000ms. |
+| **`battery`** | **Square 1x1 Bento** | Power Fuel Gauge | `#00e676` | Battery percentage pill, **Glowing Energy Fuel Capsule with Gradient Fill Bar**, remaining runtime, SoC power draw, Neural Governor tag. | Anode nominal health (99%), cell temperature (31.4°C), cycle count (34), 65W SuperVOOC ready. | Real-time synchronization with PravahOS power telemetry and microkernel battery events. |
+| **`airgap`** | **Wide 2x1 Bento** | Air-Gap Security Mesh | `#7c4dff` | Pulsing green cryptographic status dot, **Post-Quantum Chip Badge (`ML-KEM-768 / Ed448`)**, Hardware RF Killswitch badge, **Integrated Microchip Graphic**. | EL1 microkernel register lock, loopback intranet (127.0.0.1) only, block hash sealed, zero violations. | Direct hardware RF power rail synchronization with EL1 killswitch. |
 
-### 3.2 3D Flipping Animation
-Tiles can be flipped individually via their discrete flip icons (`↻`), flipped en masse via the `[🔄 Flip Tiles]` master trigger, or flipped by tapping:
-```css
-.live-tile {
-  transform-style: preserve-3d;
-  transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.live-tile.flipped {
-  transform: rotateY(180deg);
-}
-.tile-face {
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-.tile-back {
-  transform: rotateY(180deg);
-}
-```
+### 3.2 Holographic 3D Parallax Tilt & Liquid Specular Sheen
+Tiles respond dynamically to pointer and touch coordinates in real time:
+- As the user glides a finger or mouse over a tile, the tile tilts smoothly along 3D axes (up to $\pm 7^\circ$) governed by normalized displacement:
+  $$\theta_x = (y_{\text{norm}} - 0.5) \times -14^\circ, \quad \theta_y = (x_{\text{norm}} - 0.5) \times 14^\circ$$
+- A liquid specular sheen (`radial-gradient` highlight) follows the pointer position across the tile surface:
+  ```css
+  .live-tile::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(circle 200px at var(--sheen-x, 50%) var(--sheen-y, 50%), rgba(255, 255, 255, 0.18), transparent 70%);
+    pointer-events: none;
+    mix-blend-mode: overlay;
+  }
+  ```
+- Flipping tiles via `↻` or `[🔄 Flip Tiles]` preserves 3D perspective depth with smooth 180° rotation:
+  $$\text{transform} = \text{perspective}(1000\text{px}) \cdot \text{rotateY}(180^\circ + \theta_y) \cdot \text{rotateX}(\theta_x)$$
 
 ---
 
-## 4. Windows Phone / Metro Alphabetical Catalog & Fast-Jump Algorithm
+## 4. Reimagined A-Z App & Capability Index
 
-The bottom section of the Living Drawer implements the iconic Windows Phone Metro alphabetical list layout with fast-jump letter headers and an instantaneous search bar.
+The bottom section of the Living Drawer modernizes the iconic Windows Phone alphabetical list into sleek, tactile ribbons with modern glyphs and responsive micro-interactions.
 
-### 4.1 Required Alphabetical Fast-Jump Headers
-The catalog contains 14+ capabilities grouped under the following canonical letter headers:
-- **`[A]`**:
-  - `airgap_app`: **Air-Gap Matrix Killswitch** &mdash; Hardware RF isolation toggle.
-  - `android_bridge`: **Android Bridge (Starnix)** &mdash; POSIX translation container for Linux APKs.
-  - `audit_ledger`: **Audit Ledger Inspector** &mdash; Tamper-evident SHA-256 capability ledger.
-- **`[C]`**:
-  - `camera_pro`: **Camera IMX890 Pro** &mdash; 50MP RAW capture pipeline with zero-copy VMO buffer.
-  - `crypto_remit`: **Crypto Remittance (USDC)** &mdash; Zero-knowledge cross-border 250 USDC transfer.
-- **`[M]`**:
-  - `maps_offline`: **Maps & GNSS Navigation** &mdash; Offline vector map tiles with dead-reckoning fusion.
-  - `memory_compactor`: **Memory Compactor** &mdash; Zircon working set compaction & secure cache flush.
-- **`[N]`**:
-  - `neural_voice`: **Neural Voice Dictation** &mdash; Air-gapped on-device spectrogram speech transformer.
-  - `notes_vault`: **Notes & Vault** &mdash; Encrypted document store with localized OCR & redaction.
-- **`[S]`**:
-  - `settings_mesh`: **Settings & Security Mesh** &mdash; EL1 authority levels, capability routing table.
-  - `spotify_audio`: **Spotify Lossless Audio** &mdash; Direct 48kHz audio HAL streaming.
-- **`[U]`**:
-  - `uber_dispatch`: **Uber Ride Dispatch** &mdash; Ride hailing dispatch gated by Policy Gate Level 3.
-  - `upi_transfer`: **UPI Fast Transfer (₹5,000)** &mdash; High-value transaction requiring human biometric approval.
-- **`[W]`**:
-  - `weather_telemetry`: **Weather & Barometer** &mdash; Microclimate barometric sensor stream.
-  - `whatsapp_im`: **WhatsApp Messenger** &mdash; Sandboxed end-to-end messaging via Starnix VMO.
+### 4.1 Sleek Glowing Squircle Letter Ribbons
+- **Header Tiles (`.metro-letter-header-tile`)**: Organic 14px squircle buttons with translucent glass fills (`background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(124, 77, 255, 0.25))`), vibrant cyan typography, and glowing active beacons (`.metro-letter-beacon`).
+- **Category Ribbons (`.metro-letter-pill`)**: High-contrast, minimalist pill counters displaying the number of active capabilities registered under each letter.
 
-### 4.2 Grouping & Alphabetical Index Algorithm
-The pure function `groupAppsAlphabetically(apps)` groups and sorts the catalog in $\mathcal{O}(N \log N)$ time:
-```javascript
-export function groupAppsAlphabetically(apps = BUILTIN_APPS) {
-  const sorted = [...apps].sort((a, b) => a.name.localeCompare(b.name));
-  const grouped = new Map();
+### 4.2 Modern App Items & Micro-Interactions
+- **App Items (`.metro-app-item`)**: Squircle cards with 18px radii, subtle specular inner highlights, and ambient drop shadows.
+- **High-DPI App Glyphs (`.metro-app-icon-box`)**: 14px squircle icon backdrops with gradient colors, 3D specular shine (`.icon-specular-sheen`), and crisp emoji/SVG glyphs.
+- **Nothing OS Status Badges (`.metro-launch-badge`)**:
+  - `DAG` badge: Neon cyan border, ambient glow, and pulsing cyan micro-dot.
+  - `ZERO-TAX` badge: Neon violet border, ambient glow, and pulsing purple micro-dot.
+- **Haptic Micro-Bounce**: Tapping an app item triggers tactile compression (`@keyframes appLaunchBounce` scaling down to 0.94 and brightening) before dispatching the launch action.
 
-  for (const app of sorted) {
-    const letter = (app.letter || app.name.charAt(0)).toUpperCase();
-    if (!grouped.has(letter)) {
-      grouped.set(letter, []);
-    }
-    grouped.get(letter).push(app);
-  }
-
-  const activeLetters = Array.from(grouped.keys()).sort();
-  const allLetters = [];
-
-  for (let c = 65; c <= 90; c++) {
-    const char = String.fromCharCode(c);
-    const count = grouped.has(char) ? grouped.get(char).length : 0;
-    allLetters.push({
-      letter: char,
-      active: count > 0,
-      count
-    });
-  }
-
-  return { grouped, activeLetters, allLetters, totalCount: apps.length };
-}
-```
-
-### 4.3 4x7 Metro Alphabet Quick Jump Grid Modal
-Tapping any square letter header button (e.g. `[A]`, `[C]`, `[M]`) opens a full 4x7 grid modal showing letters A through Z:
-- Active letters with registered apps are illuminated in bold accent cyan with item count badges.
-- Inactive letters without apps are dimmed and disabled.
-- Tapping any active letter closes the modal, smoothly scrolls directly to that letter section (`scrollIntoView({ behavior: 'smooth', block: 'start' })`), and pulses the section with a neon highlight animation (`jump-highlight`).
-
-### 4.4 Instant Reactive Search Filtering
-The search bar provides instantaneous $\mathcal{O}(N)$ reactive filtering across app names, categories, descriptions, and searchable tags:
-```javascript
-export function filterApps(apps = BUILTIN_APPS, query = '') {
-  const trimmed = query.trim().toLowerCase();
-  if (!trimmed) return [...apps];
-
-  return apps.filter((app) => {
-    if (app.name.toLowerCase().includes(trimmed)) return true;
-    if (app.category && app.category.toLowerCase().includes(trimmed)) return true;
-    if (app.description && app.description.toLowerCase().includes(trimmed)) return true;
-    if (app.tags && app.tags.some(t => t.toLowerCase().includes(trimmed))) return true;
-    return false;
-  });
-}
-```
+### 4.3 Catalog Alphabetic Coverage
+The catalog contains 14+ capabilities grouped under canonical letter buckets:
+- **`[A]`**: Air-Gap Matrix Killswitch, Android Bridge (Starnix), Audit Ledger Inspector
+- **`[C]`**: Camera IMX890 Pro, Crypto Remittance (USDC)
+- **`[M]`**: Maps & GNSS Navigation, Memory Compactor
+- **`[N]`**: Neural Voice Dictation, Notes & Vault
+- **`[S]`**: Settings & Security Mesh, Spotify Lossless Audio
+- **`[U]`**: Uber Ride Dispatch, UPI Fast Transfer (₹5,000)
+- **`[W]`**: Weather & Barometer, WhatsApp Messenger
 
 ---
 
-## 5. Dual Execution Models: DAG Cards vs Ephemeral Windows
+## 5. Floating Glass Prism Alphabet Fast-Jump Picker
+
+Tapping any squircle letter header tile opens the **Floating Glass Prism Modal** (`#metro-jump-modal`):
+
+```mermaid
+flowchart LR
+    A["Tap Squircle Header [A] / [C] / [M]"] --> B["Open Floating Glass Prism Modal"]
+    B --> C["4x7 Grid: Letters A-Z with Glowing Beacons"]
+    C -->|Select Active Letter| D["Close Modal & Smoothly Scroll to Letter Section"]
+    D --> E["Section Glows with Neon Highlight Pulse"]
+```
+
+### 5.1 Prism Modal Features
+- **Prismatic Glass Chassis (`.glass-prism-card`)**: Multi-layer frosted glass with `backdrop-filter: blur(36px) saturate(220%)`, 26px squircle corners, and chromatic edge refraction (`.glass-prism-sheen`).
+- **4x7 Jump Grid (`.metro-jump-grid`)**:
+  - **Active Letters (`.tile-active`)**: Glowing squircle beacons illuminated with cyan/violet gradients, specular borders, active beacon dots (`.jump-beacon-dot`), and capability count badges.
+  - **Inactive Letters (`.tile-inactive`)**: Subtly dimmed with zero egress to maintain clean visual rhythm.
+- **One-Touch Navigation**: Tapping any active letter smoothly scrolls directly to that letter's section and illuminates it with a glowing neon pulse animation (`@keyframes metroJumpPulse`).
+
+---
+
+## 6. Dual Execution Model: DAG Cards vs. Ephemeral Windows
 
 PravahOS supports two distinct execution paths upon launching an app or capability:
 
-### 5.1 Native PravahOS DAG Card Execution (`launchType: 'dag'`)
-For complex, multi-stage, or policy-gated workflows (e.g. Flight AI-202 itinerary reminder, ₹5,000 UPI transfer, 250 USDC remittance, Camera document capture):
-1. Drawer dispatches `onLaunchApp(app, 'dag')`.
-2. Automatically collapses the Living Drawer to return focus to the Active Shell Workspace.
-3. Injects the intent into the Intent Bar and executes the topological DAG card sequence across staged microkernel capability nodes.
+```mermaid
+flowchart TD
+    App["Capability Selected in Living Drawer"] --> CheckType{"Execution Type"}
+    
+    CheckType -->|launchType: 'dag'| DAG["Native Shell DAG Scenario"]
+    CheckType -->|launchType: 'ephemeral'| Eph["Ephemeral Zero-Tax Window"]
+    
+    DAG --> D1["1. Drawer Slides Down (Collapse)<br/>2. Intent Injected into Intent Bar<br/>3. Staged Microkernel DAG Execution in Active Workspace"]
+    Eph --> E1["1. Drawer Slides Down (Collapse)<br/>2. Floating Ephemeral Window Instantiated<br/>3. Interactive Hardware Utility Rendered (Zero Shell Tax)"]
+```
 
-### 5.2 Ephemeral Zero-Tax Window Execution (`launchType: 'ephemeral'`)
-For rapid, glanceable utility tasks where a full DAG execution sequence would be excessive (e.g. toggling individual RF power switches, checking barometric pressure, inspecting the audit ledger hash chain, testing offline NPU speech dictation):
-1. Managed by the `EphemeralWindowManager`.
-2. Instantiates a floating frosted-glass overlay window with minimal overhead.
-3. Features an integrated header with app glyph, title, category, minimize (`_`), and close (`✕`) buttons.
-4. Renders specialized interactive capability cards:
+### 6.1 Native PravahOS DAG Card Execution (`launchType: 'dag'`)
+For complex, multi-stage, or policy-gated workflows (e.g. Flight AI-202 itinerary, ₹5,000 UPI transfer, 250 USDC remittance, Camera IMX890 RAW pipeline):
+1. living drawer collapses to return focus to the Shell Workspace.
+2. The scenario executes across staged microkernel capability nodes with topological progress visualization.
+
+### 6.2 Ephemeral Zero-Tax Window Execution (`launchType: 'ephemeral'`)
+For rapid, glanceable utility tasks (e.g. toggling hardware RF switches, checking barometric pressure, inspecting the audit ledger, running offline voice dictation):
+1. Managed by `EphemeralWindowManager`.
+2. Instantiates a floating frosted-glass window (`.ephemeral-window`) with minimal overhead.
+3. Provides specialized interactive capability cards:
    - **Air-Gap Matrix Killswitch**: Individual hardware radio toggles (5G NR, Wi-Fi 7, Bluetooth 5.4, NFC/UWB).
    - **Weather & Barometer**: 26°C hero readout, 1013.2 hPa atmospheric pressure, humidity, UV index.
-   - **Audit Ledger Inspector**: Sealed hash verification, genesis block inspection, cryptographic integrity indicator.
+   - **Audit Ledger Inspector**: Sealed SHA-256 hash verification, genesis block inspection, cryptographic ledger chain.
    - **Neural Voice Dictation**: INT8 offline speech transformer preview with dynamic spectrogram equalizer.
 
 ---
 
-## 6. Verification & Automated Test Suite
+## 7. Verification & Automated Test Suite
 
-The Living Drawer and Metro UI subsystem is verified through unit tests in `ui/tests/drawer.test.js`:
-- **State Machine Transitions**: `COLLAPSED` $\leftrightarrow$ `EXPANDED`, `toggle()`, and state change callbacks.
-- **Live Tile Flip Mechanics**: `flipTile()`, `flipAll()`, 3D CSS class manipulation, front/back face verification.
-- **Dynamic Tickers**: 5-bar equalizer generator bounds $[0.15, 0.98]$, flight countdown string formatting (`MM:SS` & `HH:MM`).
-- **Alphabetical Grouping**: Letter extraction, canonical header presence (`[A]`, `[C]`, `[M]`, `[N]`, `[S]`, `[U]`, `[W]`), 26-letter metadata flags.
-- **Search Filtering**: Substring matching across names, categories, descriptions, and tags with case-insensitivity.
-- **Dual Launch Mechanics**: DAG scenario dispatch vs Ephemeral overlay window lifecycle (open, minimize, close, closeAll).
-- **Fast-Jump Navigation**: Modal display toggle and scroll navigation logic.
+The Living Drawer and Neo-Metro UI Subsystem is verified by an extensive automated test suite covering state machines, live tickers, search algorithms, and window managers:
 
-Run the entire test suite with:
 ```powershell
-node --test ui/tests/*.test.js
+node --test ui/tests/drawer.test.js ui/tests/*.test.js
 ```
-*Result: 83 tests passing with 0 failures.*
+
+### 7.1 Test Coverage Highlights
+- **State Machine Transitions**: `COLLAPSED` $\leftrightarrow$ `EXPANDED`, `toggle()`, transform style reflections, and callback notifications.
+- **Bento Live Tiles**: 4 dynamic tile data structures, individual `flipTile()`, master `flipAll()`, 3D CSS class manipulation, normalized frequency bounds $[0.15, 0.98]$ for equalizer bars, countdown string formatting (`MM:SS` & `HH:MM`), and real-time telemetry updates.
+- **Alphabetical Grouping & Search**: Alphabetical sorting, required canonical fast-jump headers (`[A]`, `[C]`, `[M]`, `[N]`, `[S]`, `[U]`, `[W]`), 26-letter metadata coverage, and instantaneous multi-attribute filtering.
+- **Dual Launch Mechanics**: DAG scenario dispatch vs Ephemeral overlay window lifecycle (`openWindow`, `toggleMinimize`, `closeWindow`, `closeAll`).
+- **Prism Fast-Jump Navigation**: Modal state toggling, letter jump target scrolling, and visual highlight pulses.
+
+*Result: 98 tests passing with 0 failures across the complete PravahOS UI test suite.*

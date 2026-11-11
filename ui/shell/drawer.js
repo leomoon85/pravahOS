@@ -776,15 +776,22 @@ export class LivingDrawer {
 
       </div>
 
-      <!-- Metro Fast-Jump Alphabet Picker Modal -->
+      <!-- Neo-Metro Floating Glass Prism Modal -->
       <div class="metro-jump-modal-backdrop" id="metro-jump-modal">
-        <div class="metro-jump-card">
+        <div class="metro-jump-card glass-prism-card">
+          <div class="glass-prism-sheen" aria-hidden="true"></div>
           <div class="metro-jump-header">
-            <span>Jump to Letter</span>
-            <button class="btn-jump-close" id="btn-jump-close">✕</button>
+            <div class="prism-header-title">
+              <span class="prism-beacon-dot"></span>
+              <span>Capability Index Jump</span>
+            </div>
+            <button class="btn-jump-close" id="btn-jump-close" title="Close Index Picker">✕</button>
           </div>
           <div class="metro-jump-grid" id="metro-jump-grid">
             ${this._renderFastJumpGridHtml()}
+          </div>
+          <div class="metro-jump-footer">
+            <span class="jump-footer-tip">Select letter to navigate instantly</span>
           </div>
         </div>
       </div>
@@ -794,7 +801,7 @@ export class LivingDrawer {
   }
 
   /**
-   * Generates HTML for the 4 Glanceable Live Tiles.
+   * Generates HTML for the 4 Glanceable Live Tiles in Neo-Metro Bento Grid.
    */
   _renderLiveTilesHtml() {
     const s = this.liveTiles[TileId.SPOTIFY];
@@ -803,24 +810,45 @@ export class LivingDrawer {
     const a = this.liveTiles[TileId.AIRGAP];
 
     return `
-      <!-- 1. Active Spotify Playback Tile with EQ Bars -->
-      <div class="live-tile tile-wide tile-spotify ${s.flipped ? 'flipped' : ''}" id="tile-spotify" data-tile-id="${TileId.SPOTIFY}">
+      <!-- 1. Active Spotify Hero 2x1 Bento Tile with Floating Rotating Vinyl & Audio Wave Ribbon -->
+      <div class="live-tile bento-tile tile-wide tile-hero-2x1 tile-spotify ${s.flipped ? 'flipped' : ''}" id="tile-spotify" data-tile-id="${TileId.SPOTIFY}">
         <div class="tile-face tile-front">
           <div class="tile-top-row">
             <div class="tile-icon-group">
               <span class="tile-glyph">🎵</span>
               <span class="tile-badge">AUDIO HAL</span>
+              <span class="tile-dot-live"></span>
             </div>
             <div class="tile-eq-visualizer" id="spotify-eq-bars">
               ${(s.front.eqBars || [0.5, 0.8, 0.4, 0.9, 0.6]).map(h => `<div class="eq-bar" style="height:${Math.round(h * 100)}%;"></div>`).join('')}
             </div>
           </div>
-          <div class="tile-middle-info">
-            <div class="tile-title" id="spotify-track-title">${s.front.track}</div>
-            <div class="tile-sub" id="spotify-artist">${s.front.artist}</div>
+          <div class="tile-middle-info tile-hero-middle">
+            <div class="spotify-hero-content">
+              <div class="tile-title" id="spotify-track-title">${s.front.track}</div>
+              <div class="tile-sub" id="spotify-artist">${s.front.artist}</div>
+              <!-- Animated Soundwave Ribbon -->
+              <div class="soundwave-ribbon" aria-hidden="true">
+                <span class="soundwave-line wave-1"></span>
+                <span class="soundwave-line wave-2"></span>
+                <span class="soundwave-line wave-3"></span>
+                <span class="soundwave-line wave-4"></span>
+                <span class="soundwave-line wave-5"></span>
+                <span class="soundwave-line wave-6"></span>
+                <span class="soundwave-line wave-7"></span>
+              </div>
+            </div>
+            <!-- Floating Rotating Vinyl Disc -->
+            <div class="spotify-vinyl-disc ${s.front.isPlaying ? 'spinning' : ''}" aria-hidden="true">
+              <div class="vinyl-groove groove-outer"></div>
+              <div class="vinyl-groove groove-inner"></div>
+              <div class="vinyl-center-label">
+                <span class="vinyl-spindle"></span>
+              </div>
+            </div>
           </div>
           <div class="tile-bottom-row">
-            <span class="tile-meta-tag">48kHz DIRECT DMA</span>
+            <span class="tile-meta-tag">48kHz DIRECT DMA • ZERO JITTER</span>
             <button class="tile-flip-btn" data-tile="${TileId.SPOTIFY}" title="Flip tile details">↻</button>
           </div>
         </div>
@@ -833,15 +861,16 @@ export class LivingDrawer {
             <div class="spec-row"><span>Codec:</span> <strong>${s.back.codec}</strong></div>
             <div class="spec-row"><span>Audio Sink:</span> <strong>${s.back.sink}</strong></div>
             <div class="spec-row"><span>Latency:</span> <strong>${s.back.latency}</strong></div>
+            <div class="spec-row"><span>Buffer:</span> <strong>${s.back.bufferHealth}</strong></div>
           </div>
           <div class="tile-bottom-row">
-            <span class="tile-action-hint">Tap to Launch Spotify DAG</span>
+            <span class="tile-action-hint">Tap to Launch Spotify DAG ➔</span>
           </div>
         </div>
       </div>
 
-      <!-- 2. Flight AI-202 Gate Countdown Tile -->
-      <div class="live-tile tile-medium tile-flight ${f.flipped ? 'flipped' : ''}" id="tile-flight" data-tile-id="${TileId.FLIGHT}">
+      <!-- 2. Flight AI-202 Radar Bento Tile -->
+      <div class="live-tile bento-tile tile-medium tile-flight ${f.flipped ? 'flipped' : ''}" id="tile-flight" data-tile-id="${TileId.FLIGHT}">
         <div class="tile-face tile-front">
           <div class="tile-top-row">
             <div class="tile-icon-group">
@@ -850,9 +879,16 @@ export class LivingDrawer {
             </div>
             <span class="tile-status-pill ${f.front.status === 'BOARDING' ? 'pulse-amber' : 'pulse-cyan'}">${f.front.status}</span>
           </div>
-          <div class="tile-middle-info">
+          <div class="tile-middle-info flight-bento-middle">
             <div class="flight-route-display">${f.front.route}</div>
             <div class="flight-countdown-val" id="flight-countdown-val">${formatCountdown(f.front.countdownSec)}</div>
+            <!-- Flight Radar Sweep Graphic -->
+            <div class="flight-radar-scope" aria-hidden="true">
+              <div class="radar-ring ring-1"></div>
+              <div class="radar-ring ring-2"></div>
+              <div class="radar-sweep"></div>
+              <div class="radar-blip"></div>
+            </div>
           </div>
           <div class="tile-bottom-row">
             <span class="tile-meta-tag">Gate ${f.front.gate} • Term ${f.front.terminal}</span>
@@ -868,15 +904,16 @@ export class LivingDrawer {
             <div class="spec-row"><span>Aircraft:</span> <strong>${f.back.aircraft}</strong></div>
             <div class="spec-row"><span>Dest:</span> <strong>${f.back.destWeather}</strong></div>
             <div class="spec-row"><span>Baggage:</span> <strong>${f.back.baggageClaim}</strong></div>
+            <div class="spec-row"><span>On-Time:</span> <strong>${f.back.onTimeRate}</strong></div>
           </div>
           <div class="tile-bottom-row">
-            <span class="tile-action-hint">Tap to Launch Flight Scenario</span>
+            <span class="tile-action-hint">Tap to Launch Flight Scenario ➔</span>
           </div>
         </div>
       </div>
 
-      <!-- 3. Battery / Power Fuel Gauge Card -->
-      <div class="live-tile tile-medium tile-battery ${b.flipped ? 'flipped' : ''}" id="tile-battery" data-tile-id="${TileId.BATTERY}">
+      <!-- 3. Battery / Power Fuel Gauge Bento Tile -->
+      <div class="live-tile bento-tile tile-medium tile-battery ${b.flipped ? 'flipped' : ''}" id="tile-battery" data-tile-id="${TileId.BATTERY}">
         <div class="tile-face tile-front">
           <div class="tile-top-row">
             <div class="tile-icon-group">
@@ -885,9 +922,11 @@ export class LivingDrawer {
             </div>
             <span class="battery-pct-pill" id="battery-pct-pill">${b.front.level}%</span>
           </div>
-          <div class="tile-middle-info">
-            <div class="fuel-gauge-bar-wrap">
-              <div class="fuel-gauge-fill" id="battery-fuel-fill" style="width: ${b.front.level}%;"></div>
+          <div class="tile-middle-info battery-bento-middle">
+            <div class="fuel-gauge-capsule">
+              <div class="fuel-gauge-bar-wrap">
+                <div class="fuel-gauge-fill" id="battery-fuel-fill" style="width: ${b.front.level}%;"></div>
+              </div>
             </div>
             <div class="fuel-gauge-meta">
               <span id="battery-runtime-val">${b.front.runtimeRemaining}</span>
@@ -908,29 +947,39 @@ export class LivingDrawer {
             <div class="spec-row"><span>Anode:</span> <strong>${b.back.cellHealth}</strong></div>
             <div class="spec-row"><span>Temp:</span> <strong>${b.back.tempC}°C</strong></div>
             <div class="spec-row"><span>Cycles:</span> <strong>${b.back.cycleCount}</strong></div>
+            <div class="spec-row"><span>Fast Charge:</span> <strong>${b.back.fastChargeReady}</strong></div>
           </div>
           <div class="tile-bottom-row">
-            <span class="tile-action-hint">Tap to Inspect Power HAL</span>
+            <span class="tile-action-hint">Tap to Inspect Power HAL ➔</span>
           </div>
         </div>
       </div>
 
-      <!-- 4. Weather & Air-Gap Cryptographic Status Card -->
-      <div class="live-tile tile-wide tile-airgap ${a.flipped ? 'flipped' : ''}" id="tile-airgap" data-tile-id="${TileId.AIRGAP}">
+      <!-- 4. Air-Gap Cryptographic Badge Bento Tile -->
+      <div class="live-tile bento-tile tile-wide tile-airgap ${a.flipped ? 'flipped' : ''}" id="tile-airgap" data-tile-id="${TileId.AIRGAP}">
         <div class="tile-face tile-front">
           <div class="tile-top-row">
             <div class="tile-icon-group">
               <span class="tile-glyph">🛡️</span>
               <span class="tile-badge">AIR-GAP MESH</span>
+              <span class="crypto-quantum-badge">POST-QUANTUM</span>
             </div>
             <div class="airgap-secure-indicator">
               <div class="pulse-dot-green"></div>
               <span>${a.front.status}</span>
             </div>
           </div>
-          <div class="tile-middle-info">
-            <div class="tile-title">Hardware RF Killswitch Enforced</div>
-            <div class="tile-sub">All 4 radios cut • Zero telemetry egress • Microkernel locked</div>
+          <div class="tile-middle-info airgap-bento-middle">
+            <div class="airgap-badge-meta">
+              <div class="tile-title">Hardware RF Killswitch Enforced</div>
+              <div class="tile-sub">All 4 radios cut • Zero telemetry egress • Microkernel EL1 locked</div>
+            </div>
+            <div class="airgap-chip-graphic" aria-hidden="true">
+              <span class="chip-pin pin-1"></span>
+              <span class="chip-pin pin-2"></span>
+              <span class="chip-pin pin-3"></span>
+              <span class="chip-core">SEC</span>
+            </div>
           </div>
           <div class="tile-bottom-row">
             <span class="tile-meta-tag">${a.front.cryptoScheme}</span>
@@ -946,9 +995,10 @@ export class LivingDrawer {
             <div class="spec-row"><span>Enforcement:</span> <strong>${a.back.enforcement}</strong></div>
             <div class="spec-row"><span>Net Stack:</span> <strong>${a.back.ipStack}</strong></div>
             <div class="spec-row"><span>Ledger:</span> <strong>${a.back.auditLedger}</strong></div>
+            <div class="spec-row"><span>Tamper State:</span> <strong>${a.back.tamperState}</strong></div>
           </div>
           <div class="tile-bottom-row">
-            <span class="tile-action-hint">Tap to Toggle Air-Gap Isolation</span>
+            <span class="tile-action-hint">Tap to Toggle Air-Gap Isolation ➔</span>
           </div>
         </div>
       </div>
@@ -956,7 +1006,7 @@ export class LivingDrawer {
   }
 
   /**
-   * Generates the Windows Phone / Metro-style Alphabetical A-Z List HTML.
+   * Generates the Windows Phone / Metro-style Alphabetical A-Z List HTML in Neo-Metro aesthetic.
    */
   _renderMetroListHtml() {
     const filtered = filterApps(this.apps, this.searchQuery);
@@ -976,12 +1026,16 @@ export class LivingDrawer {
     for (const [letter, letterApps] of grouped.entries()) {
       html += `
         <div class="metro-letter-section" id="section-letter-${letter}" data-letter="${letter}">
-          <!-- Windows Phone Metro Square Header Button -->
+          <!-- Modern Neo-Metro Sleek Squircle Letter Ribbon -->
           <div class="metro-letter-header-wrap">
             <button class="metro-letter-header-tile" data-jump-trigger="${letter}" title="Jump to letter [${letter}]">
-              ${letter}
+              <span class="metro-letter-char">${letter}</span>
+              <span class="metro-letter-beacon" aria-hidden="true"></span>
             </button>
-            <span class="metro-letter-count">${letterApps.length} item${letterApps.length > 1 ? 's' : ''}</span>
+            <div class="metro-letter-ribbon-info">
+              <span class="metro-letter-pill">${letterApps.length} ${letterApps.length === 1 ? 'capability' : 'capabilities'}</span>
+            </div>
+            <span class="metro-letter-count" style="display:none;">${letterApps.length} item${letterApps.length > 1 ? 's' : ''}</span>
           </div>
 
           <!-- Apps under this letter -->
@@ -989,17 +1043,20 @@ export class LivingDrawer {
             ${letterApps.map(app => `
               <div class="metro-app-item" data-app-id="${app.id}" data-launch-type="${app.launchType}" tabindex="0">
                 <div class="metro-app-icon-box" style="background:${app.accent || '#00e5ff'};">
-                  <span>${app.icon || '✧'}</span>
+                  <span class="metro-glyph-inner">${app.icon || '✧'}</span>
+                  <div class="icon-specular-sheen" aria-hidden="true"></div>
                 </div>
                 <div class="metro-app-content">
                   <div class="metro-app-primary">
                     <span class="metro-app-name">${app.name}</span>
                     <span class="metro-launch-badge ${app.launchType === 'dag' ? 'badge-dag' : 'badge-ephemeral'}">
+                      <span class="badge-dot"></span>
                       ${app.launchType === 'dag' ? 'DAG' : 'ZERO-TAX'}
                     </span>
                   </div>
                   <div class="metro-app-desc">${app.description || ''}</div>
                 </div>
+                <div class="metro-app-arrow" aria-hidden="true">›</div>
               </div>
             `).join('')}
           </div>
@@ -1011,7 +1068,7 @@ export class LivingDrawer {
   }
 
   /**
-   * Generates the 4x7 Metro Alphabet Fast-Jump Picker Grid.
+   * Generates the 4x7 Metro Alphabet Fast-Jump Picker Grid with Glowing Active Letter Beacons.
    */
   _renderFastJumpGridHtml() {
     const { allLetters } = groupAppsAlphabetically(this.apps);
@@ -1023,7 +1080,10 @@ export class LivingDrawer {
         title="${item.active ? `${item.count} capabilities under [${item.letter}]` : `No capabilities under [${item.letter}]`}"
       >
         <span class="jump-char">${item.letter}</span>
-        ${item.active ? `<span class="jump-count">${item.count}</span>` : ''}
+        ${item.active ? `
+          <span class="jump-beacon-dot" aria-hidden="true"></span>
+          <span class="jump-count">${item.count}</span>
+        ` : ''}
       </button>
     `).join('');
   }
@@ -1082,13 +1142,16 @@ export class LivingDrawer {
     tiles.forEach((tile) => {
       tile.addEventListener('click', (e) => {
         // If clicking flip button directly, ignore
-        if (e.target.closest('.tile-flip-btn')) return;
-        const tileId = tile.getAttribute('data-tile-id');
-        this.handleTileClick(tileId);
+        if (e.target.closest && e.target.closest('.tile-flip-btn')) return;
+        const tileId = tile.getAttribute ? tile.getAttribute('data-tile-id') : null;
+        if (tileId) this.handleTileClick(tileId);
       });
     });
 
-    // 6. Metro letter header clicks (open fast jump)
+    // 6. Holographic 3D parallax tilt & specular light sheen on tiles
+    this._bindTileHolographicTilt();
+
+    // 7. Metro letter header clicks (open fast jump)
     const letterHeaders = this.container.querySelectorAll('[data-jump-trigger]');
     letterHeaders.forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -1096,13 +1159,13 @@ export class LivingDrawer {
       });
     });
 
-    // 7. Fast jump modal close
+    // 8. Fast jump modal close
     const btnJumpClose = this.container.querySelector('#btn-jump-close');
     btnJumpClose?.addEventListener('click', () => {
       this.closeFastJumpModal();
     });
 
-    // 8. Fast jump grid letters
+    // 9. Fast jump grid letters
     const jumpTiles = this.container.querySelectorAll('.metro-jump-tile.tile-active');
     jumpTiles.forEach((tile) => {
       tile.addEventListener('click', () => {
@@ -1111,12 +1174,60 @@ export class LivingDrawer {
       });
     });
 
-    // 9. App list item launch clicks
+    // 10. App list item launch clicks
     this._bindAppItemClicks();
   }
 
   /**
-   * Bind app item tap handlers.
+   * Dynamic Holographic 3D Parallax Tilt with liquid specular sheen tracking.
+   */
+  _bindTileHolographicTilt() {
+    if (!this.container) return;
+    const tiles = this.container.querySelectorAll('.live-tile');
+    if (!tiles || typeof tiles.forEach !== 'function') return;
+
+    tiles.forEach((tile) => {
+      if (!tile || !tile.addEventListener) return;
+
+      const handleMove = (e) => {
+        if (!tile.getBoundingClientRect) return;
+        const rect = tile.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+
+        const x = (e.clientX - rect.left) / rect.width;
+        const y = (e.clientY - rect.top) / rect.height;
+
+        // Subtle 3D tilt: ±8 deg
+        const tiltX = ((y - 0.5) * -14).toFixed(2);
+        const tiltY = ((x - 0.5) * 14).toFixed(2);
+        const sheenX = (x * 100).toFixed(1) + '%';
+        const sheenY = (y * 100).toFixed(1) + '%';
+
+        if (tile.style && tile.style.setProperty) {
+          tile.style.setProperty('--tilt-x', `${tiltX}deg`);
+          tile.style.setProperty('--tilt-y', `${tiltY}deg`);
+          tile.style.setProperty('--sheen-x', sheenX);
+          tile.style.setProperty('--sheen-y', sheenY);
+        }
+      };
+
+      const handleLeave = () => {
+        if (tile.style && tile.style.setProperty) {
+          tile.style.setProperty('--tilt-x', '0deg');
+          tile.style.setProperty('--tilt-y', '0deg');
+          tile.style.setProperty('--sheen-x', '50%');
+          tile.style.setProperty('--sheen-y', '50%');
+        }
+      };
+
+      tile.addEventListener('pointermove', handleMove);
+      tile.addEventListener('pointerleave', handleLeave);
+      tile.addEventListener('pointercancel', handleLeave);
+    });
+  }
+
+  /**
+   * Bind app item tap handlers with micro-bounce and glowing trail.
    */
   _bindAppItemClicks() {
     if (!this.container) return;
@@ -1126,7 +1237,7 @@ export class LivingDrawer {
         const appId = item.getAttribute('data-app-id');
         const app = this.apps.find(a => a.id === appId);
         if (app) {
-          this.launchApp(app);
+          this.launchApp(app, item);
         }
       });
     });
@@ -1161,7 +1272,12 @@ export class LivingDrawer {
    * 1. 'dag': Triggers a native PravahOS DAG scenario in the workspace.
    * 2. 'ephemeral': Launches into a zero-tax overlay window.
    */
-  launchApp(app) {
+  launchApp(app, triggerEl = null) {
+    if (triggerEl && triggerEl.classList && triggerEl.classList.add) {
+      triggerEl.classList.add('app-launch-bounce');
+      setTimeout(() => triggerEl.classList.remove('app-launch-bounce'), 320);
+    }
+
     try {
       haptics?.mediumSnap();
     } catch (_) {}
