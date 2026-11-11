@@ -66,33 +66,7 @@ echo "[4/5] Packaging Android Boot Image v4..."
 BOOT_IMG_OUT="${OUTPUT_DIR}/pravah_boot.img"
 VENDOR_BOOT_OUT="${OUTPUT_DIR}/pravah_vendor_boot.img"
 
-# Use existing GKI kernel or staged binary if present
-GKI_KERNEL="${PROJECT_ROOT}/kernel/Image.lz4"
-if [ ! -f "${GKI_KERNEL}" ]; then
-  echo "      NOTE: Staged GKI Image.lz4 not present. Creating kernel placeholder for offline packaging verification..."
-  GKI_KERNEL="${OUTPUT_DIR}/mock_kernel_stub.bin"
-  dd if=/dev/zero of="${GKI_KERNEL}" bs=4096 count=1024 2>/dev/null
-fi
-
-node -e "
-import('${PROJECT_ROOT}/tools/flashing/mkbootimg.js').then(m => {
-  const fs = require('fs');
-  const kernelBuf = fs.readFileSync('${GKI_KERNEL}');
-  const dtbBuf = fs.readFileSync('${DTB_OUT}');
-  
-  const bootImg = m.createBootImageV4({
-    kernelBuffer: kernelBuf,
-    cmdline: '${BOOT_CMDLINE}'
-  });
-  fs.writeFileSync('${BOOT_IMG_OUT}', bootImg);
-  
-  const vendorBootImg = m.createVendorBootImageV4({
-    dtbBuffer: dtbBuf,
-    boardName: 'PANTHER_GS201'
-  });
-  fs.writeFileSync('${VENDOR_BOOT_OUT}', vendorBootImg);
-});
-"
+node "${PROJECT_ROOT}/tools/flashing/package_panther.js" "${OUTPUT_DIR}" "${DTB_OUT}"
 
 # 5. Authoritative Image Validation & Checksum Generation
 echo "[5/5] Validating output image structures & generating provenance..."
