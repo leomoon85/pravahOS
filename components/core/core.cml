@@ -1,0 +1,200 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+
+/// Core Realm Manifest for PravahOS.
+/// Moniker: /core
+///
+/// Central routing backbone and capability mediator for userspace services.
+/// Connects the Unified Intelligence Authority (UIA), Deterministic Policy Gate,
+/// Specialist Inference Fabric, Capability Host, and core system facilities.
+///
+/// Security Invariants:
+/// - Principle of Least Privilege: Components only receive capabilities required for their function.
+/// - Unmediated Hardware Isolation: Raw driver nodes and MMIO/IRQ handles are never routed to intelligence.
+/// - Mandatory Security Mediation: UIA cannot invoke high-risk capabilities without the Policy Gate.
+/// - Offline Inference Sandboxing: The Specialist Inference Fabric has no network or ambient file capabilities.
+{
+    children: [
+        {
+            name: "policy_gate",
+            url: "fuchsia-boot:///policy_gate#meta/policy_gate.cm",
+            startup: "eager",
+        },
+        {
+            name: "inference_fabric",
+            url: "fuchsia-boot:///inference_fabric#meta/inference_fabric.cm",
+            startup: "eager",
+        },
+        {
+            name: "capability_host",
+            url: "fuchsia-boot:///capability_host#meta/capability_host.cm",
+            startup: "eager",
+        },
+        {
+            name: "uia",
+            url: "fuchsia-boot:///uia#meta/uia.cm",
+            startup: "eager",
+        },
+    ],
+    capabilities: [
+        // Core realm declares storage capabilities backed by storage subsystem
+        {
+            storage: "data",
+            from: "self",
+            backing_dir: "minfs",
+            storage_id: "static_instance_id_or_moniker",
+        },
+        {
+            storage: "cache",
+            from: "self",
+            backing_dir: "minfs",
+            storage_id: "static_instance_id_or_moniker",
+        },
+    ],
+    use: [
+        // Hardware protocols and topological devfs routed from driver_realm via root
+        {
+            protocol: [
+                "fuchsia.boot.Arguments",
+                "fuchsia.boot.FactoryItems",
+                "fuchsia.boot.Items",
+                "fuchsia.boot.ReadOnlyLog",
+                "fuchsia.boot.WriteOnlyLog",
+                "fuchsia.hardware.block.Block",
+                "fuchsia.hardware.display.Coordinator",
+                "fuchsia.hardware.gpu.Device",
+                "fuchsia.hardware.npu.Device",
+                "fuchsia.hardware.power.Device",
+                "fuchsia.hardware.sysmem.Sysmem",
+            ],
+        },
+        {
+            directory: "dev-topological",
+            rights: [
+                "connect",
+                "enumerate",
+                "r*",
+                "w*",
+            ],
+            path: "/dev",
+        },
+    ],
+    offer: [
+        // =========================================================================
+        // Diagnostics & Logging (LogSink & InspectSink)
+        // =========================================================================
+        {
+            protocol: [
+                "fuchsia.inspect.InspectSink",
+                "fuchsia.logger.LogSink",
+            ],
+            from: "parent",
+            to: [
+                "#capability_host",
+                "#inference_fabric",
+                "#policy_gate",
+                "#uia",
+            ],
+        },
+
+        // =========================================================================
+        // Isolated Storage
+        // =========================================================================
+        {
+            storage: "data",
+            from: "self",
+            to: [
+                "#capability_host",
+                "#policy_gate",
+                "#uia",
+            ],
+        },
+        {
+            storage: "cache",
+            from: "self",
+            to: [
+                "#capability_host",
+                "#inference_fabric",
+                "#uia",
+            ],
+        },
+
+        // =========================================================================
+        // Deterministic Policy Gate Routing
+        // Exposed by policy_gate -> Consumed by UIA and Capability Host
+        // =========================================================================
+        {
+            protocol: "pravah.policy.PolicyGate",
+            from: "#policy_gate",
+            to: [
+                "#capability_host",
+                "#uia",
+            ],
+        },
+
+        // =========================================================================
+        // Specialist Inference Fabric Routing
+        // Exposed by inference_fabric -> Consumed exclusively by UIA
+        // =========================================================================
+        {
+            protocol: [
+                "pravah.inference.ModelRegistry",
+                "pravah.inference.SpecialistInference",
+            ],
+            from: "#inference_fabric",
+            to: "#uia",
+        },
+
+        // =========================================================================
+        // Capability Host Routing
+        // Exposed by capability_host -> Consumed by UIA for autonomous execution
+        // =========================================================================
+        {
+            protocol: "pravah.capability.CapabilityProvider",
+            from: "#capability_host",
+            to: "#uia",
+        },
+
+        // =========================================================================
+        // Hardware Acceleration Routing
+        // NPU & GPU routed exclusively to inference_fabric and compositor
+        // =========================================================================
+        {
+            protocol: [
+                "fuchsia.hardware.gpu.Device",
+                "fuchsia.hardware.npu.Device",
+                "fuchsia.hardware.sysmem.Sysmem",
+            ],
+            from: "parent",
+            to: "#inference_fabric",
+        },
+        // Sysmem also offered to capability_host for zero-copy media streaming
+        {
+            protocol: "fuchsia.hardware.sysmem.Sysmem",
+            from: "parent",
+            to: "#capability_host",
+        },
+    ],
+    expose: [
+        // Expose TaskManager to client UI sessions and shell
+        {
+            protocol: "pravah.task.TaskManager",
+            from: "#uia",
+        },
+        // Expose PolicyGate for administrative / session inspection
+        {
+            protocol: "pravah.policy.PolicyGate",
+            from: "#policy_gate",
+        },
+        // Expose ModelRegistry for system telemetry
+        {
+            protocol: "pravah.inference.ModelRegistry",
+            from: "#inference_fabric",
+        },
+        // Expose lifecycle
+        {
+            protocol: "fuchsia.process.Lifecycle",
+            from: "#uia",
+        },
+    ],
+}

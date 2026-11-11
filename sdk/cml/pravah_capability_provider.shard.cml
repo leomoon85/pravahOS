@@ -1,0 +1,18 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+//
+// PravahOS Capability Provider Manifest Shard
+// Provides standard declarations and exposure for modular capability providers.
+{
+    capabilities: [
+        {
+            protocol: "pravah.capability.CapabilityProvider",
+        },
+    ],
+    expose: [
+        {
+            protocol: "pravah.capability.CapabilityProvider",
+            from: "self",
+        },
+    ],
+}

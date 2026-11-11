@@ -1,0 +1,94 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+
+/// Specialist Inference Fabric Component Manifest.
+/// Moniker: /core/inference_fabric
+///
+/// Host and lifecycle orchestrator for on-device quantized specialist neural models.
+/// Models operate as consultative domain specialists under UIA orchestration.
+///
+/// Subsystem Architecture:
+/// - Model Registry: Catalogs loaded models, precision (INT4/INT8/FP16), and memory footprint.
+/// - Dynamic Execution: Offloads tensor operations to NPU (Hexagon/HTP) or GPU via Sysmem zero-copy VMOs.
+/// - Strict Sandboxing:
+///   * OFFLINE-FIRST: Zero network access capability (`fuchsia.posix.socket.Provider` is omitted).
+///   * PRIVACY-FIRST: Zero ambient filesystem access to user data.
+///   * Input/output exchange strictly via short-lived, bounds-checked `zx.Handle:VMO` handles.
+{
+    include: [
+        "//sdk/cml/pravah_base.shard.cml",
+    ],
+    program: {
+        runner: "elf",
+        binary: "bin/inference_fabric",
+        args: [
+            "--weights-dir=/pkg/models",
+            "--cache-dir=/cache/models",
+            "--max-resident-bytes=1073741824", // 1GB memory budget for specialist models
+        ],
+    },
+    collections: [
+        // Dynamic collection for isolated specialist model worker sandboxes
+        {
+            name: "specialist-workers",
+            durability: "transient",
+            environment: "#specialist-env",
+        },
+    ],
+    capabilities: [
+        {
+            protocol: [
+                "pravah.inference.ModelRegistry",
+                "pravah.inference.SpecialistInference",
+            ],
+        },
+    ],
+    use: [
+        // Hardware acceleration endpoints from Driver Realm
+        {
+            protocol: [
+                "fuchsia.hardware.gpu.Device",
+                "fuchsia.hardware.npu.Device",
+                "fuchsia.hardware.sysmem.Sysmem",
+            ],
+        },
+        // Isolated model cache storage
+        {
+            storage: "cache",
+            path: "/cache",
+        },
+    ],
+    offer: [
+        {
+            protocol: [
+                "fuchsia.inspect.InspectSink",
+                "fuchsia.logger.LogSink",
+                "fuchsia.hardware.npu.Device",
+                "fuchsia.hardware.sysmem.Sysmem",
+            ],
+            from: "parent",
+            to: "#specialist-workers",
+        },
+    ],
+    expose: [
+        {
+            protocol: [
+                "pravah.inference.ModelRegistry",
+                "pravah.inference.SpecialistInference",
+            ],
+            from: "self",
+        },
+    ],
+    environments: [
+        {
+            name: "specialist-env",
+            extends: "realm",
+            runners: [
+                {
+                    runner: "elf",
+                    from: "parent",
+                },
+            ],
+        },
+    ],
+}

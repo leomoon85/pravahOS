@@ -1,0 +1,15 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+//
+// PravahOS Inference Client Manifest Shard
+// Provides the ModelRegistry and SpecialistInference protocols for components invoking neural inference.
+{
+    use: [
+        {
+            protocol: [
+                "pravah.inference.ModelRegistry",
+                "pravah.inference.SpecialistInference",
+            ],
+        },
+    ],
+}

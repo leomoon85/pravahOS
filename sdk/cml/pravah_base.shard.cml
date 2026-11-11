@@ -1,0 +1,15 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+//
+// PravahOS Base Component Manifest Shard
+// Provides standard diagnostic protocols (logging and inspect) required by all PravahOS components.
+{
+    use: [
+        {
+            protocol: [
+                "fuchsia.inspect.InspectSink",
+                "fuchsia.logger.LogSink",
+            ],
+        },
+    ],
+}

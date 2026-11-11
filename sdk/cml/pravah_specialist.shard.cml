@@ -1,0 +1,29 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+//
+// PravahOS Specialist Runner Manifest Shard
+// Provides standard environment and protocol bindings for specialist neural model runtimes.
+// Enforces strict offline isolation (zero network socket routing).
+{
+    capabilities: [
+        {
+            protocol: "pravah.inference.SpecialistInference",
+        },
+    ],
+    use: [
+        {
+            protocol: [
+                "fuchsia.inspect.InspectSink",
+                "fuchsia.logger.LogSink",
+                "fuchsia.sysmem.Allocator",
+                "fuchsia.sysmem2.Allocator",
+            ],
+        },
+    ],
+    expose: [
+        {
+            protocol: "pravah.inference.SpecialistInference",
+            from: "self",
+        },
+    ],
+}

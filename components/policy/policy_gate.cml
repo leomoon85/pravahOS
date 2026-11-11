@@ -1,0 +1,51 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+
+/// Deterministic Policy Gate Component Manifest.
+/// Moniker: /core/policy_gate
+///
+/// Uncompromising deterministic security verification layer in PravahOS.
+/// Sits between the Autonomous Task Engine (UIA) and concrete system capabilities.
+///
+/// Architectural Guarantees:
+/// 1. AI Zero Authority: Neural models cannot alter, bypass, or influence policy decisions.
+/// 2. Deterministic State Machine: Evaluates caller tokens, risk tiers, and authority grants against static policies.
+/// 3. Tamper-Evident Audit Logging: Every evaluation generates an audit token recorded to append-only local storage.
+/// 4. Complete Sandboxing: Has zero network access, zero dynamic code loading, and zero direct hardware access.
+{
+    include: [
+        "//sdk/cml/pravah_base.shard.cml",
+    ],
+    program: {
+        runner: "elf",
+        binary: "bin/policy_gate",
+        args: [
+            "--policy-dir=/pkg/data/policies",
+            "--audit-log=/data/audit.log",
+        ],
+    },
+    capabilities: [
+        {
+            protocol: [
+                "pravah.policy.PolicyAdmin",
+                "pravah.policy.PolicyGate",
+            ],
+        },
+    ],
+    use: [
+        // Isolated persistent storage for immutable audit trail and security logs
+        {
+            storage: "data",
+            path: "/data",
+        },
+    ],
+    expose: [
+        {
+            protocol: [
+                "pravah.policy.PolicyAdmin",
+                "pravah.policy.PolicyGate",
+            ],
+            from: "self",
+        },
+    ],
+}

@@ -1,0 +1,107 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+
+/// Root realm manifest for PravahOS.
+/// Moniker: /
+///
+/// Top-level coordinator of the Fuchsia Component Framework (CFv2) tree.
+/// Directly instantiated by `component_manager` upon microkernel handoff.
+///
+/// Responsibilities:
+/// 1. Partitions kernel resources (MMIO, IRQ, SMC, IOMMU) strictly to `driver_realm`.
+/// 2. Isolates the Userspace Driver Framework (DFv2) from the core intelligence and capability services.
+/// 3. Instantiates and supervises the `core` userspace realm.
+/// 4. Enforces the strict rule that no application or intelligence component ever receives
+///    raw hardware capability handles.
+{
+    children: [
+        {
+            name: "driver_realm",
+            url: "fuchsia-boot:///driver_realm#meta/driver_realm.cm",
+            startup: "eager",
+            on_terminate: "reboot",
+        },
+        {
+            name: "core",
+            url: "fuchsia-boot:///core#meta/core.cm",
+            startup: "eager",
+            on_terminate: "reboot",
+        },
+    ],
+    offer: [
+        // =========================================================================
+        // Microkernel Hardware Resources -> driver_realm ONLY
+        // Strict boundary: Never routed to core or application realms.
+        // =========================================================================
+        {
+            protocol: [
+                "fuchsia.boot.RootResource",
+                "fuchsia.kernel.CpuResource",
+                "fuchsia.kernel.DebugResource",
+                "fuchsia.kernel.HypervisorResource",
+                "fuchsia.kernel.InfoResource",
+                "fuchsia.kernel.IommuResource",
+                "fuchsia.kernel.IrqResource",
+                "fuchsia.kernel.MmioResource",
+                "fuchsia.kernel.PowerResource",
+                "fuchsia.kernel.RootJobResource",
+                "fuchsia.kernel.SmcResource",
+                "fuchsia.kernel.VmexResource",
+            ],
+            from: "parent",
+            to: "#driver_realm",
+        },
+        // Boot configuration and early kernel logger to both driver_realm and core
+        {
+            protocol: [
+                "fuchsia.boot.Arguments",
+                "fuchsia.boot.FactoryItems",
+                "fuchsia.boot.Items",
+                "fuchsia.boot.ReadOnlyLog",
+                "fuchsia.boot.WriteOnlyLog",
+            ],
+            from: "parent",
+            to: [
+                "#core",
+                "#driver_realm",
+            ],
+        },
+        // =========================================================================
+        // Driver Services & Device Nodes -> core
+        // Exposes sandboxed hardware abstractions to the system routing backbone.
+        // =========================================================================
+        {
+            protocol: [
+                "fuchsia.hardware.block.Block",
+                "fuchsia.hardware.display.Coordinator",
+                "fuchsia.hardware.gpu.Device",
+                "fuchsia.hardware.npu.Device",
+                "fuchsia.hardware.power.Device",
+                "fuchsia.hardware.sysmem.Sysmem",
+            ],
+            from: "#driver_realm",
+            to: "#core",
+        },
+        {
+            directory: "dev-topological",
+            from: "#driver_realm",
+            to: "#core",
+        },
+        // System log sink routed to children once userspace archivist/log service runs in core
+        {
+            protocol: [
+                "fuchsia.inspect.InspectSink",
+                "fuchsia.logger.LogSink",
+            ],
+            from: "#core",
+            to: "#driver_realm",
+        },
+    ],
+    expose: [
+        // Expose system management protocol up to component_manager if needed
+        {
+            protocol: "fuchsia.process.Lifecycle",
+            from: "#core",
+        },
+    ],
+}

@@ -1,0 +1,80 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+
+/// Unified Intelligence Authority (UIA) Component Manifest.
+/// Moniker: /core/uia
+///
+/// Central orchestration engine for intent decomposition, task graph execution,
+/// and deterministic security coordination in PravahOS.
+///
+/// Architectural Role:
+/// - Maintains the Autonomous Task DAG state machine:
+///   Created -> Understood -> Planned -> Authorized -> Executing -> Verifying -> Completed.
+/// - Consults the Specialist Inference Fabric for semantic understanding and planning.
+/// - Mediates every capability execution through the Deterministic Policy Gate.
+/// - Dispatches authorized actions to isolated Capability Providers via typed FIDL.
+///
+/// Sandboxing Invariants:
+/// - Zero direct hardware access: Cannot touch kernel resources, MMIO, or raw device drivers.
+/// - Bound by Policy Gate: Cannot execute consequential or irreversible tasks without user or gate clearance.
+/// - Clean fault isolation: Failures in inference runtimes or capability plugins do not compromise UIA state.
+{
+    include: [
+        "//sdk/cml/pravah_base.shard.cml",
+    ],
+    program: {
+        runner: "elf",
+        binary: "bin/uia",
+        args: [
+            "--checkpoint-dir=/data/task_checkpoints",
+            "--max-active-tasks=16",
+        ],
+    },
+    capabilities: [
+        {
+            protocol: [
+                "pravah.task.TaskEngineDiagnostics",
+                "pravah.task.TaskManager",
+            ],
+        },
+    ],
+    use: [
+        // Deterministic security gate: Evaluates policy before invoking any capability
+        {
+            protocol: "pravah.policy.PolicyGate",
+        },
+        // Specialist inference contracts: Model discovery and execution
+        {
+            protocol: [
+                "pravah.inference.ModelRegistry",
+                "pravah.inference.SpecialistInference",
+            ],
+        },
+        // Capability execution contracts: Dispatching actions to providers
+        {
+            protocol: [
+                "pravah.capability.CapabilityProvider",
+                "pravah.capability.CapabilityRegistry",
+            ],
+        },
+        // Isolated persistent storage for DAG checkpointing and recovery
+        {
+            storage: "data",
+            path: "/data",
+        },
+        // Ephemeral cache for task decomposition tokens
+        {
+            storage: "cache",
+            path: "/cache",
+        },
+    ],
+    expose: [
+        {
+            protocol: [
+                "pravah.task.TaskEngineDiagnostics",
+                "pravah.task.TaskManager",
+            ],
+            from: "self",
+        },
+    ],
+}

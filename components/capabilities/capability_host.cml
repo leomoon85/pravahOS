@@ -1,0 +1,87 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+
+/// Modular Capability Host Component Manifest.
+/// Moniker: /core/capability_host
+///
+/// Host environment and lifecycle supervisor for PravahOS capability providers.
+/// Every OS action, device access, and external interaction is encapsulated as a
+/// strictly typed, policy-evaluated capability provider.
+///
+/// Security & Isolation:
+/// - Principle of Mutual Distrust: Providers execute in isolated child sandboxes.
+/// - Mandatory Policy Handshake: High-risk operations require verification against the Policy Gate.
+/// - Scoped Hardware Access: Device nodes (sensors, camera, storage) are selectively routed
+///   only to the specific capability provider requiring them.
+{
+    include: [
+        "//sdk/cml/pravah_base.shard.cml",
+    ],
+    program: {
+        runner: "elf",
+        binary: "bin/capability_host",
+    },
+    collections: [
+        // Dynamic collection for pluggable capability provider components
+        {
+            name: "providers",
+            durability: "transient",
+            environment: "#provider-env",
+        },
+    ],
+    capabilities: [
+        {
+            protocol: [
+                "pravah.capability.CapabilityProvider",
+                "pravah.capability.CapabilityRegistry",
+            ],
+        },
+    ],
+    use: [
+        // Deterministic security gate routed from core
+        {
+            protocol: "pravah.policy.PolicyGate",
+        },
+        // Zero-copy memory allocator for media/sensor buffers
+        {
+            protocol: "fuchsia.hardware.sysmem.Sysmem",
+        },
+        // Isolated persistent storage for capability configuration
+        {
+            storage: "data",
+            path: "/data",
+        },
+    ],
+    offer: [
+        {
+            protocol: [
+                "fuchsia.inspect.InspectSink",
+                "fuchsia.logger.LogSink",
+                "pravah.policy.PolicyGate",
+            ],
+            from: "parent",
+            to: "#providers",
+        },
+    ],
+    expose: [
+        {
+            protocol: [
+                "pravah.capability.CapabilityProvider",
+                "pravah.capability.CapabilityRegistry",
+            ],
+            from: "self",
+        },
+    ],
+    environments: [
+        {
+            name: "provider-env",
+            extends: "realm",
+            runners: [
+                {
+                    runner: "elf",
+                    from: "parent",
+                },
+            ],
+        },
+    ],
+}

@@ -21,7 +21,7 @@ This roadmap details the transition to the Google Fuchsia / Zircon microkernel a
 - [ ] Boot Zircon kernel image and reach serial console milestone on ARM64 virtual target
 
 ### Milestone 3: Component Framework & Capability Runtime
-- [ ] Scaffold `component_manager` and base component topology
+- [x] Scaffold `component_manager` and base component topology (CFv2 CML manifests & shards)
 - [ ] Implement userland `CapabilityRegistry` component in Rust / C++
 - [ ] Wire first deterministic capability (e.g., `system.time`, `storage.inspect`) with policy validation
 

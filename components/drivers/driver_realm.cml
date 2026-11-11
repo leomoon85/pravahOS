@@ -1,0 +1,191 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+
+/// Sandboxed Driver Framework (DFv2) Realm for PravahOS.
+/// Moniker: /driver_realm
+///
+/// Encapsulates all user-space device drivers in isolated driver host processes.
+/// In accordance with Zircon microkernel design, zero drivers run in ring 0.
+///
+/// Subsystems managed:
+/// - Neural Processing Unit (NPU) firmware loader and hardware execution queue.
+/// - Graphics Processing Unit (GPU / Adreno / Mali / VirtIO-GPU).
+/// - Storage controllers (NVMe / UFS / eMMC / VirtIO-Block).
+/// - Display controller (DSI / DP / VirtIO-GPU Display).
+/// - Zero-copy shared memory allocator (Sysmem).
+/// - Sensors, audio, and communications (Bluetooth / Wi-Fi / Cellular).
+{
+    collections: [
+        // Dynamic collection for isolated driver host processes.
+        // Each driver runs in a dedicated userspace process with isolated address space.
+        {
+            name: "driver-hosts",
+            durability: "transient",
+            environment: "#driver-host-env",
+        },
+    ],
+    children: [
+        {
+            name: "driver_manager",
+            url: "fuchsia-boot:///driver_manager#meta/driver_manager.cm",
+            startup: "eager",
+        },
+        {
+            name: "sysmem",
+            url: "fuchsia-boot:///sysmem#meta/sysmem.cm",
+            startup: "eager",
+        },
+        {
+            name: "npu_driver_host",
+            url: "fuchsia-boot:///npu_driver_host#meta/npu_driver_host.cm",
+            startup: "eager",
+        },
+        {
+            name: "gpu_driver_host",
+            url: "fuchsia-boot:///gpu_driver_host#meta/gpu_driver_host.cm",
+            startup: "eager",
+        },
+    ],
+    capabilities: [
+        // Exposed devfs topological device tree
+        {
+            directory: "dev-topological",
+            rights: [
+                "connect",
+                "enumerate",
+                "r*",
+                "w*",
+            ],
+            path: "/dev",
+        },
+    ],
+    use: [
+        // Kernel hardware access handles supplied by root
+        {
+            protocol: [
+                "fuchsia.boot.Arguments",
+                "fuchsia.boot.FactoryItems",
+                "fuchsia.boot.Items",
+                "fuchsia.boot.ReadOnlyLog",
+                "fuchsia.boot.RootResource",
+                "fuchsia.boot.WriteOnlyLog",
+                "fuchsia.kernel.CpuResource",
+                "fuchsia.kernel.DebugResource",
+                "fuchsia.kernel.HypervisorResource",
+                "fuchsia.kernel.InfoResource",
+                "fuchsia.kernel.IommuResource",
+                "fuchsia.kernel.IrqResource",
+                "fuchsia.kernel.MmioResource",
+                "fuchsia.kernel.PowerResource",
+                "fuchsia.kernel.RootJobResource",
+                "fuchsia.kernel.SmcResource",
+                "fuchsia.kernel.VmexResource",
+            ],
+        },
+        {
+            protocol: [
+                "fuchsia.inspect.InspectSink",
+                "fuchsia.logger.LogSink",
+            ],
+        },
+    ],
+    offer: [
+        // Offer kernel hardware resources to driver_manager for binding drivers
+        {
+            protocol: [
+                "fuchsia.boot.Arguments",
+                "fuchsia.boot.RootResource",
+                "fuchsia.boot.WriteOnlyLog",
+                "fuchsia.kernel.IommuResource",
+                "fuchsia.kernel.IrqResource",
+                "fuchsia.kernel.MmioResource",
+                "fuchsia.kernel.SmcResource",
+            ],
+            from: "parent",
+            to: "#driver_manager",
+        },
+        // Offer sysmem and diagnostics to driver hosts
+        {
+            protocol: [
+                "fuchsia.inspect.InspectSink",
+                "fuchsia.logger.LogSink",
+            ],
+            from: "parent",
+            to: [
+                "#driver_manager",
+                "#gpu_driver_host",
+                "#npu_driver_host",
+                "#sysmem",
+            ],
+        },
+        // Offer MMIO and IRQ to the dedicated NPU driver host
+        {
+            protocol: [
+                "fuchsia.kernel.IommuResource",
+                "fuchsia.kernel.IrqResource",
+                "fuchsia.kernel.MmioResource",
+                "fuchsia.kernel.SmcResource",
+            ],
+            from: "parent",
+            to: "#npu_driver_host",
+        },
+        // Offer MMIO and IRQ to the GPU driver host
+        {
+            protocol: [
+                "fuchsia.kernel.IrqResource",
+                "fuchsia.kernel.MmioResource",
+            ],
+            from: "parent",
+            to: "#gpu_driver_host",
+        },
+        // Offer sysmem allocator between driver hosts
+        {
+            protocol: "fuchsia.hardware.sysmem.Sysmem",
+            from: "#sysmem",
+            to: [
+                "#gpu_driver_host",
+                "#npu_driver_host",
+            ],
+        },
+    ],
+    expose: [
+        // Topological devfs exposed to root realm
+        {
+            directory: "dev-topological",
+            from: "#driver_manager",
+        },
+        // Sandboxed hardware protocols exposed upward
+        {
+            protocol: "fuchsia.hardware.npu.Device",
+            from: "#npu_driver_host",
+        },
+        {
+            protocol: "fuchsia.hardware.gpu.Device",
+            from: "#gpu_driver_host",
+        },
+        {
+            protocol: "fuchsia.hardware.sysmem.Sysmem",
+            from: "#sysmem",
+        },
+        {
+            protocol: [
+                "fuchsia.hardware.block.Block",
+                "fuchsia.hardware.display.Coordinator",
+                "fuchsia.hardware.power.Device",
+            ],
+            from: "#driver_manager",
+        },
+    ],
+    environments: [
+        {
+            name: "driver-host-env",
+            extends: "realm",
+            runners: [
+                {
+                    runner: "driver",
+                    from: "#driver_manager",
+                },
+            ],
+        },
+    ],
+}
