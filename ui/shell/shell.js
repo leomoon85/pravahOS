@@ -1135,36 +1135,46 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Initialize Living App Drawer & Capability Catalog
-  const livingDrawerEl = document.getElementById('living-drawer');
-  if (livingDrawerEl && window.PravahDrawer?.LivingDrawer) {
-    window.livingDrawer = new window.PravahDrawer.LivingDrawer({
-      container: livingDrawerEl,
-      onLaunchApp: (app, launchType) => {
-        if (launchType === 'dag' && app.scenario) {
-          const input = document.getElementById('intent-input');
-          if (input && Scenarios[app.scenario]) {
-            input.value = Scenarios[app.scenario].intent;
-          }
-          executeTask(app.scenario);
-        }
-      },
-      onStateChange: (state) => {
-        const navPill = document.getElementById('shell-drawer-nav');
-        if (navPill) {
-          navPill.style.opacity = (state === 'EXPANDED') ? '0' : '1';
-          navPill.style.pointerEvents = (state === 'EXPANDED') ? 'none' : 'auto';
-        }
-      }
-    });
+  function initDrawerIfReady() {
+    const livingDrawerEl = document.getElementById('living-drawer');
+    if (!livingDrawerEl) return;
+    if (window.livingDrawer) return;
 
-    // Wire bottom pill bar click
-    const drawerNavPill = document.getElementById('shell-drawer-nav');
-    if (drawerNavPill) {
-      drawerNavPill.addEventListener('click', () => {
-        window.PravahHaptics?.haptics.mediumSnap();
-        window.livingDrawer?.toggle();
+    if (window.PravahDrawer?.LivingDrawer) {
+      window.livingDrawer = new window.PravahDrawer.LivingDrawer({
+        container: livingDrawerEl,
+        onLaunchApp: (app, launchType) => {
+          if (launchType === 'dag' && app.scenario) {
+            const input = document.getElementById('intent-input');
+            if (input && Scenarios[app.scenario]) {
+              input.value = Scenarios[app.scenario].intent;
+            }
+            executeTask(app.scenario);
+          }
+        },
+        onStateChange: (state) => {
+          const navPill = document.getElementById('shell-drawer-nav');
+          if (navPill) {
+            navPill.style.opacity = (state === 'EXPANDED') ? '0' : '1';
+            navPill.style.pointerEvents = (state === 'EXPANDED') ? 'none' : 'auto';
+          }
+        }
       });
+
+      // Wire bottom pill bar click
+      const drawerNavPill = document.getElementById('shell-drawer-nav');
+      if (drawerNavPill) {
+        drawerNavPill.addEventListener('click', () => {
+          window.PravahHaptics?.haptics.mediumSnap();
+          window.livingDrawer?.toggle();
+        });
+      }
+    } else {
+      setTimeout(initDrawerIfReady, 50);
     }
+  }
+
+  initDrawerIfReady();
 
     // Direct swipe up gesture detection on bottom viewport edge
     let touchStartY = 0;
@@ -1446,11 +1456,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         break;
 
       case 'PRAVAH_TOGGLE_DRAWER':
-        window.livingDrawer?.toggle();
+        if (window.livingDrawer) {
+          window.livingDrawer.toggle();
+        } else {
+          initDrawerIfReady();
+          setTimeout(() => window.livingDrawer?.toggle(), 80);
+        }
         break;
 
       case 'PRAVAH_OPEN_DRAWER':
-        window.livingDrawer?.expand();
+        if (window.livingDrawer) {
+          window.livingDrawer.expand();
+        } else {
+          initDrawerIfReady();
+          setTimeout(() => window.livingDrawer?.expand(), 80);
+        }
         break;
 
       case 'PRAVAH_CLOSE_DRAWER':
