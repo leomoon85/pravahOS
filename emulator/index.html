@@ -94,6 +94,9 @@
         <button id="btn-toggle-living-drawer" class="tb-btn" title="Toggle Living App & Capability Drawer (Metro UI)">
           ⊞ Living Drawer
         </button>
+        <button id="btn-trigger-back" class="tb-btn" title="Trigger Android-style Universal Back (Edge Gesture or Click)">
+          ◂ Back
+        </button>
       </div>
 
       <!-- AOT APK Installer & Dormancy Supervisor Modal Trigger -->
@@ -826,6 +829,14 @@
         if (app.iframe && app.iframe.contentWindow) {
           app.iframe.contentWindow.postMessage({ type: 'PRAVAH_TOGGLE_DRAWER' }, '*');
           app.pulseDynamicIsland('LIVING DRAWER');
+        }
+      });
+
+      const btnTriggerBack = document.getElementById('btn-trigger-back');
+      btnTriggerBack?.addEventListener('click', () => {
+        if (app.iframe && app.iframe.contentWindow) {
+          app.iframe.contentWindow.postMessage({ type: 'PRAVAH_UNIVERSAL_BACK' }, '*');
+          app.pulseDynamicIsland('UNIVERSAL BACK ◂');
         }
       });
 

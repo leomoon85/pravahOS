@@ -1,0 +1,85 @@
+/* Copyright 2026 The PravahOS Authors. All rights reserved. */
+/* Use of this source code is governed by a BSD-style license. */
+
+/**
+ * Universal Predictive Back Gesture Indicator Stylesheet.
+ * Fluid liquid teardrop and animated directional arrow.
+ */
+
+.predictive-back-indicator {
+  position: fixed;
+  z-index: 1200;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  will-change: transform, left, right, top;
+}
+
+.predictive-back-indicator.visible {
+  opacity: 1;
+}
+
+.back-pill-bubble {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: rgba(14, 21, 37, 0.85);
+  -webkit-backdrop-filter: blur(28px) saturate(210%);
+  backdrop-filter: blur(28px) saturate(210%);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e2e8f0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 16px rgba(0, 240, 255, 0.15);
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.back-arrow-svg {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Edge orientation */
+.predictive-back-indicator.edge-left .back-pill-bubble {
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+.predictive-back-indicator.edge-right .back-pill-bubble {
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+/* Committed state (User pulled beyond activation threshold) */
+.predictive-back-indicator.committed .back-pill-bubble {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.35) 0%, rgba(139, 92, 246, 0.45) 100%);
+  border-color: var(--accent-cyan, #00f0ff);
+  color: #fff;
+  box-shadow: 0 0 24px rgba(0, 240, 255, 0.6), 0 12px 36px rgba(0, 0, 0, 0.8);
+}
+
+.predictive-back-indicator.committed .back-arrow-svg {
+  transform: translateX(-3px);
+  filter: drop-shadow(0 0 8px #00f0ff);
+}
+
+/* Trigger Pop on release */
+.predictive-back-indicator.trigger-pop {
+  animation: backTriggerPop 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes backTriggerPop {
+  0% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  40% {
+    transform: scale(1.35);
+    opacity: 1;
+    filter: brightness(1.4);
+  }
+  100% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+}

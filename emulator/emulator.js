@@ -51,7 +51,9 @@ const GestureType = {
   SWIPE_DOWN: 5,
   SWIPE_LEFT: 6,
   SWIPE_RIGHT: 7,
-  PINCH_ZOOM: 8
+  PINCH_ZOOM: 8,
+  EDGE_BACK_LEFT: 9,
+  EDGE_BACK_RIGHT: 10
 };
 
 const GestureLabels = [
@@ -63,7 +65,9 @@ const GestureLabels = [
   'SWIPE_DOWN',
   'SWIPE_LEFT',
   'SWIPE_RIGHT',
-  'PINCH_ZOOM'
+  'PINCH_ZOOM',
+  'EDGE_BACK_LEFT',
+  'EDGE_BACK_RIGHT'
 ];
 
 const DevicePresets = {
@@ -119,7 +123,9 @@ class GestureDecoder {
       longPressMaxDistPx: options.longPressMaxDistPx ?? 25,
       swipeMinDistancePx: options.swipeMinDistancePx ?? 60,
       swipeMaxDurationMs: options.swipeMaxDurationMs ?? 600,
-      pinchMinDeltaPx: options.pinchMinDeltaPx ?? 20
+      pinchMinDeltaPx: options.pinchMinDeltaPx ?? 20,
+      edgeSlopPx: options.edgeSlopPx ?? 36,
+      screenWidthPx: options.screenWidthPx ?? 412
     };
 
     /** @type {Map<number, { slot: number, startX: number, startY: number, curX: number, curY: number, startTime: number }>} */
@@ -350,7 +356,15 @@ class GestureDecoder {
         let swipeName = 'NONE';
 
         if (Math.abs(deltaX) >= Math.abs(deltaY)) {
-          if (deltaX > 0) {
+          const edgeSlop = this.tuning.edgeSlopPx ?? 36;
+          const screenWidth = this.tuning.screenWidthPx ?? 412;
+          if (contact.startX <= edgeSlop && deltaX > 0) {
+            swipeType = GestureType.EDGE_BACK_LEFT;
+            swipeName = 'EDGE_BACK_LEFT';
+          } else if (contact.startX >= screenWidth - edgeSlop && deltaX < 0) {
+            swipeType = GestureType.EDGE_BACK_RIGHT;
+            swipeName = 'EDGE_BACK_RIGHT';
+          } else if (deltaX > 0) {
             swipeType = GestureType.SWIPE_RIGHT;
             swipeName = 'SWIPE_RIGHT';
           } else {
@@ -1345,6 +1359,13 @@ class PhoneEmulatorApp {
           type: 'PRAVAH_GESTURE_FLING',
           gesture
         }, '*');
+
+        if (gesture.name === 'EDGE_BACK_LEFT' || gesture.name === 'EDGE_BACK_RIGHT') {
+          this.iframe.contentWindow.postMessage({
+            type: 'PRAVAH_UNIVERSAL_BACK',
+            gesture
+          }, '*');
+        }
       } catch (_) {}
     }
 

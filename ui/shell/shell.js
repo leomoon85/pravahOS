@@ -1481,6 +1481,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   initDialerIfReady();
 
+  // Initialize Android-Style Universal Back Gesture & Predictive Indicator
+  function initBackGestureIfReady() {
+    if (window.backGestureController) return;
+    if (window.PravahBackGesture?.UniversalBackGestureController) {
+      window.backGestureController = new window.PravahBackGesture.UniversalBackGestureController({
+        container: document.body,
+        onBack: (action) => {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'PRAVAH_BACK_ACTION_TAKEN', action }, '*');
+          }
+        }
+      });
+    } else {
+      setTimeout(initBackGestureIfReady, 50);
+    }
+  }
+
+  initBackGestureIfReady();
+
   // Direct swipe up / down gesture detection on viewport edges
   let touchStartY = 0;
   let touchStartTime = 0;
@@ -1876,6 +1895,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       case 'PRAVAH_UNLOCK':
         window.lockScreen?.unlock();
+        break;
+
+      case 'PRAVAH_UNIVERSAL_BACK':
+      case 'PRAVAH_GESTURE_BACK':
+        if (window.PravahBackGesture?.executeUniversalBackStack) {
+          window.PravahBackGesture.executeUniversalBackStack();
+        }
         break;
 
       case 'PRAVAH_QUERY_STATE':
