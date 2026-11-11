@@ -40,6 +40,7 @@ include_directories(
 # Source Files
 set(KERNEL_SRCS
     arch/arm64/boot.S
+    arch/arm64/switch.S
     arch/arm64/uart_pl011.c
     lib/string.c
     mm/pmm.c
@@ -47,6 +48,12 @@ set(KERNEL_SRCS
     object/handle.c
     object/vmo.c
     object/channel.c
+    process/elf.c
+    process/process.c
+    process/thread.c
+    process/syscall.c
+    drivers/display/display.c
+    drivers/input/input.c
     main.c
 )
 

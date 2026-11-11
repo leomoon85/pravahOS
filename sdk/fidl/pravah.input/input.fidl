@@ -1,0 +1,198 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+library pravah.input;
+
+using zx;
+
+/// Physical or virtual input device classifications.
+type DeviceType = strict enum : uint8 {
+    UNKNOWN = 0;
+    KEYBOARD = 1;
+    MOUSE = 2;
+    TOUCHSCREEN = 3;
+    TOUCHPAD = 4;
+    VIRTIO_INPUT = 5;
+};
+
+/// High-level event category.
+type InputEventType = strict enum : uint8 {
+    NONE = 0;
+    KEY = 1;
+    POINTER = 2;
+    TOUCH = 3;
+    GESTURE = 4;
+};
+
+/// Multi-touch finger contact phase.
+type TouchPhase = strict enum : uint8 {
+    DOWN = 1;
+    MOVE = 2;
+    UP = 3;
+    CANCEL = 4;
+};
+
+/// Key press lifecycle states.
+type KeyAction = strict enum : uint8 {
+    RELEASE = 0;
+    PRESS = 1;
+    REPEAT = 2;
+};
+
+/// Decoded multi-touch gestures recognized by the kernel gesture engine.
+type GestureType = strict enum : uint16 {
+    NONE = 0;
+    TAP = 1;
+    DOUBLE_TAP = 2;
+    LONG_PRESS = 3;
+    SWIPE_UP = 4;
+    SWIPE_DOWN = 5;
+    SWIPE_LEFT = 6;
+    SWIPE_RIGHT = 7;
+    PINCH_ZOOM = 8;
+};
+
+/// Screen and sensor coordinate normalization parameters.
+type CalibrationSettings = struct {
+    display_width uint32;
+    display_height uint32;
+    raw_min_x int32;
+    raw_max_x int32;
+    raw_min_y int32;
+    raw_max_y int32;
+    swap_xy bool;
+    invert_x bool;
+    invert_y bool;
+};
+
+/// Multi-touch tracking contact point.
+type TouchPoint = struct {
+    slot uint32;
+    tracking_id int32;
+    screen_x int32;
+    screen_y int32;
+    raw_x int32;
+    raw_y int32;
+    pressure int32;
+};
+
+/// Touch event container.
+type TouchEvent = struct {
+    phase TouchPhase;
+    point TouchPoint;
+};
+
+/// Keyboard event container.
+type KeyEvent = struct {
+    action KeyAction;
+    keycode uint32;
+    modifiers uint32;
+};
+
+/// Mouse and cursor motion container.
+type PointerEvent = struct {
+    rel_x int32;
+    rel_y int32;
+    screen_x int32;
+    screen_y int32;
+    scroll_wheel int32;
+    buttons uint32;
+};
+
+/// High-level gesture event emitted by the gesture decoder.
+type GestureEvent = struct {
+    type GestureType;
+    center_x int32;
+    center_y int32;
+    delta_x int32;
+    delta_y int32;
+    velocity_px_sec int32;
+    duration_ms uint32;
+    scale_milli int32; // 1000 = 1.0x scale
+    touch_count uint32;
+};
+
+/// Unified multi-modal input event packet.
+type InputPayload = strict union {
+    1: touch TouchEvent;
+    2: key KeyEvent;
+    3: pointer PointerEvent;
+    4: gesture GestureEvent;
+};
+
+type InputEvent = struct {
+    timestamp_ns uint64;
+    device_id string:64;
+    device_type DeviceType;
+    event_type InputEventType;
+    payload InputPayload;
+};
+
+/// Tuning parameters for runtime gesture recognition.
+type GestureTuning = struct {
+    tap_max_distance_px uint32;
+    tap_max_duration_ms uint32;
+    double_tap_interval_ms uint32;
+    double_tap_distance_px uint32;
+    long_press_duration_ms uint32;
+    long_press_max_dist_px uint32;
+    swipe_min_distance_px uint32;
+    swipe_max_duration_ms uint32;
+    pinch_min_delta_px uint32;
+};
+
+/// Client listener receiving stream of raw or normalized input events.
+protocol InputEventListener {
+    flexible OnInputEvent(struct {
+        event InputEvent;
+    }) -> ();
+};
+
+/// Client listener receiving high-level decoded gesture notifications.
+protocol GestureListener {
+    flexible OnGesture(struct {
+        gesture GestureEvent;
+        timestamp_ns uint64;
+    }) -> ();
+};
+
+/// Device registration interface for hardware driver hosts (VirtIO, I2C, SPI, HID).
+@discoverable
+open protocol InputRegistry {
+    /// Register a new physical or virtual input device into the system.
+    flexible RegisterDevice(struct {
+        device_id string:64;
+        device_type DeviceType;
+    }) -> () error zx.Status;
+
+    /// Update coordinate calibration for a touchscreen/digitizer.
+    flexible SetCalibration(struct {
+        device_id string:64;
+        settings CalibrationSettings;
+    }) -> () error zx.Status;
+
+    /// Tune kernel gesture recognition thresholds.
+    flexible ConfigureGestures(struct {
+        tuning GestureTuning;
+    }) -> () error zx.Status;
+};
+
+/// System input event dispatcher connecting drivers, Scenic compositor, and UI apps.
+@discoverable
+open protocol InputDispatcher {
+    /// Register a client to receive dispatched input events.
+    flexible RegisterListener(resource struct {
+        listener client_end:InputEventListener;
+        event_mask uint32;
+    }) -> () error zx.Status;
+
+    /// Register a client to receive interpreted multi-touch gestures.
+    flexible RegisterGestureListener(resource struct {
+        listener client_end:GestureListener;
+        gesture_mask uint32;
+    }) -> () error zx.Status;
+
+    /// Inject synthetic or simulated input event into the system pipeline.
+    flexible InjectEvent(struct {
+        event InputEvent;
+    }) -> () error zx.Status;
+};

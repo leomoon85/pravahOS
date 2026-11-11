@@ -12,7 +12,8 @@ param (
     [int]$MemoryMB = 4096,
     [string]$Cpu = "cortex-a76",
     [switch]$DryRun,
-    [switch]$Build
+    [switch]$Build,
+    [switch]$Graphical
 )
 
 # 1. Resolve Kernel Image Candidate Paths
@@ -88,10 +89,22 @@ $Arguments = @(
     "-M", "virt,gic-version=3",
     "-cpu", $Cpu,
     "-m", "${MemoryMB}M",
-    "-smp", "4",
-    "-nographic",
-    "-serial", "mon:stdio"
+    "-smp", "4"
 )
+
+if ($Graphical) {
+    # Emulate mobile portrait display via ramfb or virtio-gpu with serial multiplexing
+    $Arguments += @(
+        "-device", "ramfb",
+        "-device", "virtio-gpu-pci",
+        "-serial", "mon:stdio"
+    )
+} else {
+    $Arguments += @(
+        "-nographic",
+        "-serial", "mon:stdio"
+    )
+}
 
 if ($ResolvedKernel) {
     $Arguments += @("-kernel", $ResolvedKernel)

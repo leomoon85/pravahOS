@@ -27,9 +27,11 @@
 #define DESC_PXN         (1ULL << 53) /* Privileged Execute Never */
 
 /* Root L0 Table Physical Addresses */
-static zx_paddr_t ttbr0_root_paddr = 0;
-static zx_paddr_t ttbr1_root_paddr = 0;
-static bool       mmu_enabled = false;
+static zx_paddr_t    boot_ttbr0_root_paddr = 0;
+static zx_paddr_t    ttbr0_root_paddr = 0;
+static zx_paddr_t    ttbr1_root_paddr = 0;
+static vmm_aspace_t *active_user_aspace = NULL;
+static bool          mmu_enabled = false;
 
 zx_paddr_t vmm_get_ttbr0(void) {
     return ttbr0_root_paddr;
@@ -41,6 +43,10 @@ zx_paddr_t vmm_get_ttbr1(void) {
 
 bool vmm_is_mmu_enabled(void) {
     return mmu_enabled;
+}
+
+vmm_aspace_t *vmm_get_active_aspace(void) {
+    return active_user_aspace;
 }
 
 /**
@@ -69,13 +75,13 @@ static uint64_t *get_or_alloc_table(uint64_t *table, size_t index) {
     return (uint64_t *)(uintptr_t)new_table_paddr;
 }
 
-zx_status_t vmm_map_page(zx_vaddr_t vaddr, zx_paddr_t paddr, uint64_t flags) {
+/**
+ * @brief Internal helper to map a virtual page into an arbitrary L0 root table.
+ */
+static zx_status_t map_page_in_root(zx_paddr_t root_paddr, zx_vaddr_t vaddr, zx_paddr_t paddr, uint64_t flags) {
     if ((vaddr & (PAGE_SIZE - 1)) != 0 || (paddr & (PAGE_SIZE - 1)) != 0) {
         return ZX_ERR_INVALID_ARGS;
     }
-
-    /* Select TTBR0 or TTBR1 based on virtual address space */
-    zx_paddr_t root_paddr = (vaddr >= KERNEL_ASPACE_BASE) ? ttbr1_root_paddr : ttbr0_root_paddr;
     if (root_paddr == 0) {
         return ZX_ERR_INTERNAL;
     }
@@ -132,7 +138,7 @@ zx_status_t vmm_map_page(zx_vaddr_t vaddr, zx_paddr_t paddr, uint64_t flags) {
 
     l3_table[l3_idx] = desc;
 
-    /* TLB invalidate if active */
+    /* Invalidate TLB for this virtual address if MMU is running */
     if (mmu_enabled) {
         __asm__ volatile("tlbi vaae1is, %0; dsb sy; isb" :: "r"(vaddr >> 12) : "memory");
     }
@@ -140,12 +146,13 @@ zx_status_t vmm_map_page(zx_vaddr_t vaddr, zx_paddr_t paddr, uint64_t flags) {
     return ZX_OK;
 }
 
-zx_status_t vmm_unmap_page(zx_vaddr_t vaddr) {
+/**
+ * @brief Internal helper to unmap a virtual page from an arbitrary L0 root table.
+ */
+static zx_status_t unmap_page_in_root(zx_paddr_t root_paddr, zx_vaddr_t vaddr) {
     if ((vaddr & (PAGE_SIZE - 1)) != 0) {
         return ZX_ERR_INVALID_ARGS;
     }
-
-    zx_paddr_t root_paddr = (vaddr >= KERNEL_ASPACE_BASE) ? ttbr1_root_paddr : ttbr0_root_paddr;
     if (root_paddr == 0) return ZX_ERR_INTERNAL;
 
     uint64_t vaddr_masked = vaddr & 0x0000FFFFFFFFFFFFULL;
@@ -175,6 +182,154 @@ zx_status_t vmm_unmap_page(zx_vaddr_t vaddr) {
     return ZX_OK;
 }
 
+/**
+ * @brief Internal helper to query physical address translation from a given L0 root table.
+ */
+static zx_paddr_t vaddr_to_paddr_in_root(zx_paddr_t root_paddr, zx_vaddr_t vaddr) {
+    if (root_paddr == 0) return (zx_paddr_t)-1;
+
+    uint64_t vaddr_masked = vaddr & 0x0000FFFFFFFFFFFFULL;
+    size_t l0_idx = (vaddr_masked >> L0_SHIFT) & TABLE_INDEX_MASK;
+    size_t l1_idx = (vaddr_masked >> L1_SHIFT) & TABLE_INDEX_MASK;
+    size_t l2_idx = (vaddr_masked >> L2_SHIFT) & TABLE_INDEX_MASK;
+    size_t l3_idx = (vaddr_masked >> L3_SHIFT) & TABLE_INDEX_MASK;
+
+    uint64_t *l0_table = (uint64_t *)(uintptr_t)root_paddr;
+    if (!(l0_table[l0_idx] & DESC_VALID)) return (zx_paddr_t)-1;
+
+    uint64_t *l1_table = (uint64_t *)(uintptr_t)(l0_table[l0_idx] & ENTRY_ADDR_MASK);
+    if (!(l1_table[l1_idx] & DESC_VALID)) return (zx_paddr_t)-1;
+
+    uint64_t *l2_table = (uint64_t *)(uintptr_t)(l1_table[l1_idx] & ENTRY_ADDR_MASK);
+    if (!(l2_table[l2_idx] & DESC_VALID)) return (zx_paddr_t)-1;
+
+    uint64_t *l3_table = (uint64_t *)(uintptr_t)(l2_table[l2_idx] & ENTRY_ADDR_MASK);
+    if (!(l3_table[l3_idx] & DESC_VALID)) return (zx_paddr_t)-1;
+
+    return (l3_table[l3_idx] & ENTRY_ADDR_MASK) | (vaddr & (PAGE_SIZE - 1));
+}
+
+/* ========================================================================= */
+/* Public VMM Address Space Management APIs                                  */
+/* ========================================================================= */
+
+zx_status_t vmm_aspace_create(vmm_aspace_t *out_aspace) {
+    if (!out_aspace) return ZX_ERR_INVALID_ARGS;
+
+    /* Allocate physical page for process root L0 table */
+    zx_paddr_t root_paddr = 0;
+    zx_status_t status = pmm_alloc_page(&root_paddr);
+    if (status != ZX_OK) return status;
+
+    memset((void *)(uintptr_t)root_paddr, 0, PAGE_SIZE);
+
+    out_aspace->ttbr0_paddr = root_paddr;
+    out_aspace->base = USER_ASPACE_BASE;
+    out_aspace->size = USER_ASPACE_SIZE;
+    out_aspace->is_user = true;
+
+    /*
+     * Identity map MMIO peripherals & DRAM in the process L0 table with EL1 PRIVILEGED
+     * permissions (WITHOUT VMM_FLAG_USER). This guarantees:
+     * 1) EL0 userland tasks cannot read, write, or execute kernel memory (hardware fault).
+     * 2) When EL0 traps into EL1 via svc/irq, EL1 vectors and serial console are immediately accessible.
+     */
+    vmm_aspace_map_range(out_aspace, GIC_DIST_BASE_PADDR, GIC_DIST_BASE_PADDR, 0x10000,
+                         VMM_FLAG_READ | VMM_FLAG_WRITE | VMM_FLAG_DEVICE_NGNRNE);
+
+    vmm_aspace_map_range(out_aspace, GIC_REDIST_BASE_PADDR, GIC_REDIST_BASE_PADDR, 0x60000,
+                         VMM_FLAG_READ | VMM_FLAG_WRITE | VMM_FLAG_DEVICE_NGNRNE);
+
+    vmm_aspace_map_range(out_aspace, UART0_BASE_PADDR, UART0_BASE_PADDR, 0x1000,
+                         VMM_FLAG_READ | VMM_FLAG_WRITE | VMM_FLAG_DEVICE);
+
+    vmm_aspace_map_range(out_aspace, RTC_BASE_PADDR, RTC_BASE_PADDR, 0x1000,
+                         VMM_FLAG_READ | VMM_FLAG_WRITE | VMM_FLAG_DEVICE);
+
+    vmm_aspace_map_range(out_aspace, PCIE_MMIO_BASE_PADDR, PCIE_MMIO_BASE_PADDR, 0x1000000,
+                         VMM_FLAG_READ | VMM_FLAG_WRITE | VMM_FLAG_DEVICE);
+
+    vmm_aspace_map_range(out_aspace, RAM_BASE_PADDR, RAM_BASE_PADDR, 0x40000000,
+                         VMM_FLAG_READ | VMM_FLAG_WRITE | VMM_FLAG_EXECUTE);
+
+    return ZX_OK;
+}
+
+zx_status_t vmm_aspace_destroy(vmm_aspace_t *aspace) {
+    if (!aspace || aspace->ttbr0_paddr == 0) return ZX_ERR_INVALID_ARGS;
+
+    if (active_user_aspace == aspace) {
+        vmm_set_active_aspace(NULL);
+    }
+
+    pmm_free_page(aspace->ttbr0_paddr);
+    aspace->ttbr0_paddr = 0;
+    return ZX_OK;
+}
+
+zx_status_t vmm_aspace_map(vmm_aspace_t *aspace, zx_vaddr_t vaddr, zx_paddr_t paddr, uint64_t flags) {
+    if (!aspace || aspace->ttbr0_paddr == 0) return ZX_ERR_INVALID_ARGS;
+    return map_page_in_root(aspace->ttbr0_paddr, vaddr, paddr, flags);
+}
+
+zx_status_t vmm_aspace_map_range(vmm_aspace_t *aspace, zx_vaddr_t vaddr, zx_paddr_t paddr, size_t size, uint64_t flags) {
+    if (!aspace || size == 0) return ZX_OK;
+
+    size_t pages = ALIGN_UP(size, PAGE_SIZE) / PAGE_SIZE;
+    for (size_t i = 0; i < pages; i++) {
+        zx_status_t st = vmm_aspace_map(aspace, vaddr + (i * PAGE_SIZE), paddr + (i * PAGE_SIZE), flags);
+        if (st != ZX_OK) return st;
+    }
+    return ZX_OK;
+}
+
+zx_status_t vmm_aspace_unmap(vmm_aspace_t *aspace, zx_vaddr_t vaddr) {
+    if (!aspace || aspace->ttbr0_paddr == 0) return ZX_ERR_INVALID_ARGS;
+    return unmap_page_in_root(aspace->ttbr0_paddr, vaddr);
+}
+
+zx_paddr_t vmm_aspace_vaddr_to_paddr(vmm_aspace_t *aspace, zx_vaddr_t vaddr) {
+    if (!aspace || aspace->ttbr0_paddr == 0) return (zx_paddr_t)-1;
+    return vaddr_to_paddr_in_root(aspace->ttbr0_paddr, vaddr);
+}
+
+zx_status_t vmm_set_active_aspace(vmm_aspace_t *aspace) {
+    active_user_aspace = aspace;
+
+    if (aspace && aspace->ttbr0_paddr != 0) {
+        ttbr0_root_paddr = aspace->ttbr0_paddr;
+    } else {
+        ttbr0_root_paddr = boot_ttbr0_root_paddr;
+    }
+
+    if (mmu_enabled) {
+        __asm__ volatile(
+            "msr ttbr0_el1, %0\n"
+            "isb\n"
+            "tlbi vmalle1is\n"
+            "dsb sy\n"
+            "isb\n"
+            :: "r"(ttbr0_root_paddr) : "memory"
+        );
+    }
+
+    return ZX_OK;
+}
+
+/* ========================================================================= */
+/* Global / Kernel Mapping Interfaces                                        */
+/* ========================================================================= */
+
+zx_status_t vmm_map_page(zx_vaddr_t vaddr, zx_paddr_t paddr, uint64_t flags) {
+    zx_paddr_t root_paddr = (vaddr >= KERNEL_ASPACE_BASE) ? ttbr1_root_paddr : ttbr0_root_paddr;
+    return map_page_in_root(root_paddr, vaddr, paddr, flags);
+}
+
+zx_status_t vmm_unmap_page(zx_vaddr_t vaddr) {
+    zx_paddr_t root_paddr = (vaddr >= KERNEL_ASPACE_BASE) ? ttbr1_root_paddr : ttbr0_root_paddr;
+    return unmap_page_in_root(root_paddr, vaddr);
+}
+
 zx_status_t vmm_map_range(zx_vaddr_t vaddr, zx_paddr_t paddr, size_t size, uint64_t flags) {
     if (size == 0) return ZX_OK;
 
@@ -200,38 +355,20 @@ zx_status_t vmm_unmap_range(zx_vaddr_t vaddr, size_t size) {
 
 zx_paddr_t vmm_vaddr_to_paddr(zx_vaddr_t vaddr) {
     zx_paddr_t root_paddr = (vaddr >= KERNEL_ASPACE_BASE) ? ttbr1_root_paddr : ttbr0_root_paddr;
-    if (root_paddr == 0) return (zx_paddr_t)-1;
-
-    uint64_t vaddr_masked = vaddr & 0x0000FFFFFFFFFFFFULL;
-    size_t l0_idx = (vaddr_masked >> L0_SHIFT) & TABLE_INDEX_MASK;
-    size_t l1_idx = (vaddr_masked >> L1_SHIFT) & TABLE_INDEX_MASK;
-    size_t l2_idx = (vaddr_masked >> L2_SHIFT) & TABLE_INDEX_MASK;
-    size_t l3_idx = (vaddr_masked >> L3_SHIFT) & TABLE_INDEX_MASK;
-
-    uint64_t *l0_table = (uint64_t *)(uintptr_t)root_paddr;
-    if (!(l0_table[l0_idx] & DESC_VALID)) return (zx_paddr_t)-1;
-
-    uint64_t *l1_table = (uint64_t *)(uintptr_t)(l0_table[l0_idx] & ENTRY_ADDR_MASK);
-    if (!(l1_table[l1_idx] & DESC_VALID)) return (zx_paddr_t)-1;
-
-    uint64_t *l2_table = (uint64_t *)(uintptr_t)(l1_table[l1_idx] & ENTRY_ADDR_MASK);
-    if (!(l2_table[l2_idx] & DESC_VALID)) return (zx_paddr_t)-1;
-
-    uint64_t *l3_table = (uint64_t *)(uintptr_t)(l2_table[l2_idx] & ENTRY_ADDR_MASK);
-    if (!(l3_table[l3_idx] & DESC_VALID)) return (zx_paddr_t)-1;
-
-    return (l3_table[l3_idx] & ENTRY_ADDR_MASK) | (vaddr & (PAGE_SIZE - 1));
+    return vaddr_to_paddr_in_root(root_paddr, vaddr);
 }
 
 zx_status_t vmm_init(void) {
     /* Allocate L0 translation tables for TTBR0 and TTBR1 */
-    zx_status_t status = pmm_alloc_page(&ttbr0_root_paddr);
+    zx_status_t status = pmm_alloc_page(&boot_ttbr0_root_paddr);
     if (status != ZX_OK) return status;
 
     status = pmm_alloc_page(&ttbr1_root_paddr);
     if (status != ZX_OK) return status;
 
-    memset((void *)(uintptr_t)ttbr0_root_paddr, 0, PAGE_SIZE);
+    ttbr0_root_paddr = boot_ttbr0_root_paddr;
+
+    memset((void *)(uintptr_t)boot_ttbr0_root_paddr, 0, PAGE_SIZE);
     memset((void *)(uintptr_t)ttbr1_root_paddr, 0, PAGE_SIZE);
 
     /* 1. Identity Map MMIO Peripherals in TTBR0 */

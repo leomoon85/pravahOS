@@ -36,6 +36,16 @@ extern "C" {
 #define MAIR_ATTR_NORMAL_NC     3
 
 /**
+ * @brief User Process Address Space Container.
+ */
+typedef struct vmm_aspace {
+    zx_paddr_t ttbr0_paddr; /* Root L0 page table physical address */
+    zx_vaddr_t base;        /* Base virtual address (USER_ASPACE_BASE) */
+    size_t     size;        /* Virtual address space size */
+    bool       is_user;     /* True for user address spaces */
+} vmm_aspace_t;
+
+/**
  * @brief Initialize the ARM64 Virtual Memory Manager.
  *
  * Allocates L0 root page tables for TTBR0 (identity / userspace) and TTBR1 (kernel high memory),
@@ -47,9 +57,80 @@ extern "C" {
 zx_status_t vmm_init(void);
 
 /**
- * @brief Map a single 4 KiB virtual page to a physical address.
+ * @brief Create a dedicated user address space with its own root L0 translation table.
  *
- * Dynamically allocates intermediate translation table levels (L1, L2, L3) as needed.
+ * Configures identity mappings for supervisor mode (kernel MMIO and DRAM without user access)
+ * to ensure safe execution when trapping to EL1.
+ *
+ * @param[out] out_aspace Pointer to address space structure to initialize.
+ * @return ZX_OK on success, or error code.
+ */
+zx_status_t vmm_aspace_create(vmm_aspace_t *out_aspace);
+
+/**
+ * @brief Destroy a user address space, reclaiming all intermediate translation tables.
+ *
+ * @param aspace Pointer to address space.
+ * @return ZX_OK on success.
+ */
+zx_status_t vmm_aspace_destroy(vmm_aspace_t *aspace);
+
+/**
+ * @brief Map a virtual page within a specific address space.
+ *
+ * @param aspace Target address space.
+ * @param vaddr Virtual address (4 KiB aligned).
+ * @param paddr Backing physical address (4 KiB aligned).
+ * @param flags VMM mapping flags (VMM_FLAG_USER, READ, WRITE, EXECUTE, etc.).
+ * @return ZX_OK on success, or error code.
+ */
+zx_status_t vmm_aspace_map(vmm_aspace_t *aspace, zx_vaddr_t vaddr, zx_paddr_t paddr, uint64_t flags);
+
+/**
+ * @brief Map a contiguous virtual range within a specific address space.
+ *
+ * @param aspace Target address space.
+ * @param vaddr Starting virtual address.
+ * @param paddr Starting physical address.
+ * @param size Size in bytes.
+ * @param flags Mapping attributes and permissions.
+ * @return ZX_OK on success, or error code.
+ */
+zx_status_t vmm_aspace_map_range(vmm_aspace_t *aspace, zx_vaddr_t vaddr, zx_paddr_t paddr, size_t size, uint64_t flags);
+
+/**
+ * @brief Unmap a single virtual page within an address space.
+ *
+ * @param aspace Target address space.
+ * @param vaddr Virtual address to unmap.
+ * @return ZX_OK on success, or ZX_ERR_NOT_FOUND.
+ */
+zx_status_t vmm_aspace_unmap(vmm_aspace_t *aspace, zx_vaddr_t vaddr);
+
+/**
+ * @brief Translate a virtual address in an address space to its backing physical address.
+ *
+ * @param aspace Target address space.
+ * @param vaddr Virtual address to query.
+ * @return Backing physical address, or (zx_paddr_t)-1 if unmapped.
+ */
+zx_paddr_t vmm_aspace_vaddr_to_paddr(vmm_aspace_t *aspace, zx_vaddr_t vaddr);
+
+/**
+ * @brief Switch the active CPU translation table (TTBR0_EL1) to a given address space.
+ *
+ * @param aspace Target address space, or NULL to revert to kernel boot TTBR0.
+ * @return ZX_OK on success.
+ */
+zx_status_t vmm_set_active_aspace(vmm_aspace_t *aspace);
+
+/**
+ * @brief Get currently active user address space.
+ */
+vmm_aspace_t *vmm_get_active_aspace(void);
+
+/**
+ * @brief Map a single 4 KiB virtual page to a physical address in the current address space.
  *
  * @param vaddr Virtual address (must be 4 KiB aligned).
  * @param paddr Physical address (must be 4 KiB aligned).
@@ -59,7 +140,7 @@ zx_status_t vmm_init(void);
 zx_status_t vmm_map_page(zx_vaddr_t vaddr, zx_paddr_t paddr, uint64_t flags);
 
 /**
- * @brief Unmap a single 4 KiB virtual page.
+ * @brief Unmap a single 4 KiB virtual page in the current address space.
  *
  * @param vaddr Virtual address to unmap.
  * @return ZX_OK on success, or ZX_ERR_NOT_FOUND if page was not mapped.
@@ -67,7 +148,7 @@ zx_status_t vmm_map_page(zx_vaddr_t vaddr, zx_paddr_t paddr, uint64_t flags);
 zx_status_t vmm_unmap_page(zx_vaddr_t vaddr);
 
 /**
- * @brief Map a contiguous virtual range to contiguous physical frames.
+ * @brief Map a contiguous virtual range to contiguous physical frames in the current address space.
  *
  * @param vaddr Starting virtual address.
  * @param paddr Starting physical address.
@@ -78,7 +159,7 @@ zx_status_t vmm_unmap_page(zx_vaddr_t vaddr);
 zx_status_t vmm_map_range(zx_vaddr_t vaddr, zx_paddr_t paddr, size_t size, uint64_t flags);
 
 /**
- * @brief Unmap a virtual range.
+ * @brief Unmap a virtual range in the current address space.
  *
  * @param vaddr Starting virtual address.
  * @param size Size in bytes.
@@ -87,7 +168,7 @@ zx_status_t vmm_map_range(zx_vaddr_t vaddr, zx_paddr_t paddr, size_t size, uint6
 zx_status_t vmm_unmap_range(zx_vaddr_t vaddr, size_t size);
 
 /**
- * @brief Translate a virtual address to its backing physical address.
+ * @brief Translate a virtual address to its backing physical address in the current address space.
  *
  * @param vaddr Virtual address to query.
  * @return Physical address, or (zx_paddr_t)-1 if unmapped.

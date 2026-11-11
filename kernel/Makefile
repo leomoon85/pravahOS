@@ -26,8 +26,8 @@ CFLAGS   := -Wall -Wextra -O2 -g -ffreestanding -nostdlib -mgeneral-regs-only -I
 ASFLAGS  := -g -Iinclude
 LDFLAGS  := -T linker.ld -nostdlib -static --gc-sections
 
-SRCS_C   := main.c arch/arm64/uart_pl011.c lib/string.c mm/pmm.c mm/vmm.c object/handle.c object/vmo.c object/channel.c
-SRCS_S   := arch/arm64/boot.S
+SRCS_C   := main.c arch/arm64/uart_pl011.c lib/string.c mm/pmm.c mm/vmm.c object/handle.c object/vmo.c object/channel.c drivers/display/display.c drivers/input/input.c process/elf.c process/process.c process/thread.c process/syscall.c
+SRCS_S   := arch/arm64/boot.S arch/arm64/switch.S
 
 OBJS     := $(patsubst %.c,$(BUILD_DIR)/%.o,$(SRCS_C)) \
             $(patsubst %.S,$(BUILD_DIR)/%.o,$(SRCS_S))
@@ -45,6 +45,9 @@ $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)/lib
 	@mkdir -p $(BUILD_DIR)/mm
 	@mkdir -p $(BUILD_DIR)/object
+	@mkdir -p $(BUILD_DIR)/drivers/display
+	@mkdir -p $(BUILD_DIR)/drivers/input
+	@mkdir -p $(BUILD_DIR)/process
 	@mkdir -p $(OUTPUT_DIR)
 
 $(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)

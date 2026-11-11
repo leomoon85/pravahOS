@@ -97,6 +97,20 @@ Once in EL1:
   7. Enable transmitter and receiver in `UARTCR` (`UARTEN = 1`, `TXE = 1`, `RXE = 1`).
 - **Output Safety:** `uart_putc` spins on `UARTFR.TXFF` (Transmit FIFO Full) before writing to `UARTDR`, ensuring zero character loss under high-speed console output.
 
+### 4.2 Linear Framebuffer & Display Subsystem
+- **Target Resolutions:** Mobile Portrait 20:9 (720x1600 Default HD+, 1080x2400 FHD+, 1440x3200 QHD+)
+- **Pixel Format:** 32-bit ARGB8888 (Little-Endian, 4 bytes per pixel)
+- **Driver Locations:** `kernel/drivers/display/display.c`, `kernel/drivers/display/font8x16.h`, `kernel/include/kernel/display.h`
+- **Surface Architecture:**
+  - Double-buffered pipeline (`front_buffer` for visible scanout, `back_buffer` for off-screen rendering)
+  - Dynamically allocated from physical DRAM page frames via `pmm_alloc_pages()` (1125 pages per buffer at 720x1600)
+  - Zero-tearing atomic page flip (`display_flip()`) and 60 Hz frame pacing via ARM64 generic timer (`CNTVCT_EL0`)
+- **2D Graphics & Font Engine:**
+  - Clipped lines (Bresenham), solid/wireframe rectangles, and rounded-corner rectangles (midpoint circle algorithm)
+  - Fixed-point Porter-Duff Source-Over alpha blending
+  - Monospace 8x16 IBM/VGA ASCII bitmap font renderer with integer scaling ($1\times, 2\times, 3\times$)
+  - Official PravahOS Mobile Bootscreen layout engine displaying hardware telemetry, subsystem verification status, and branding.
+
 ---
 
 ## 5. Source Tree Structure
@@ -111,6 +125,12 @@ kernel/
 │   └── arm64/
 │       ├── boot.S              # EL2/EL1 boot stub, vector table & stack setup
 │       └── uart_pl011.c        # Memory-mapped PL011 serial driver
+├── drivers/
+│   ├── display/
+│   │   ├── display.c           # Linear framebuffer, 2D rasterizer, double buffer & bootscreen
+│   │   └── font8x16.h          # Built-in 8x16 IBM/VGA ASCII monospace bitmap font
+│   └── input/
+│       └── input.c             # Multi-touch gesture engine & ring buffer
 ├── lib/
 │   └── string.c                # Freestanding memset, memcpy, memmove, string utils
 ├── mm/
@@ -128,7 +148,9 @@ kernel/
     └── kernel/
         ├── channel.h           # Channel IPC definitions & Zircon syscall contracts
         ├── console.h           # Formatted early kernel console macros
+        ├── display.h           # Display subsystem, 2D primitives & bootscreen APIs
         ├── handle.h            # Handle descriptor, table bounds & rights masks
+        ├── input.h             # Input events, ring buffer & gesture engine
         ├── memory.h            # QEMU virt physical memory map & page constants
         ├── pmm.h               # PMM allocation APIs & memory metrics
         ├── string.h            # Freestanding string & memory header
@@ -439,6 +461,12 @@ Upon boot, the microkernel executes its integrated self-test suites across all s
 [HANDLE] Microkernel Handle Table Initialized (Capacity: 512 descriptors)
 [VMO] Virtual Memory Object Subsystem Initialized (Pool: 32 VMO descriptors)
 [CHANNEL] Microkernel Channel Subsystem Initialized (Pool: 16 endpoints)
+[DISPLAY] Linear Framebuffer Subsystem Initialized:
+          Resolution   : 720 x 1600 (Mobile Portrait 20:9)
+          Pixel Format : 32-bit ARGB8888 (Pitch: 2880 bytes)
+          Front Buffer : Physical 0x40140000 (4500 KiB)
+          Back Buffer  : Physical 0x405B0000 (Double-Buffered)
+          PMM Footprint: 2252 physical frames (8 MiB)
 
 --- [Test Suite 1: Physical Memory Manager (PMM)] ---
   [PASS] Single Page Allocated at Physical Addr: 0x40126000
@@ -463,6 +491,13 @@ Upon boot, the microkernel executes its integrated self-test suites across all s
   [PASS] Sender Handle Revocation: Transferred handle invalidated in sender table
   [PASS] Channel Message Read: "FIDL:pravah.capability.TransferResource" (Received Handle: 0x4001)
   [PASS] Transferred VMO Data Integrity Confirmed: "Capability-Secured-VMO-Secret"
+
+--- [Test Suite 5: Linear Framebuffer & Display Subsystem] ---
+  [PASS] Framebuffer Geometry Validated: 720x1600 @ 32bpp (Double-Buffered)
+  [PASS] Direct Pixel Read/Write Verified: ARGB8888 0xFF55AAFF
+  [PASS] Porter-Duff Alpha Blend Arithmetic Validated: (Black + 50% White = 0xFF7F7F7F)
+  [PASS] Built-in 8x16 ASCII Font Matrix Tested: Text Rasterization Confirmed
+  [PASS] Mobile Bootscreen Rendered & Presented via Atomic Page Flip (Frame: 1)
 
 ========================================================================
 >>> ALL PRAVAHOS MICROKERNEL SELF-TESTS PASSED SUCCESSFULLY <<<

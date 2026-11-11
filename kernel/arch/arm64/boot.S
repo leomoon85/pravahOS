@@ -148,7 +148,7 @@ vectors:
 
     /* Lower EL using AArch64 */
     .balign 128
-    b exc_sync_el0_64
+    b arm64_el0_sync_entry
     .balign 128
     b exc_irq_el0_64
     .balign 128
@@ -178,7 +178,6 @@ exc_sync_el1:
 exc_irq_el1:
 exc_fiq_el1:
 exc_serror_el1:
-exc_sync_el0_64:
 exc_irq_el0_64:
 exc_fiq_el0_64:
 exc_serror_el0_64:

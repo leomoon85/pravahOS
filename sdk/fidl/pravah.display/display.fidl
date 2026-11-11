@@ -1,0 +1,172 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+library pravah.display;
+
+using zx;
+using pravah.capability;
+
+/// Supported framebuffer pixel formats in PravahOS display pipeline.
+type PixelFormat = strict enum : uint32 {
+    INVALID = 0;
+    ARGB_8888 = 1;   // 32-bit ARGB (8:8:8:8), Little-Endian (Default)
+    XRGB_8888 = 2;   // 32-bit RGB with ignored alpha
+    BGRA_8888 = 3;   // 32-bit BGRA (Vulkan / Wayland native)
+    RGBA_8888 = 4;   // 32-bit RGBA
+    RGB_565   = 5;   // 16-bit packed RGB (5:6:5) for low-power ambient
+};
+
+/// Hardware display orientation.
+type DisplayOrientation = strict enum : uint8 {
+    PORTRAIT = 0;          // Primary portrait (e.g. mobile 720x1600, 1080x2400)
+    LANDSCAPE = 1;         // Primary landscape (e.g. tablet 2560x1600, desktop)
+    REVERSE_PORTRAIT = 2;  // Inverted portrait (180 degrees)
+    REVERSE_LANDSCAPE = 3; // Inverted landscape (270 degrees)
+};
+
+/// Physical or emulated screen aspect ratios.
+type DisplayAspectRatio = strict enum : uint8 {
+    RATIO_20_9   = 0;  // Standard modern mobile (720x1600, 1080x2400, 1440x3200)
+    RATIO_19_5_9 = 1;  // Tall mobile (1080x2340)
+    RATIO_16_9   = 2;  // Desktop widescreen (1920x1080, 1280x720)
+    RATIO_16_10  = 3;  // Tablet (2560x1600)
+    RATIO_CUSTOM = 4;  // Arbitrary custom geometry
+};
+
+/// Display resolution and timing mode.
+type DisplayMode = struct {
+    width uint32;
+    height uint32;
+    refresh_rate_millihz uint32; // e.g. 60000 for 60Hz, 120000 for 120Hz
+    flags uint32;
+};
+
+/// Comprehensive physical and logical display telemetry.
+type DisplayInfo = struct {
+    display_id uint64;
+    manufacturer_name string:32;
+    monitor_name string:32;
+    supported_modes vector<DisplayMode>:16;
+    current_mode DisplayMode;
+    pixel_format PixelFormat;
+    orientation DisplayOrientation;
+    aspect_ratio DisplayAspectRatio;
+    physical_width_mm uint32;
+    physical_height_mm uint32;
+    is_touch_enabled bool;
+    is_virtual bool;
+};
+
+/// Framebuffer allocation descriptor backed by a Zircon VMO.
+type FrameBuffer = resource struct {
+    buffer_id uint64;
+    vmo zx.Handle:VMO;
+    width uint32;
+    height uint32;
+    stride uint32;
+    pixel_format PixelFormat;
+    size_bytes uint64;
+};
+
+/// Frame presentation request submitted to the display coordinator.
+type PresentConfig = resource struct {
+    buffer_id uint64;
+    display_id uint64;
+    acquire_fence zx.Handle:EVENT;
+    release_fence zx.Handle:EVENT;
+    vsync_counter uint64;
+};
+
+/// Vertical synchronization timing notification.
+type VSyncNotification = struct {
+    display_id uint64;
+    timestamp_ns uint64;
+    frame_index uint64;
+};
+
+/// Display subsystem failure error codes.
+type DisplayError = strict enum : uint32 {
+    INTERNAL = 1;
+    INVALID_ARGUMENTS = 2;
+    UNSUPPORTED_MODE = 3;
+    DEVICE_UNAVAILABLE = 4;
+    BUFFER_ALLOCATION_FAILED = 5;
+    FENCE_TIMEOUT = 6;
+    ACCESS_DENIED = 7;
+};
+
+/// Display Coordinator Protocol.
+/// Mediates surface presentation, double-buffering, and VSync pacing
+/// between the user-shell Scenic/Flatland composer and kernel display drivers.
+@discoverable
+open protocol DisplayCoordinator {
+    /// Enumerate all connected physical and emulated display devices.
+    flexible GetDisplays() -> (struct {
+        displays vector<DisplayInfo>:8;
+    }) error DisplayError;
+
+    /// Switch active resolution or refresh rate on a specific display.
+    flexible SetDisplayMode(struct {
+        display_id uint64;
+        mode DisplayMode;
+    }) -> () error DisplayError;
+
+    /// Allocate double-buffered or single-buffered surfaces backed by VMOs.
+    flexible AllocateFrameBuffer(struct {
+        display_id uint64;
+        width uint32;
+        height uint32;
+        format PixelFormat;
+        double_buffered bool;
+    }) -> (resource struct {
+        front_buffer FrameBuffer;
+        back_buffer FrameBuffer;
+    }) error DisplayError;
+
+    /// Submit a back-buffer for scanout presentation synchronized with fences.
+    flexible PresentFrame(resource struct {
+        config PresentConfig;
+    }) -> () error DisplayError;
+
+    /// Adjust display panel backlight illumination percentage (0 - 100).
+    flexible SetBacklightBrightness(struct {
+        display_id uint64;
+        brightness_pct uint8;
+    }) -> () error DisplayError;
+
+    /// Broadcast VSync tick for frame pacing and animation loop drivers.
+    flexible -> OnVSync(struct {
+        vsync VSyncNotification;
+    });
+
+    /// Notification emitted when display panels are attached or detached.
+    flexible -> OnHotplug(struct {
+        display DisplayInfo;
+        connected bool;
+    });
+};
+
+/// Low-Level Hardware Display Controller Driver Protocol (DFv2).
+/// Implemented by virtio-gpu, ramfb, PL111, and MIPI-DSI kernel/driver components.
+@discoverable
+open protocol DisplayController {
+    /// Bind linear framebuffer hardware MMIO to coordinator.
+    flexible BindFramebuffer(resource struct {
+        vmo zx.Handle:VMO;
+        paddr uint64;
+        width uint32;
+        height uint32;
+        stride uint32;
+        format PixelFormat;
+    }) -> () error DisplayError;
+
+    /// Trigger immediate hardware page-flip register update.
+    flexible PageFlip(struct {
+        buffer_id uint64;
+    }) -> () error DisplayError;
+
+    /// Power management control for panel sleep/wake.
+    flexible SetPowerState(struct {
+        display_id uint64;
+        power_on bool;
+    }) -> () error DisplayError;
+};
