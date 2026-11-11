@@ -12,3 +12,4 @@ export * from './capabilities/index.js';
 export * from './memory.js';
 export * from './planner.js';
 export * from './compat/android_bridge.js';
+export * from './compat/apk_transpiler.js';

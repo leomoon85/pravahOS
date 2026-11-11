@@ -834,6 +834,17 @@ class PhoneEmulatorApp {
       this.sensory = null;
     }
 
+    // AOT Capability Installer & Dormancy Supervisor Subsystem
+    const AotModule = (typeof require === 'function')
+      ? (() => { try { return require('./installer.js'); } catch (_) { return null; } })()
+      : (typeof window !== 'undefined' ? window.PravahAotInstaller : null);
+
+    if (AotModule && AotModule.DormancySupervisor) {
+      this.dormancySupervisor = new AotModule.DormancySupervisor();
+    } else {
+      this.dormancySupervisor = null;
+    }
+
     // Touch visualization state
     this.touchTrails = [];
     this.simulatedPinch = false;

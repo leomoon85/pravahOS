@@ -1134,6 +1134,60 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.shellIsland = new window.PravahIsland.DynamicIslandController(shellIslandEl);
   }
 
+  // Initialize Living App Drawer & Capability Catalog
+  const livingDrawerEl = document.getElementById('living-drawer');
+  if (livingDrawerEl && window.PravahDrawer?.LivingDrawer) {
+    window.livingDrawer = new window.PravahDrawer.LivingDrawer({
+      container: livingDrawerEl,
+      onLaunchApp: (app, launchType) => {
+        if (launchType === 'dag' && app.scenario) {
+          const input = document.getElementById('intent-input');
+          if (input && Scenarios[app.scenario]) {
+            input.value = Scenarios[app.scenario].intent;
+          }
+          executeTask(app.scenario);
+        }
+      },
+      onStateChange: (state) => {
+        const navPill = document.getElementById('shell-drawer-nav');
+        if (navPill) {
+          navPill.style.opacity = (state === 'EXPANDED') ? '0' : '1';
+          navPill.style.pointerEvents = (state === 'EXPANDED') ? 'none' : 'auto';
+        }
+      }
+    });
+
+    // Wire bottom pill bar click
+    const drawerNavPill = document.getElementById('shell-drawer-nav');
+    if (drawerNavPill) {
+      drawerNavPill.addEventListener('click', () => {
+        window.PravahHaptics?.haptics.mediumSnap();
+        window.livingDrawer?.toggle();
+      });
+    }
+
+    // Direct swipe up gesture detection on bottom viewport edge
+    let touchStartY = 0;
+    let touchStartTime = 0;
+    window.addEventListener('touchstart', (e) => {
+      if (e.touches && e.touches[0]) {
+        touchStartY = e.touches[0].clientY;
+        touchStartTime = Date.now();
+      }
+    }, { passive: true });
+
+    window.addEventListener('touchend', (e) => {
+      if (e.changedTouches && e.changedTouches[0]) {
+        const dy = e.changedTouches[0].clientY - touchStartY;
+        const dt = Date.now() - touchStartTime;
+        // Swipe up from bottom area (dy < -60px within 500ms)
+        if (dy < -60 && dt < 500 && touchStartY > window.innerHeight - 160) {
+          window.livingDrawer?.expand();
+        }
+      }
+    }, { passive: true });
+  }
+
   // Initialize Spring-Damping Gesture Physics & 120Hz Momentum Inertia
   initModalSheetSpringPhysics();
   initListInertiaPhysics(document.getElementById('dag-canvas'), 'x');
@@ -1333,6 +1387,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       case 'PRAVAH_SET_AIRGAP':
         ShellState.offline = Boolean(data.offline);
         renderAmbientHeader();
+        window.livingDrawer?.updateTelemetry({ airgap: ShellState.offline });
         break;
 
       case 'PRAVAH_SET_AUTHORITY':
@@ -1346,6 +1401,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (data.telemetry) {
           Object.assign(ShellState.telemetry, data.telemetry);
           renderAmbientHeader();
+          window.livingDrawer?.updateTelemetry(ShellState.telemetry);
         }
         break;
 
@@ -1371,16 +1427,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (data.gesture) {
           const g = data.gesture;
           const canvas = document.getElementById('dag-canvas');
-          if (canvas && (g.name === 'SWIPE_LEFT' || g.name === 'SWIPE_RIGHT')) {
+          if (g.name === 'SWIPE_UP') {
+            window.livingDrawer?.expand();
+          } else if (g.name === 'SWIPE_DOWN') {
+            if (window.livingDrawer && window.livingDrawer.state === 'EXPANDED') {
+              window.livingDrawer.collapse();
+            } else {
+              const modal = document.getElementById('approval-modal-backdrop');
+              if (modal && modal.classList.contains('active')) {
+                handleModalDecision(false);
+              }
+            }
+          } else if (canvas && (g.name === 'SWIPE_LEFT' || g.name === 'SWIPE_RIGHT')) {
             const vel = g.name === 'SWIPE_LEFT' ? 700 : -700;
             canvas.scrollBy({ left: vel * 0.45, behavior: 'smooth' });
-          } else if (g.name === 'SWIPE_DOWN') {
-            const modal = document.getElementById('approval-modal-backdrop');
-            if (modal && modal.classList.contains('active')) {
-              handleModalDecision(false);
-            }
           }
         }
+        break;
+
+      case 'PRAVAH_TOGGLE_DRAWER':
+        window.livingDrawer?.toggle();
+        break;
+
+      case 'PRAVAH_OPEN_DRAWER':
+        window.livingDrawer?.expand();
+        break;
+
+      case 'PRAVAH_CLOSE_DRAWER':
+        window.livingDrawer?.collapse();
         break;
 
       case 'PRAVAH_TOGGLE_KEYBOARD':

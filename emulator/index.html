@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PravahOS Mobile Phone Emulator & Device Shell</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="installer.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -70,6 +71,16 @@
         </button>
         <button id="btn-toggle-voice" class="tb-btn" title="Activate Neural Voice Dictation Visualizer">
           🎤 Voice
+        </button>
+        <button id="btn-toggle-living-drawer" class="tb-btn" title="Toggle Living App & Capability Drawer (Metro UI)">
+          ⊞ Living Drawer
+        </button>
+      </div>
+
+      <!-- AOT APK Installer & Dormancy Supervisor Modal Trigger -->
+      <div class="toolbar-group">
+        <button id="btn-open-installer" class="tb-btn tb-btn-accent" title="Open PravahOS AOT Capability Installer & Zero-Tax Supervisor">
+          📦 AOT Installer
         </button>
       </div>
 
@@ -233,6 +244,11 @@
 
               <!-- Pinch Guide Visual Hint -->
               <div id="pinch-hint" class="pinch-hint">MULTI-TOUCH PINCH SIMULATION ACTIVE</div>
+
+              <!-- Phone Chassis Bottom Navigation Pill Bar (Swipe up or tap for Living Drawer) -->
+              <div id="phone-nav-bar" class="phone-nav-bar" title="Swipe Up or Tap to open Living App Drawer">
+                <div class="phone-home-pill" id="phone-home-pill"></div>
+              </div>
 
             </div>
           </div>
@@ -402,8 +418,8 @@
           <div class="scenario-grid">
             <button id="btn-pinch-mode" class="btn-scenario">🔍 Toggle Pinch Mode</button>
             <button id="btn-trigger-doubletap" class="btn-scenario">👆 Trigger Double-Tap</button>
-            <button id="btn-trigger-swipe-up" class="btn-scenario">⬆ Swipe Up (App Switch)</button>
-            <button id="btn-trigger-swipe-down" class="btn-scenario">⬇ Swipe Down (Notifs)</button>
+            <button id="btn-trigger-swipe-up" class="btn-scenario">⬆ Swipe Up (Living Drawer)</button>
+            <button id="btn-trigger-swipe-down" class="btn-scenario">⬇ Swipe Down (Dismiss Drawer)</button>
           </div>
         </div>
 
@@ -501,6 +517,7 @@
   <script src="../ui/shell/island.js" type="module"></script>
   <script src="sensory_bridge.js"></script>
   <script src="android_bridge.js"></script>
+  <script src="installer.js"></script>
   <script src="emulator.js"></script>
   <script>
     // Initialize Phone Emulator Application
@@ -729,6 +746,23 @@
         }
       });
 
+      // Living App Drawer toggles (Toolbar & Chassis Home Bar)
+      const btnLivingDrawer = document.getElementById('btn-toggle-living-drawer');
+      btnLivingDrawer?.addEventListener('click', () => {
+        if (app.iframe && app.iframe.contentWindow) {
+          app.iframe.contentWindow.postMessage({ type: 'PRAVAH_TOGGLE_DRAWER' }, '*');
+          app.pulseDynamicIsland('LIVING DRAWER');
+        }
+      });
+
+      const phoneNavBar = document.getElementById('phone-nav-bar');
+      phoneNavBar?.addEventListener('click', () => {
+        if (app.iframe && app.iframe.contentWindow) {
+          app.iframe.contentWindow.postMessage({ type: 'PRAVAH_TOGGLE_DRAWER' }, '*');
+          app.pulseDynamicIsland('LIVING DRAWER');
+        }
+      });
+
       // Dynamic Island Morphing Controls
       const islandStatusPill = document.getElementById('island-status-pill');
 
@@ -803,6 +837,16 @@
           androidBridge.ipcLogs = [];
           androidBridge.renderIpcStream();
         });
+      }
+
+      // Initialize AOT APK Installer UI & Dormancy Supervisor
+      if (typeof PravahAotInstaller !== 'undefined') {
+        const dormancySupervisor = new PravahAotInstaller.DormancySupervisor();
+        const aotInstaller = new PravahAotInstaller.AotInstallerUI(app, dormancySupervisor, window.androidBridge);
+        window.dormancySupervisor = dormancySupervisor;
+        window.aotInstaller = aotInstaller;
+        app.dormancySupervisor = dormancySupervisor;
+        app.aotInstaller = aotInstaller;
       }
     });
   </script>

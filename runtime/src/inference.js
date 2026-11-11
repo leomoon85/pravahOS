@@ -153,13 +153,39 @@ export class IntentSpecialist extends SpecialistInferenceProvider {
     const raw = String(request.input || '').toLowerCase();
 
     // Flight and Travel
-    const hasPayment = /pay|transfer|send\s+\$|wallet|money|funds|usdc|crypto|sol|btc|eth/i.test(raw);
-    const hasFlight = /flight|fly|airline|departure|gate|terminal/i.test(raw);
-    const hasReminder = /remind|reminder|schedule|calendar|alert/i.test(raw);
-    const hasSummary = /summarize|summary|overview|digest/i.test(raw);
-    const hasCamera = /photo|camera|capture|picture|snapshot|scan|image/i.test(raw);
-    const hasNote = /note|memo|record/i.test(raw);
-    const hasCrypto = /crypto|usdc|sol|btc|eth|token|bitcoin|ethereum|solana/i.test(raw);
+    const hasPayment = /\b(?:pay|transfer|send\s+\$|wallet|money|funds|usdc|crypto|sol|btc|eth)\b/i.test(raw);
+    const hasFlight = /\b(?:flight|fly|airline|departure|gate|terminal)\b/i.test(raw);
+    const hasReminder = /\b(?:remind|reminder|schedule|calendar|alert)\b/i.test(raw);
+    const hasSummary = /\b(?:summarize|summary|overview|digest)\b/i.test(raw);
+    const hasCamera = /\b(?:photo|camera|capture|picture|snapshot|scan|image)\b/i.test(raw);
+    const hasNote = /\b(?:note|memo|record)\b/i.test(raw);
+    const hasCrypto = /\b(?:crypto|usdc|sol|btc|eth|token|bitcoin|ethereum|solana)\b/i.test(raw);
+
+    // Ride Hailing & Transportation (Uber transpiled capabilities)
+    const hasRide = /cab|uber|ride|taxi|lyft/i.test(raw);
+    const hasTrack = /track|status|where\s+is\s+my/i.test(raw);
+
+    // Media & Audio (Spotify transpiled capability)
+    const hasSpotify = /spotify|play\s+song|play\s+music|stream\s+music|listen\s+to/i.test(raw);
+
+    // Communication (WhatsApp transpiled capability)
+    const hasWhatsApp = /whatsapp/i.test(raw);
+    const hasVideoCall = /video\s*call|facetime|video\s*chat/i.test(raw);
+    const hasMessaging = /message|text\s+|send\s+(?:a\s+)?(?:text|message)|chat/i.test(raw);
+
+    // Navigation & Maps (Google Maps transpiled capability)
+    const hasNavigation = /navigate|directions?|route\s+to|how\s+to\s+get\s+to|google\s+maps|maps/i.test(raw);
+
+    // Multi-step: Navigation + Ride request
+    if (hasNavigation && hasRide) {
+      return {
+        intent: 'NAVIGATION_AND_RIDE',
+        confidence: 0.98,
+        categories: ['NAVIGATION', 'TRANSPORTATION'],
+        isMultiStep: true,
+        summary: 'Calculate route and request ride hailing transport'
+      };
+    }
 
     // Multi-step: Camera frame capture -> Smart private note
     if (hasCamera && hasNote) {
@@ -242,6 +268,65 @@ export class IntentSpecialist extends SpecialistInferenceProvider {
         categories: ['PRODUCTIVITY'],
         isMultiStep: false,
         summary: 'Summarize context or documents'
+      };
+    }
+
+    if (hasRide) {
+      if (hasTrack) {
+        return {
+          intent: 'RIDE_TRACK',
+          confidence: 0.96,
+          categories: ['TRANSPORTATION'],
+          isMultiStep: false,
+          summary: 'Track live ride vehicle status and telemetry'
+        };
+      }
+      return {
+        intent: 'RIDE_REQUEST',
+        confidence: 0.97,
+        categories: ['TRANSPORTATION'],
+        isMultiStep: false,
+        summary: 'Request ride-hailing transportation service'
+      };
+    }
+
+    if (hasSpotify) {
+      return {
+        intent: 'MEDIA_STREAM_PLAYBACK',
+        confidence: 0.96,
+        categories: ['MEDIA', 'AUDIO'],
+        isMultiStep: false,
+        summary: 'Stream media playback via audio service'
+      };
+    }
+
+    if (hasVideoCall || (hasWhatsApp && /call/i.test(raw))) {
+      return {
+        intent: 'COMMUNICATION_VIDEO_CALL',
+        confidence: 0.96,
+        categories: ['COMMUNICATION'],
+        isMultiStep: false,
+        summary: 'Initiate video call with contact'
+      };
+    }
+
+    if ((hasWhatsApp || hasMessaging) && !hasPayment) {
+      return {
+        intent: 'COMMUNICATION_MESSAGE_SEND',
+        confidence: 0.96,
+        categories: ['COMMUNICATION'],
+        isMultiStep: false,
+        summary: 'Send messaging communication to recipient'
+      };
+    }
+
+    if (hasNavigation) {
+      return {
+        intent: 'NAVIGATION_ROUTE_QUERY',
+        confidence: 0.96,
+        categories: ['NAVIGATION', 'MAPS'],
+        isMultiStep: false,
+        summary: 'Calculate route directions to destination'
       };
     }
 
@@ -345,6 +430,57 @@ export class EntitySpecialist extends SpecialistInferenceProvider {
     } else {
       entities.sensor = 'BACK_PRIMARY';
       entities.sensorId = 0;
+    }
+
+    // Ride Hailing, Navigation & Location Slots
+    if (/\bhome\b/i.test(raw)) {
+      entities.destination = 'home';
+    }
+    const destMatch = raw.match(/\b(?:to|towards)\s+([^,.:;]+?)(?:\s+(?:with|via|on|using|and|\$|$)|$)/i);
+    if (destMatch && !entities.destination) {
+      entities.destination = destMatch[1].trim();
+    }
+    const pickupMatch = raw.match(/\b(?:from)\s+([^,.:;]+?)(?:\s+(?:to|towards)|$)/i);
+    if (pickupMatch) {
+      entities.pickup = pickupMatch[1].trim();
+    }
+    if (/uberxl/i.test(raw)) {
+      entities.rideType = 'UberXL';
+    } else if (/black/i.test(raw)) {
+      entities.rideType = 'Black';
+    } else if (/comfort/i.test(raw)) {
+      entities.rideType = 'Comfort';
+    } else if (/uber/i.test(raw)) {
+      entities.rideType = 'UberX';
+      entities.service = 'Uber';
+    }
+    const rideIdMatch = raw.match(/\b(UBER-[A-Z0-9]+)\b/i);
+    if (rideIdMatch) {
+      entities.rideId = rideIdMatch[1];
+    }
+
+    // Media & Music Slots
+    const spotifySongMatch = raw.match(/play\s+(?:song\s+)?['"]?([^'"]+?)['"]?\s+(?:on|via|with)\s+spotify/i) ||
+                             raw.match(/play\s+(?:the\s+song\s+)?['"]?([^'"]+?)['"]?(?:\s+on\s+spotify|$)/i);
+    if (spotifySongMatch && !entities.track) {
+      entities.track = spotifySongMatch[1].trim();
+      entities.service = 'Spotify';
+    }
+    const artistMatch = raw.match(/\bby\s+([A-Za-z0-9\s'-]+)/i);
+    if (artistMatch) {
+      entities.artist = artistMatch[1].trim();
+    }
+
+    // Messaging & Communication Slots
+    const msgContentMatch = raw.match(/(?:message|text)\s*(?:to\s+[A-Za-z0-9_-]+)?\s*:\s*['"]?([^'"]+)['"]?/i) ||
+                            raw.match(/saying\s+['"]?([^'"]+)['"]?/i) ||
+                            raw.match(/['"]([^'"]{3,})['"]/);
+    if (msgContentMatch) {
+      entities.message = msgContentMatch[1].trim();
+    }
+    const callRecipientMatch = raw.match(/\bwith\s+([A-Za-z0-9_-]+)/i);
+    if (callRecipientMatch && !entities.recipient) {
+      entities.recipient = callRecipientMatch[1].trim();
     }
 
     // Title / Subject
@@ -548,15 +684,163 @@ export class PlanningSpecialist extends SpecialistInferenceProvider {
         break;
       }
 
-      default: {
-        // Fallback generic inspection or time node
-        if (capIds.has('system.time.get')) {
+      case 'RIDE_REQUEST': {
+        if (capIds.has('ride.request')) {
           nodes.push({
-            nodeId: 'check_system_time',
-            capabilityId: 'system.time.get',
+            nodeId: 'uber_ride_request',
+            capabilityId: 'ride.request',
             dependencies: [],
-            inputs: {}
+            inputs: {
+              destination: entities.destination || 'home',
+              pickup: entities.pickup || 'Current Location',
+              rideType: entities.rideType || 'UberX'
+            }
           });
+        }
+        break;
+      }
+
+      case 'RIDE_TRACK': {
+        if (capIds.has('ride.track')) {
+          nodes.push({
+            nodeId: 'uber_ride_track',
+            capabilityId: 'ride.track',
+            dependencies: [],
+            inputs: {
+              rideId: entities.rideId || 'active_ride'
+            }
+          });
+        }
+        break;
+      }
+
+      case 'MEDIA_STREAM_PLAYBACK': {
+        if (capIds.has('media.playback.stream')) {
+          nodes.push({
+            nodeId: 'spotify_audio_stream',
+            capabilityId: 'media.playback.stream',
+            dependencies: [],
+            inputs: {
+              query: entities.track || entities.query || 'Bohemian Rhapsody',
+              track: entities.track,
+              artist: entities.artist
+            }
+          });
+        }
+        break;
+      }
+
+      case 'COMMUNICATION_MESSAGE_SEND': {
+        if (capIds.has('messaging.send')) {
+          nodes.push({
+            nodeId: 'whatsapp_message_send',
+            capabilityId: 'messaging.send',
+            dependencies: [],
+            inputs: {
+              recipient: entities.recipient || 'Unknown',
+              message: entities.message || 'Hello'
+            }
+          });
+        }
+        break;
+      }
+
+      case 'COMMUNICATION_VIDEO_CALL': {
+        if (capIds.has('call.video')) {
+          nodes.push({
+            nodeId: 'whatsapp_video_call',
+            capabilityId: 'call.video',
+            dependencies: [],
+            inputs: {
+              recipient: entities.recipient || 'Unknown'
+            }
+          });
+        }
+        break;
+      }
+
+      case 'NAVIGATION_ROUTE_QUERY': {
+        if (capIds.has('navigation.route')) {
+          nodes.push({
+            nodeId: 'google_maps_route',
+            capabilityId: 'navigation.route',
+            dependencies: [],
+            inputs: {
+              destination: entities.destination || 'Destination',
+              origin: entities.origin || 'Current Location',
+              mode: entities.mode || 'DRIVING'
+            }
+          });
+        }
+        break;
+      }
+
+      case 'NAVIGATION_AND_RIDE': {
+        if (capIds.has('navigation.route')) {
+          nodes.push({
+            nodeId: 'plan_destination_route',
+            capabilityId: 'navigation.route',
+            dependencies: [],
+            inputs: {
+              destination: entities.destination || 'Destination',
+              origin: entities.origin || 'Current Location'
+            }
+          });
+        }
+        if (capIds.has('ride.request')) {
+          nodes.push({
+            nodeId: 'request_uber_ride',
+            capabilityId: 'ride.request',
+            dependencies: nodes.length > 0 ? ['plan_destination_route'] : [],
+            inputs: {
+              destination: entities.destination || 'Destination',
+              pickup: entities.pickup || 'Current Location',
+              rideType: entities.rideType || 'UberX'
+            }
+          });
+        }
+        break;
+      }
+
+      default: {
+        // Fallback generic inspection or dynamic synthesized capability routing
+        if (nodes.length === 0) {
+          if (capIds.has('ride.request') && (intent.includes('RIDE') || intent.includes('CAB') || intent.includes('UBER'))) {
+            nodes.push({
+              nodeId: 'uber_ride_request',
+              capabilityId: 'ride.request',
+              dependencies: [],
+              inputs: { destination: entities.destination || 'home' }
+            });
+          } else if (capIds.has('media.playback.stream') && (intent.includes('MEDIA') || intent.includes('MUSIC') || intent.includes('SPOTIFY'))) {
+            nodes.push({
+              nodeId: 'spotify_audio_stream',
+              capabilityId: 'media.playback.stream',
+              dependencies: [],
+              inputs: { track: entities.track || entities.query || 'music' }
+            });
+          } else if (capIds.has('messaging.send') && intent.includes('COMMUNICATION')) {
+            nodes.push({
+              nodeId: 'whatsapp_message_send',
+              capabilityId: 'messaging.send',
+              dependencies: [],
+              inputs: { recipient: entities.recipient || 'Unknown', message: entities.message || 'Hello' }
+            });
+          } else if (capIds.has('navigation.route') && intent.includes('NAV')) {
+            nodes.push({
+              nodeId: 'google_maps_route',
+              capabilityId: 'navigation.route',
+              dependencies: [],
+              inputs: { destination: entities.destination || 'Destination' }
+            });
+          } else if (capIds.has('system.time.get')) {
+            nodes.push({
+              nodeId: 'check_system_time',
+              capabilityId: 'system.time.get',
+              dependencies: [],
+              inputs: {}
+            });
+          }
         }
         break;
       }

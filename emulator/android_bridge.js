@@ -146,11 +146,14 @@ class EmulatorAndroidBridge {
 
   startMetricsTicker() {
     if (typeof setInterval !== 'undefined') {
-      setInterval(() => {
+      this.metricsTimer = setInterval(() => {
         if (this.activeAppId) {
           this.containerMetrics.containerUptimeSec += 1;
         }
       }, 1000);
+      if (this.metricsTimer && typeof this.metricsTimer.unref === 'function') {
+        this.metricsTimer.unref();
+      }
     }
   }
 
@@ -261,6 +264,9 @@ class EmulatorAndroidBridge {
       this.logIPC('HAL_DELEGATE', 'Spotify', `writePcmData(512 frames, RMS=-16.4 dBFS) -> Audio HAL`);
       this.renderSpotifyTime();
     }, 2000);
+    if (this.spotifyAudioTimer && typeof this.spotifyAudioTimer.unref === 'function') {
+      this.spotifyAudioTimer.unref();
+    }
   }
 
   stopSpotifyPlayback() {

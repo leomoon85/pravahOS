@@ -81,6 +81,19 @@ export class IntentPlanner {
     if (intent?.includes('WALLET') && !mergedEntities.recipient && userContext.default_payment_recipient) {
       mergedEntities.recipient = userContext.default_payment_recipient;
     }
+    if (intent?.includes('RIDE') || intent?.includes('CAB')) {
+      if ((!mergedEntities.destination || mergedEntities.destination.toLowerCase() === 'home') && userContext.home_address) {
+        mergedEntities.destination = userContext.home_address;
+      }
+      if (!mergedEntities.pickup && userContext.current_location) {
+        mergedEntities.pickup = userContext.current_location;
+      }
+    }
+    if (intent?.includes('NAVIGATION')) {
+      if ((!mergedEntities.destination || mergedEntities.destination.toLowerCase() === 'home') && userContext.home_address) {
+        mergedEntities.destination = userContext.home_address;
+      }
+    }
 
     // 4. Deconstruct into candidate DAG steps via Planning Specialist
     const availableCapabilities = this.registry.list();

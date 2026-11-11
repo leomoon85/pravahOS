@@ -1,0 +1,912 @@
+/* Copyright 2026 The PravahOS Authors. All rights reserved. */
+/* Use of this source code is governed by a BSD-style license. */
+
+/**
+ * installer.css
+ * Styles for PravahOS AOT Capability Synthesizer & Zero-Tax Dormancy Supervisor UI.
+ */
+
+/* ========================================================================== */
+/* 1. Modal Dialog & Backdrop                                                 */
+/* ========================================================================== */
+
+.aot-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(3, 7, 18, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: aotFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes aotFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.aot-modal-window {
+  width: 920px;
+  max-width: 94vw;
+  max-height: 90vh;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.94) 0%, rgba(10, 15, 29, 0.98) 100%);
+  border: 1px solid rgba(0, 229, 255, 0.28);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.7),
+    0 0 40px rgba(0, 229, 255, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: aotSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes aotSlideUp {
+  from { transform: translateY(24px) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* ========================================================================== */
+/* 2. Modal Header & Tab Navigation                                           */
+/* ========================================================================== */
+
+.aot-modal-header {
+  padding: 1.1rem 1.5rem;
+  background: rgba(15, 23, 42, 0.7);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.aot-brand-title {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.aot-header-icon {
+  font-size: 1.75rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.4));
+}
+
+.aot-title-text {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #fff;
+  margin: 0;
+}
+
+.aot-subtitle-text {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #94a3b8);
+  margin: 0;
+  margin-top: 2px;
+}
+
+.aot-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.aot-tab-bar {
+  display: flex;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 4px;
+}
+
+.aot-tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.aot-tab-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.aot-tab-btn.active {
+  background: rgba(0, 229, 255, 0.18);
+  color: var(--accent-cyan, #00e5ff);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.25);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+}
+
+.aot-btn-close {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary, #94a3b8);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.aot-btn-close:hover {
+  background: rgba(255, 23, 68, 0.2);
+  color: #ff1744;
+  border-color: rgba(255, 23, 68, 0.4);
+}
+
+/* ========================================================================== */
+/* 3. Modal Body & Tab Views                                                  */
+/* ========================================================================== */
+
+.aot-modal-body {
+  padding: 1.4rem 1.6rem;
+  overflow-y: auto;
+  max-height: calc(90vh - 80px);
+}
+
+.aot-tab-view {
+  display: none;
+}
+
+.aot-tab-view.active {
+  display: block;
+  animation: aotTabFade 0.2s ease;
+}
+
+@keyframes aotTabFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.aot-section-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-cyan, #00e5ff);
+  margin-bottom: 0.75rem;
+}
+
+/* ========================================================================== */
+/* 4. One-Click Preset Buttons                                                */
+/* ========================================================================== */
+
+.aot-presets-card {
+  margin-bottom: 1.25rem;
+}
+
+.aot-presets-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+}
+
+.aot-preset-btn {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: left;
+}
+
+.aot-preset-btn:hover {
+  background: rgba(0, 229, 255, 0.1);
+  border-color: rgba(0, 229, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 229, 255, 0.15);
+}
+
+.aot-preset-btn:active {
+  transform: translateY(0);
+}
+
+.preset-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.preset-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.preset-name {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.preset-sub {
+  font-size: 0.7rem;
+  color: var(--text-secondary, #94a3b8);
+  margin-top: 2px;
+}
+
+/* ========================================================================== */
+/* 5. Drag & Drop Zone                                                        */
+/* ========================================================================== */
+
+.aot-drop-zone {
+  border: 2px dashed rgba(0, 229, 255, 0.3);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.45);
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.22s ease;
+  margin-bottom: 1rem;
+}
+
+.aot-drop-zone:hover,
+.aot-drop-zone.drag-over {
+  border-color: var(--accent-cyan, #00e5ff);
+  background: rgba(0, 229, 255, 0.08);
+  box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+  transform: scale(1.005);
+}
+
+.drop-zone-icon {
+  font-size: 2.8rem;
+  margin-bottom: 0.75rem;
+  filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.5));
+  animation: floatBounce 2.5s ease-in-out infinite;
+}
+
+@keyframes floatBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.drop-zone-primary {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.3rem;
+}
+
+.drop-zone-primary code {
+  color: var(--accent-cyan, #00e5ff);
+  background: rgba(0, 229, 255, 0.12);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono, monospace);
+}
+
+.drop-zone-secondary {
+  font-size: 0.78rem;
+  color: var(--text-muted, #64748b);
+}
+
+/* ========================================================================== */
+/* 6. 4-Stage Visual Progress Pipeline                                        */
+/* ========================================================================== */
+
+.aot-progress-card {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  animation: aotFadeIn 0.25s ease;
+}
+
+.aot-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+}
+
+.aot-chip {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.7rem;
+  background: rgba(0, 229, 255, 0.12);
+  color: var(--accent-cyan, #00e5ff);
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.aot-progress-pct {
+  font-family: var(--font-mono, monospace);
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: var(--accent-cyan, #00e5ff);
+}
+
+.aot-progress-bar-wrap {
+  width: 100%;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 1.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.aot-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00e5ff 0%, #7c4dff 50%, #00e676 100%);
+  border-radius: 999px;
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.6);
+  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Timeline 4 Stages */
+.aot-stages-timeline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  position: relative;
+}
+
+.stage-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.4rem;
+  z-index: 2;
+  flex: 1;
+}
+
+.stage-dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(30, 41, 59, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--text-muted, #64748b);
+  transition: all 0.25s ease;
+}
+
+.stage-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary, #94a3b8);
+  max-width: 140px;
+}
+
+.stage-node.active .stage-dot {
+  background: rgba(0, 229, 255, 0.2);
+  border-color: var(--accent-cyan, #00e5ff);
+  color: #fff;
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.6), inset 0 0 10px rgba(0, 229, 255, 0.3);
+  animation: pulseDot 1.4s infinite alternate;
+}
+
+.stage-node.active .stage-label {
+  color: var(--accent-cyan, #00e5ff);
+  font-weight: 700;
+}
+
+.stage-node.completed .stage-dot {
+  background: rgba(0, 230, 118, 0.2);
+  border-color: var(--accent-emerald, #00e676);
+  color: var(--accent-emerald, #00e676);
+  box-shadow: 0 0 12px rgba(0, 230, 118, 0.35);
+}
+
+.stage-node.completed .stage-label {
+  color: #fff;
+}
+
+@keyframes pulseDot {
+  from { transform: scale(1); }
+  to { transform: scale(1.12); }
+}
+
+.stage-line {
+  flex: 1;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  margin-top: -24px;
+  transition: background 0.3s ease;
+}
+
+.stage-line.completed {
+  background: linear-gradient(90deg, var(--accent-cyan, #00e5ff), var(--accent-emerald, #00e676));
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+}
+
+/* Descriptive Active Stage Banner */
+.aot-stage-banner {
+  background: rgba(0, 229, 255, 0.08);
+  border-left: 4px solid var(--accent-cyan, #00e5ff);
+  padding: 0.75rem 1rem;
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 1rem;
+}
+
+.aot-stage-banner.stage-2 {
+  background: rgba(255, 171, 0, 0.08);
+  border-left-color: var(--accent-amber, #ffab00);
+}
+
+.aot-stage-banner.stage-3 {
+  background: rgba(124, 77, 255, 0.08);
+  border-left-color: var(--accent-violet, #7c4dff);
+}
+
+.aot-stage-banner.stage-4 {
+  background: rgba(0, 230, 118, 0.08);
+  border-left-color: var(--accent-emerald, #00e676);
+}
+
+.aot-stage-banner.error {
+  background: rgba(255, 23, 68, 0.1);
+  border-left-color: var(--accent-danger, #ff1744);
+}
+
+.stage-banner-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.stage-banner-subtext {
+  font-size: 0.74rem;
+  color: var(--text-secondary, #94a3b8);
+  margin-top: 2px;
+}
+
+/* Log Terminal Output */
+.aot-terminal-wrap {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: #040813;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.aot-terminal-bar {
+  background: rgba(15, 23, 42, 0.8);
+  padding: 0.4rem 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.terminal-title {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--text-muted, #64748b);
+  letter-spacing: 0.05em;
+}
+
+.terminal-status {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.62rem;
+  color: var(--accent-cyan, #00e5ff);
+  background: rgba(0, 229, 255, 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.terminal-status.complete {
+  color: var(--accent-emerald, #00e676);
+  background: rgba(0, 230, 118, 0.1);
+}
+
+.aot-log-console {
+  padding: 0.75rem 0.9rem;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  max-height: 140px;
+  overflow-y: auto;
+  line-height: 1.5;
+  color: #94a3b8;
+}
+
+.log-line {
+  margin-bottom: 3px;
+}
+
+.log-time {
+  color: #475569;
+}
+
+.log-line.info .log-msg {
+  color: #cbd5e1;
+}
+
+.log-line.error .log-msg {
+  color: #ff1744;
+  font-weight: 700;
+}
+
+/* Completion Box */
+.aot-completion-box {
+  background: rgba(0, 230, 118, 0.06);
+  border: 1px solid rgba(0, 230, 118, 0.3);
+  border-radius: 12px;
+  padding: 1.25rem 1.4rem;
+  animation: aotFadeIn 0.3s ease;
+}
+
+.completion-hero {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.completion-icon {
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.completion-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.completion-sub {
+  font-size: 0.75rem;
+  color: var(--accent-emerald, #00e676);
+  margin-top: 2px;
+}
+
+.completion-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.6rem;
+  margin-bottom: 1.1rem;
+}
+
+.completion-metric-chip {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 0.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+}
+
+.completion-metric-chip .m-val {
+  font-family: var(--font-mono, monospace);
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--accent-cyan, #00e5ff);
+}
+
+.completion-metric-chip .m-lbl {
+  font-size: 0.65rem;
+  color: var(--text-muted, #64748b);
+  margin-top: 2px;
+}
+
+.completion-actions {
+  display: flex;
+  gap: 0.65rem;
+}
+
+/* Common Buttons */
+.aot-btn-primary {
+  background: linear-gradient(135deg, var(--accent-cyan, #00e5ff), #00b0ff);
+  color: #030712;
+  font-weight: 700;
+  font-size: 0.82rem;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 4px 14px rgba(0, 229, 255, 0.3);
+}
+
+.aot-btn-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 229, 255, 0.45);
+}
+
+.aot-btn-primary.success-glow {
+  background: linear-gradient(135deg, var(--accent-emerald, #00e676), #00c853);
+  box-shadow: 0 0 25px rgba(0, 230, 118, 0.6);
+  color: #030712;
+}
+
+.aot-btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.82rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.aot-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ========================================================================== */
+/* 7. Dormancy Supervisor HUD (Tab 2)                                         */
+/* ========================================================================== */
+
+.dormancy-hero-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+.dormancy-stat-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.dormancy-stat-card .stat-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--text-muted, #64748b);
+  margin-bottom: 0.4rem;
+}
+
+.stat-big-val {
+  font-family: var(--font-mono, monospace);
+  font-weight: 800;
+  font-size: 1.45rem;
+  line-height: 1.1;
+  margin-bottom: 0.35rem;
+}
+
+.stat-big-val.cyan { color: var(--accent-cyan, #00e5ff); text-shadow: 0 0 15px rgba(0, 229, 255, 0.4); }
+.stat-big-val.emerald { color: var(--accent-emerald, #00e676); text-shadow: 0 0 15px rgba(0, 230, 118, 0.4); }
+.stat-big-val.amber { color: var(--accent-amber, #ffab00); }
+.stat-big-val.purple { color: #d8b4fe; }
+
+.stat-sub {
+  font-size: 0.68rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
+/* Audit Banner */
+.audit-action-banner {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.08) 0%, rgba(124, 77, 255, 0.08) 100%);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  border-radius: 12px;
+  padding: 0.9rem 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.audit-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.audit-shield {
+  font-size: 1.8rem;
+}
+
+.audit-heading {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.audit-desc {
+  font-size: 0.72rem;
+  color: var(--text-secondary, #94a3b8);
+  margin-top: 1px;
+}
+
+.audit-right {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Capability Process Ledger Table */
+.dormancy-table-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.table-header-row {
+  padding: 0.75rem 1.1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.table-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--accent-cyan, #00e5ff);
+}
+
+.live-pill {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.65rem;
+  color: var(--accent-emerald, #00e676);
+  background: rgba(0, 230, 118, 0.1);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.table-scroll-wrap {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.dormancy-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  text-align: left;
+}
+
+.dormancy-table th {
+  padding: 0.6rem 0.9rem;
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--text-muted, #64748b);
+  font-weight: 700;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dormancy-table td {
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  vertical-align: middle;
+}
+
+.dormancy-table tr.row-frozen:hover {
+  background: rgba(0, 229, 255, 0.04);
+}
+
+.dormancy-table tr.row-active {
+  background: rgba(255, 171, 0, 0.05);
+}
+
+.dormancy-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  font-family: var(--font-mono, monospace);
+}
+
+.dormancy-chip.frozen {
+  background: rgba(0, 229, 255, 0.12);
+  color: var(--accent-cyan, #00e5ff);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+}
+
+.dormancy-chip.active {
+  background: rgba(255, 171, 0, 0.15);
+  color: #ffab00;
+  border: 1px solid rgba(255, 171, 0, 0.35);
+  animation: pulseActiveChip 1.8s infinite alternate;
+}
+
+@keyframes pulseActiveChip {
+  from { box-shadow: 0 0 4px rgba(255, 171, 0, 0.2); }
+  to { box-shadow: 0 0 12px rgba(255, 171, 0, 0.5); }
+}
+
+.wakelock-pill {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.68rem;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.tbl-action-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tbl-action-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.tbl-action-btn.wake {
+  border-color: rgba(255, 171, 0, 0.3);
+  color: #ffab00;
+}
+.tbl-action-btn.wake:hover {
+  background: rgba(255, 171, 0, 0.2);
+}
+
+.tbl-action-btn.freeze {
+  border-color: rgba(0, 229, 255, 0.3);
+  color: var(--accent-cyan, #00e5ff);
+}
+.tbl-action-btn.freeze:hover {
+  background: rgba(0, 229, 255, 0.2);
+}
+
+.tbl-action-btn.launch {
+  border-color: rgba(0, 230, 118, 0.3);
+  color: var(--accent-emerald, #00e676);
+}
+.tbl-action-btn.launch:hover {
+  background: rgba(0, 230, 118, 0.2);
+}
+
+/* Toolbar Accent Button */
+.tb-btn-accent {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(124, 77, 255, 0.2)) !important;
+  border-color: rgba(0, 229, 255, 0.4) !important;
+  color: var(--accent-cyan, #00e5ff) !important;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+}
+
+.tb-btn-accent:hover {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.35), rgba(124, 77, 255, 0.35)) !important;
+  color: #fff !important;
+}
