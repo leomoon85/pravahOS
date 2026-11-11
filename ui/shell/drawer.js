@@ -1580,7 +1580,7 @@ export class LivingDrawer {
   }
 }
 
-// Window global registration
+// Window global registration & resilient self-mounting
 if (typeof window !== 'undefined') {
   window.PravahDrawer = {
     DrawerState,
@@ -1594,4 +1594,18 @@ if (typeof window !== 'undefined') {
     EphemeralWindowManager,
     LivingDrawer
   };
+
+  // Immediate or deferred self-mounting to guarantee container is populated
+  const autoMountLivingDrawer = () => {
+    const el = document.getElementById('living-drawer');
+    if (el && !window.livingDrawer) {
+      window.livingDrawer = new LivingDrawer({ container: el });
+    }
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', autoMountLivingDrawer);
+  } else {
+    autoMountLivingDrawer();
+  }
 }

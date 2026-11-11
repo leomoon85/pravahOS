@@ -1344,40 +1344,83 @@ document.addEventListener('DOMContentLoaded', async () => {
   function initDrawerIfReady() {
     const livingDrawerEl = document.getElementById('living-drawer');
     if (!livingDrawerEl) return;
-    if (window.livingDrawer) return;
 
-    if (window.PravahDrawer?.LivingDrawer) {
+    if (!window.livingDrawer && window.PravahDrawer?.LivingDrawer) {
       window.livingDrawer = new window.PravahDrawer.LivingDrawer({
-        container: livingDrawerEl,
-        onLaunchApp: (app, launchType) => {
-          if (launchType === 'dag' && app.scenario) {
-            const input = document.getElementById('intent-input');
-            if (input && Scenarios[app.scenario]) {
-              input.value = Scenarios[app.scenario].intent;
-            }
-            executeTask(app.scenario);
-          }
-        },
-        onStateChange: (state) => {
-          const navPill = document.getElementById('shell-drawer-nav');
-          if (navPill) {
-            navPill.style.opacity = (state === 'EXPANDED') ? '0' : '1';
-            navPill.style.pointerEvents = (state === 'EXPANDED') ? 'none' : 'auto';
-          }
-        }
+        container: livingDrawerEl
       });
+    }
 
-      // Wire bottom pill bar click
-      const drawerNavPill = document.getElementById('shell-drawer-nav');
-      if (drawerNavPill) {
-        drawerNavPill.addEventListener('click', () => {
-          window.PravahHaptics?.haptics.mediumSnap();
-          window.livingDrawer?.toggle();
-        });
-      }
+    if (window.livingDrawer) {
+      window.livingDrawer.onLaunchApp = (app, launchType) => {
+        if (launchType === 'dag' && app.scenario) {
+          const input = document.getElementById('intent-input');
+          if (input && Scenarios[app.scenario]) {
+            input.value = Scenarios[app.scenario].intent;
+          }
+          executeTask(app.scenario);
+        }
+      };
+
+      window.livingDrawer.onStateChange = (state) => {
+        const navPill = document.getElementById('shell-drawer-nav');
+        if (navPill) {
+          navPill.style.opacity = (state === 'EXPANDED') ? '0' : '1';
+          navPill.style.pointerEvents = (state === 'EXPANDED') ? 'none' : 'auto';
+        }
+      };
     } else {
       setTimeout(initDrawerIfReady, 50);
     }
+  }
+
+  // Master Drawer Trigger (Used by Dock, Pill Handle, and Message Bridge)
+  function toggleLivingDrawer(forceExpand = null) {
+    try {
+      window.hapticEngine?.triggerMedium();
+    } catch (_) {}
+
+    initDrawerIfReady();
+
+    if (window.livingDrawer) {
+      if (forceExpand === true) {
+        window.livingDrawer.expand();
+      } else if (forceExpand === false) {
+        window.livingDrawer.collapse();
+      } else {
+        window.livingDrawer.toggle();
+      }
+      return;
+    }
+
+    // Direct DOM fallback if LivingDrawer instance is still constructing
+    const drawerEl = document.getElementById('living-drawer');
+    if (drawerEl) {
+      const isCurrentlyCollapsed = drawerEl.classList.contains('collapsed') || drawerEl.style.transform === 'translateY(100%)';
+      const shouldExpand = forceExpand !== null ? forceExpand : isCurrentlyCollapsed;
+
+      if (shouldExpand) {
+        drawerEl.classList.remove('collapsed');
+        drawerEl.classList.add('expanded');
+        drawerEl.style.transform = 'translateY(0%)';
+        drawerEl.style.pointerEvents = 'auto';
+      } else {
+        drawerEl.classList.remove('expanded');
+        drawerEl.classList.add('collapsed');
+        drawerEl.style.transform = 'translateY(100%)';
+        drawerEl.style.pointerEvents = 'none';
+      }
+    }
+  }
+  window.toggleLivingDrawer = toggleLivingDrawer;
+
+  // Wire bottom pill bar click
+  const drawerNavPill = document.getElementById('shell-drawer-nav');
+  if (drawerNavPill) {
+    drawerNavPill.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleLivingDrawer();
+    });
   }
 
   initDrawerIfReady();
@@ -1904,9 +1947,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // 8. Living Drawer Dock Trigger
-  document.getElementById('dock-btn-drawer')?.addEventListener('click', () => {
-    window.hapticEngine?.triggerLight();
-    window.livingDrawer?.toggle();
+  document.getElementById('dock-btn-drawer')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleLivingDrawer();
   });
 
   // Developer / Technical Verification Drawer Toggle
@@ -2028,25 +2071,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         break;
 
       case 'PRAVAH_TOGGLE_DRAWER':
-        if (window.livingDrawer) {
-          window.livingDrawer.toggle();
-        } else {
-          initDrawerIfReady();
-          setTimeout(() => window.livingDrawer?.toggle(), 80);
-        }
+        toggleLivingDrawer();
         break;
 
       case 'PRAVAH_OPEN_DRAWER':
-        if (window.livingDrawer) {
-          window.livingDrawer.expand();
-        } else {
-          initDrawerIfReady();
-          setTimeout(() => window.livingDrawer?.expand(), 80);
-        }
+        toggleLivingDrawer(true);
         break;
 
       case 'PRAVAH_CLOSE_DRAWER':
-        window.livingDrawer?.collapse();
+        toggleLivingDrawer(false);
         break;
 
       case 'PRAVAH_TOGGLE_KEYBOARD':
