@@ -2224,3 +2224,55 @@ body {
   transform: translateY(-2px) scale(1.03) !important;
   box-shadow: 0 6px 16px rgba(0, 240, 255, 0.25) !important;
 }
+
+/* ========================================================================== */
+/* 11. Passport Form Factor (4:3) Dual-Pane Adaptive Layout                    */
+/* ========================================================================== */
+
+body.passport-mode .shell-container {
+  max-width: 100% !important;
+  padding: 0.6rem 1rem !important;
+}
+
+body.passport-mode .workspace-section {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 16px !important;
+}
+
+body.passport-mode .intent-card {
+  grid-column: 1 / -1;
+  margin-bottom: 0.75rem;
+}
+
+body.passport-mode .ambient-header {
+  padding: 0.5rem 1rem;
+}
+
+body.passport-mode .side-panel {
+  display: flex !important;
+  flex-direction: column;
+}
+
+body.passport-mode .audit-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+body.passport-mode .audit-stream {
+  flex: 1;
+  max-height: 380px;
+}
+
+/* Flex Tabletop (90°) Layout */
+body.flex-mode .workspace-section {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+body.flex-mode .workspace-card {
+  border-bottom: 2px solid rgba(0, 240, 255, 0.3);
+}
+

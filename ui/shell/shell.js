@@ -1420,6 +1420,67 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   initShadeIfReady();
 
+  // Initialize Lock Screen & 1Hz AOD
+  function initLockScreenIfReady() {
+    const lockEl = document.getElementById('lockscreen-root');
+    if (!lockEl) return;
+    if (window.lockScreen) return;
+
+    if (window.PravahLockScreen?.LockScreen) {
+      window.lockScreen = new window.PravahLockScreen.LockScreen({
+        container: lockEl,
+        initialState: 'UNLOCKED',
+        onTorchToggle: (active) => {
+          if (window.controlShade) window.controlShade.setTorch(active);
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'PRAVAH_TORCH_STATE', active }, '*');
+          }
+        },
+        onCameraLaunch: () => {
+          window.lockScreen.unlock();
+          loadScenario('camera_note');
+        },
+        onUnlock: () => {
+          window.PravahHaptics?.haptics?.mediumSnap();
+        }
+      });
+    } else {
+      setTimeout(initLockScreenIfReady, 50);
+    }
+  }
+
+  initLockScreenIfReady();
+
+  // Initialize Telecom Phone Dialer & AI Call Screener
+  function initDialerIfReady() {
+    const dialerEl = document.getElementById('dialer-root');
+    if (!dialerEl) return;
+    if (window.telecomDialer) return;
+
+    if (window.PravahDialer?.TelecomDialer) {
+      window.telecomDialer = new window.PravahDialer.TelecomDialer({
+        container: dialerEl,
+        onCallBlocked: (number) => {
+          ShellState.auditLog.push({
+            seq: ShellState.auditLog.length,
+            timestamp: new Date().toISOString(),
+            caller: 'telecom/call_screener',
+            capabilityId: 'telephony.call.block',
+            riskLevel: 1,
+            decision: 'BLOCKED',
+            auditToken: `0x${Math.random().toString(16).slice(2, 10)}`,
+            metadata: { number, reason: 'ROBOCALL_AI_INTERCEPTED' }
+          });
+          renderAuditStream();
+        }
+      });
+    } else {
+      setTimeout(initDialerIfReady, 50);
+    }
+  }
+
+  initDialerIfReady();
+
   // Direct swipe up / down gesture detection on viewport edges
   let touchStartY = 0;
   let touchStartTime = 0;
@@ -1780,6 +1841,41 @@ document.addEventListener('DOMContentLoaded', async () => {
       case 'PRAVAH_TRIGGER_VOICE':
         if (window.softKeyboard) window.softKeyboard.hide();
         if (window.voiceOverlay) window.voiceOverlay.show();
+        break;
+
+      case 'PRAVAH_SET_FORM_FACTOR':
+        document.body.classList.toggle('passport-mode', data.formFactor === 'passport');
+        document.body.classList.toggle('flex-mode', data.formFactor === 'flex');
+        document.body.dataset.formFactor = data.formFactor || 'candybar';
+        document.body.dataset.hingeAngle = data.hingeAngle !== undefined ? data.hingeAngle : 0;
+        break;
+
+      case 'PRAVAH_SET_POWER_STATE':
+        if (data.state === 'sleep' || data.state === 'aod') {
+          window.lockScreen?.enterAOD();
+        } else if (data.state === 'lock') {
+          window.lockScreen?.lock();
+        } else if (data.state === 'wake') {
+          window.lockScreen?.wakeToLockScreen();
+        } else if (data.state === 'unlock') {
+          window.lockScreen?.unlock();
+        }
+        break;
+
+      case 'PRAVAH_OPEN_DIALER':
+        window.telecomDialer?.open();
+        break;
+
+      case 'PRAVAH_SIMULATE_CALL':
+        window.telecomDialer?.simulateIncomingCall(data.callInfo || {
+          callerNumber: '+1 (800) 555-0199',
+          callerName: 'Unknown Caller (Toll Free)',
+          isLikelySpam: true
+        });
+        break;
+
+      case 'PRAVAH_UNLOCK':
+        window.lockScreen?.unlock();
         break;
 
       case 'PRAVAH_QUERY_STATE':

@@ -67,9 +67,12 @@ const GestureLabels = [
 ];
 
 const DevicePresets = {
-  'pixel8': { name: 'Pravah Phone 1 (Default)', width: 412, height: 915, ratio: '20:9', radius: 44 },
-  'iphone15': { name: 'Pravah Mini', width: 390, height: 844, ratio: '19.5:9', radius: 48 },
-  'hdplus': { name: 'Pravah HD+ Panel', width: 720, height: 1600, ratio: '20:9', radius: 40 }
+  'pixel8': { name: 'Pravah Phone 1 (Default)', width: 412, height: 915, ratio: '20:9', radius: 44, formFactor: 'candybar', hingeAngle: 0 },
+  'iphone15': { name: 'Pravah Mini', width: 390, height: 844, ratio: '19.5:9', radius: 48, formFactor: 'candybar', hingeAngle: 0 },
+  'hdplus': { name: 'Pravah HD+ Panel', width: 720, height: 1600, ratio: '20:9', radius: 40, formFactor: 'candybar', hingeAngle: 0 },
+  'passport': { name: 'Pravah Passport Fold (Unfolded 4:3)', width: 780, height: 680, ratio: '4:3', radius: 36, formFactor: 'passport', hingeAngle: 180 },
+  'flex': { name: 'Pravah Flex Tabletop (90°)', width: 480, height: 720, ratio: 'flex', radius: 36, formFactor: 'flex', hingeAngle: 90 },
+  'flip_cover': { name: 'Pravah Flip Cover (Outer Screen)', width: 380, height: 420, ratio: '1:1', radius: 32, formFactor: 'flip_cover', hingeAngle: 0 }
 };
 
 // ============================================================================
@@ -1607,6 +1610,8 @@ class PhoneEmulatorApp {
 
     const chassis = this.container.querySelector('#phone-chassis');
     const viewport = this.container.querySelector('#phone-viewport');
+    const wrapper = this.container.querySelector('#phone-wrapper');
+    const iframe = this.container.querySelector('#shell-frame, .shell-iframe');
 
     if (viewport) {
       viewport.style.width = `${this.preset.width}px`;
@@ -1614,6 +1619,24 @@ class PhoneEmulatorApp {
     }
     if (chassis) {
       chassis.style.borderRadius = `${this.preset.radius + 12}px`;
+    }
+
+    if (wrapper) {
+      wrapper.classList.toggle('mode-passport', this.preset.formFactor === 'passport');
+      wrapper.classList.toggle('mode-flex', this.preset.formFactor === 'flex');
+      wrapper.classList.toggle('mode-flip-cover', this.preset.formFactor === 'flip_cover');
+    }
+
+    // Broadcast form factor and hinge posture to DEC shell iframe
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.postMessage({
+        type: 'PRAVAH_SET_FORM_FACTOR',
+        formFactor: this.preset.formFactor || 'candybar',
+        hingeAngle: this.preset.hingeAngle !== undefined ? this.preset.hingeAngle : 0,
+        presetKey: this.presetKey,
+        width: this.preset.width,
+        height: this.preset.height
+      }, '*');
     }
 
     if (this.fbRenderer) {

@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="../keyboard/keyboard.css">
   <link rel="stylesheet" href="drawer.css">
   <link rel="stylesheet" href="shade.css">
+  <link rel="stylesheet" href="lockscreen.css">
+  <link rel="stylesheet" href="dialer.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -242,6 +244,12 @@
   <!-- 6. Ephemeral Capability Overlay Window Host -->
   <div id="ephemeral-window-host" class="ephemeral-window-host"></div>
 
+  <!-- 7. 1Hz AOD & Biometric Lock Screen -->
+  <div id="lockscreen-root" class="lockscreen-root state-unlocked"></div>
+
+  <!-- 8. Telecom Phone Dialer & AI Call Screening -->
+  <div id="dialer-root" class="dialer-root"></div>
+
   <script type="module" src="../motion/spring.js"></script>
   <script type="module" src="../motion/haptics.js"></script>
   <script type="module" src="island.js"></script>
@@ -249,6 +257,8 @@
   <script type="module" src="../keyboard/keyboard.js"></script>
   <script type="module" src="shade.js"></script>
   <script type="module" src="drawer.js"></script>
+  <script type="module" src="lockscreen.js"></script>
+  <script type="module" src="dialer.js"></script>
   <script src="shell.js"></script>
 </body>
 </html>

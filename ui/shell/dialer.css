@@ -1,0 +1,451 @@
+/* Copyright 2026 The PravahOS Authors. All rights reserved. */
+/* Use of this source code is governed by a BSD-style license. */
+
+/**
+ * Telecom Dialer & AI Call Screening Stylesheet.
+ */
+
+.dialer-root {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 870;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  background: rgba(10, 15, 28, 0.94);
+  -webkit-backdrop-filter: blur(36px) saturate(200%);
+  backdrop-filter: blur(36px) saturate(200%);
+  display: flex;
+  flex-direction: column;
+}
+
+.dialer-root.expanded {
+  pointer-events: auto;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.dialer-surface {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.8rem 1.6rem 2rem;
+}
+
+.dialer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.dialer-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.telecom-logo {
+  font-size: 1.2rem;
+}
+
+.telecom-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent-cyan, #00f0ff);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: var(--font-mono, monospace);
+}
+
+.btn-dialer-close {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #94a3b8;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.btn-dialer-close:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+/* Display & Matches */
+.dialer-display-area {
+  text-align: center;
+  margin: 1rem 0;
+  min-height: 80px;
+}
+
+.dialed-digits {
+  font-size: 2.2rem;
+  font-weight: 300;
+  color: #64748b;
+  letter-spacing: 0.05em;
+  font-family: var(--font-mono, monospace);
+  transition: color 0.2s ease;
+}
+
+.dialed-digits.has-digits {
+  color: #fff;
+  font-weight: 600;
+}
+
+.t9-contact-matches {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  max-height: 70px;
+  overflow-y: auto;
+}
+
+.t9-match-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.t9-match-item:hover {
+  background: rgba(0, 240, 255, 0.15);
+}
+
+.m-name {
+  color: #fff;
+  font-weight: 600;
+}
+
+.m-number {
+  color: var(--accent-cyan, #00f0ff);
+  font-family: var(--font-mono, monospace);
+}
+
+/* T9 Keypad Grid */
+.t9-keypad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.t9-key {
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.t9-key:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(0, 240, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.t9-key:active {
+  transform: scale(0.92);
+  background: rgba(0, 240, 255, 0.25);
+}
+
+.key-digit {
+  font-size: 1.4rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.key-letters {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.1em;
+}
+
+/* Action Bar */
+.dialer-actions {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin-top: 1.2rem;
+}
+
+.btn-sim-incoming {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 8px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-sim-incoming:hover {
+  background: rgba(245, 158, 11, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-call-primary {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981, #059669);
+  border: none;
+  color: #fff;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-call-primary:hover {
+  transform: scale(1.08);
+}
+
+.btn-call-primary:active {
+  transform: scale(0.92);
+}
+
+.btn-backspace {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.btn-backspace:hover {
+  color: #fff;
+}
+
+/* ========================================================================== */
+/* Call Overlay & AI Call Screener Modal                                      */
+/* ========================================================================== */
+
+.call-overlay-modal {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 10, 20, 0.88);
+  -webkit-backdrop-filter: blur(32px) saturate(210%);
+  backdrop-filter: blur(32px) saturate(210%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.call-overlay-modal.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.call-card {
+  width: 100%;
+  max-width: 360px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  border-radius: 24px;
+  padding: 1.8rem 1.4rem;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 32px rgba(0, 240, 255, 0.18);
+}
+
+.incoming-avatar, .connected-avatar {
+  font-size: 2.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.call-meta h3 {
+  font-size: 1.25rem;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.call-num {
+  font-family: var(--font-mono, monospace);
+  color: var(--accent-cyan, #00f0ff);
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.call-flag {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  padding: 3px 8px;
+  border-radius: 8px;
+}
+
+.call-duration {
+  font-size: 0.75rem;
+  color: #10b981;
+  font-weight: 600;
+}
+
+.call-btn-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 1.5rem;
+}
+
+.btn-call-action {
+  padding: 10px 16px;
+  border-radius: 14px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-hangup {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.btn-hangup:hover {
+  background: #ef4444;
+  color: #fff;
+}
+
+.btn-answer {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+}
+
+.btn-screen-ai {
+  background: linear-gradient(135deg, #8b5cf6, #00f0ff);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3);
+}
+
+.btn-block {
+  background: #dc2626;
+  color: #fff;
+}
+
+/* Screening Layout */
+.screening-header {
+  margin-bottom: 1rem;
+}
+
+.ai-badge-pulse {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--accent-cyan, #00f0ff);
+  font-family: var(--font-mono, monospace);
+  margin-bottom: 6px;
+}
+
+.ai-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-cyan, #00f0ff);
+  box-shadow: 0 0 8px var(--accent-cyan, #00f0ff);
+  animation: pulseDot 1.6s infinite;
+}
+
+.spam-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.badge-analyzing {
+  background: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+}
+
+.badge-high-risk {
+  background: rgba(239, 68, 68, 0.25);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.6);
+  animation: pulseRed 1.4s infinite;
+}
+
+@keyframes pulseRed {
+  0%, 100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.7); }
+}
+
+.screening-caller-info {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  margin-bottom: 12px;
+}
+
+.screening-transcript-box {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: left;
+  min-height: 80px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.t-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: var(--accent-cyan, #00f0ff);
+  font-family: var(--font-mono, monospace);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.screening-transcript-box p {
+  font-size: 0.78rem;
+  color: #f1f5f9;
+  line-height: 1.4;
+}

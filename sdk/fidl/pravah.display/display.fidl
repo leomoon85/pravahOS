@@ -25,11 +25,34 @@ type DisplayOrientation = strict enum : uint8 {
 
 /// Physical or emulated screen aspect ratios.
 type DisplayAspectRatio = strict enum : uint8 {
-    RATIO_20_9   = 0;  // Standard modern mobile (720x1600, 1080x2400, 1440x3200)
-    RATIO_19_5_9 = 1;  // Tall mobile (1080x2340)
-    RATIO_16_9   = 2;  // Desktop widescreen (1920x1080, 1280x720)
-    RATIO_16_10  = 3;  // Tablet (2560x1600)
-    RATIO_CUSTOM = 4;  // Arbitrary custom geometry
+    RATIO_20_9           = 0;  // Standard modern mobile (720x1600, 1080x2400, 1440x3200)
+    RATIO_19_5_9         = 1;  // Tall mobile (1080x2340)
+    RATIO_16_9           = 2;  // Desktop widescreen (1920x1080, 1280x720)
+    RATIO_16_10          = 3;  // Tablet (2560x1600)
+    RATIO_CUSTOM         = 4;  // Arbitrary custom geometry
+    RATIO_PASSPORT_4_3   = 5;  // Unfolded Passport Booklet (4:3 aspect ratio, e.g. 780x680, 2156x1617)
+    RATIO_PASSPORT_1_1   = 6;  // Square Passport (1:1 aspect ratio, e.g. 1440x1440)
+    RATIO_FOLD_TABLETOP  = 7;  // 90° Flex tabletop split viewport
+};
+
+/// Discrete physical posture of folding hinge mechanism.
+type HingePosture = strict enum : uint8 {
+    CLOSED          = 0; // 0° - 15°: Outer cover active, inner panel 0.0V
+    PEEK            = 1; // 15° - 45°: Glanceable peek edge
+    FLEX_TABLETOP   = 2; // 60° - 120°: L-shape tabletop split
+    OPEN_PASSPORT   = 3; // 135° - 180°: Full flat passport booklet canvas
+    TENT            = 4; // > 180°: Reversed tent stand mode
+};
+
+/// Folding geometry and dual-pane seam descriptor.
+type FoldTopology = struct {
+    posture HingePosture;
+    angle_millidegrees int32;
+    seam_x_px uint32;
+    crease_width_px uint32;
+    left_pane_width_px uint32;
+    right_pane_width_px uint32;
+    is_dual_pane_active bool;
 };
 
 /// Display resolution and timing mode.

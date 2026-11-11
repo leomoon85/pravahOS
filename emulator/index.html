@@ -21,13 +21,29 @@
     </div>
 
     <div class="toolbar-controls">
-      <!-- Device Preset -->
+      <!-- Device Preset & Form Factor Switcher -->
       <div class="toolbar-group">
         <select id="preset-select" class="tb-select" title="Switch phone hardware profile">
           <option value="pixel8" selected>Flagship Phone (412 × 915 • 20:9)</option>
+          <option value="passport">📖 Passport Fold (780 × 680 • 4:3 Unfolded)</option>
+          <option value="flex">📐 Flex Tabletop (480 × 720 • 90° Hinge)</option>
+          <option value="flip_cover">🪟 Clamshell Cover (380 × 420 • 1:1)</option>
           <option value="iphone15">Compact Flagship (390 × 844 • 19.5:9)</option>
           <option value="hdplus">Mobile HD+ Panel (720 × 1600 • 20:9)</option>
         </select>
+      </div>
+
+      <!-- Quick Form Factor Buttons -->
+      <div class="toolbar-group">
+        <button id="btn-ff-candybar" class="tb-btn active" title="Switch to Monolithic Slab (20:9)">
+          📱 Slab
+        </button>
+        <button id="btn-ff-passport" class="tb-btn" title="Switch to Passport Fold (4:3 Unfolded)">
+          📖 Passport
+        </button>
+        <button id="btn-ff-flex" class="tb-btn" title="Switch to 90° Flex Tabletop Mode">
+          📐 Flex
+        </button>
       </div>
 
       <!-- Mode Switcher -->
@@ -164,6 +180,11 @@
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <!-- OLED Folding Hinge Crease / Dual-Pane Splitter (Active in Passport & Flex modes) -->
+              <div class="phone-hinge-crease" id="phone-hinge-crease" title="OLED Folding Hinge Seam (Crease Mitigation Active)">
+                <div class="hinge-bezel-shadow"></div>
               </div>
 
               <!-- View Layer 1: Embedded PravahOS Dynamic Experience Shell -->
@@ -545,8 +566,35 @@
       const btnResetInput = document.getElementById('btn-reset-input');
       const phoneWrapper = document.getElementById('phone-wrapper');
 
+      const btnFfCandybar = document.getElementById('btn-ff-candybar');
+      const btnFfPassport = document.getElementById('btn-ff-passport');
+      const btnFfFlex = document.getElementById('btn-ff-flex');
+
+      const updateFfButtons = (activeKey) => {
+        btnFfCandybar?.classList.toggle('active', activeKey === 'pixel8' || activeKey === 'iphone15' || activeKey === 'hdplus');
+        btnFfPassport?.classList.toggle('active', activeKey === 'passport');
+        btnFfFlex?.classList.toggle('active', activeKey === 'flex');
+        if (presetSelect) presetSelect.value = activeKey;
+      };
+
       presetSelect.addEventListener('change', (e) => {
         app.switchPreset(e.target.value);
+        updateFfButtons(e.target.value);
+      });
+
+      btnFfCandybar?.addEventListener('click', () => {
+        app.switchPreset('pixel8');
+        updateFfButtons('pixel8');
+      });
+
+      btnFfPassport?.addEventListener('click', () => {
+        app.switchPreset('passport');
+        updateFfButtons('passport');
+      });
+
+      btnFfFlex?.addEventListener('click', () => {
+        app.switchPreset('flex');
+        updateFfButtons('flex');
       });
 
       scaleSelect.addEventListener('change', (e) => {
