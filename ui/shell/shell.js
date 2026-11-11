@@ -1666,6 +1666,41 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   initDialerIfReady();
 
+  // Initialize Flagship Messages & SMS Stock App (ML-KEM-768 Hardware Sealed)
+  function initMessagesIfReady() {
+    const msgEl = document.getElementById('messages-root');
+    if (!msgEl) return;
+    if (window.messagesApp) return;
+
+    if (window.PravahMessages?.MessagesApp) {
+      window.messagesApp = new window.PravahMessages.MessagesApp({
+        container: msgEl,
+        airGapSecurity: true,
+        onMessageSent: (msg) => {
+          ShellState.auditLog.push({
+            seq: ShellState.auditLog.length,
+            timestamp: new Date().toISOString(),
+            caller: 'apps/messages',
+            capabilityId: 'telephony.sms.send',
+            riskLevel: 2,
+            decision: 'ALLOWED',
+            auditToken: `0x${Math.random().toString(16).slice(2, 10)}`,
+            metadata: {
+              messageId: msg.id,
+              encrypted: msg.encrypted,
+              securityBadge: msg.securityBadge
+            }
+          });
+          renderAuditStream();
+        }
+      });
+    } else {
+      setTimeout(initMessagesIfReady, 50);
+    }
+  }
+
+  initMessagesIfReady();
+
   // Initialize Android-Style Universal Back Gesture & Predictive Indicator
   function initBackGestureIfReady() {
     if (window.backGestureController) return;
@@ -2003,25 +2038,34 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ==========================================================================
   // Consumer App Squircle Grid & Floating Dock Shortcuts
   // ==========================================================================
-  // 1. Phone App
-  const launchPhone = () => {
+  // Stock Flagship Applications Integration
+  // ==========================================================================
+  const launchStockApp = (appId) => {
     window.hapticEngine?.triggerLight();
-    window.telecomDialer?.open();
+    if (window.getAppRunner) {
+      window.getAppRunner().launch(appId);
+      return;
+    }
+    // Fallbacks
+    if (appId === 'phone') window.telecomDialer?.open();
+    else if (appId === 'messages') window.messagesApp?.open();
   };
+
+  // 1. Phone App
+  const launchPhone = () => launchStockApp('phone');
   document.getElementById('app-tile-phone')?.addEventListener('click', launchPhone);
   document.getElementById('dock-btn-phone')?.addEventListener('click', launchPhone);
 
   // 2. Messages App
-  const launchMessages = () => {
-    window.hapticEngine?.triggerLight();
-    const input = document.getElementById('intent-input');
-    if (input) {
-      input.value = "Send a secure offline note: 'Arrived safely at Bengaluru Airport'";
-      input.focus();
-    }
-  };
+  const launchMessages = () => launchStockApp('messages');
   document.getElementById('app-tile-messages')?.addEventListener('click', launchMessages);
   document.getElementById('dock-btn-messages')?.addEventListener('click', launchMessages);
+
+  // Stock Apps: Gallery, Files, Calculator, Clock
+  document.getElementById('app-tile-gallery')?.addEventListener('click', () => launchStockApp('gallery'));
+  document.getElementById('app-tile-files')?.addEventListener('click', () => launchStockApp('files'));
+  document.getElementById('app-tile-calculator')?.addEventListener('click', () => launchStockApp('calculator'));
+  document.getElementById('app-tile-clock')?.addEventListener('click', () => launchStockApp('clock'));
 
   // 3. Camera App
   const launchCamera = () => {
@@ -2228,6 +2272,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       case 'PRAVAH_OPEN_DIALER':
         window.telecomDialer?.open();
+        break;
+
+      case 'PRAVAH_OPEN_MESSAGES':
+        window.messagesApp?.open();
         break;
 
       case 'PRAVAH_SIMULATE_CALL':

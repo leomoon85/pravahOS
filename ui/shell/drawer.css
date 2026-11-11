@@ -1216,6 +1216,17 @@
   box-shadow: 0 0 6px #7c4dff;
 }
 
+.badge-stock {
+  background: rgba(16, 185, 129, 0.16);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.badge-stock .badge-dot {
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981;
+}
+
 .metro-app-desc {
   font-size: 0.74rem;
   color: #94a3b8;

@@ -1,0 +1,904 @@
+/* Copyright 2026 The PravahOS Authors. All rights reserved. */
+/* Use of this source code is governed by a BSD-style license. */
+
+/**
+ * PravahOS Flagship Gallery & Photo Manager Styles
+ * 120Hz Fluid Responsive Grid, Frosted Glass Optics, and High-Performance Media Lightbox.
+ */
+
+/* ==========================================================================
+   1. Root Container & Layout
+   ========================================================================== */
+
+.gallery-app {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-primary, #070a14);
+  color: var(--text-primary, #f8fafc);
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "SF Pro Display", Roboto, sans-serif);
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ==========================================================================
+   2. Header & Glass Optics
+   ========================================================================== */
+
+.gallery-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px 8px 20px;
+  background: var(--glass-bg, rgba(13, 20, 36, 0.78));
+  backdrop-filter: var(--glass-blur, blur(32px) saturate(180%));
+  -webkit-backdrop-filter: var(--glass-blur, blur(32px) saturate(180%));
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.gallery-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gallery-branding {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gallery-logo {
+  font-size: 24px;
+  filter: drop-shadow(0 2px 8px rgba(56, 189, 248, 0.4));
+}
+
+.gallery-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+  background: linear-gradient(135deg, #ffffff 40%, var(--accent-primary, #38bdf8));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gallery-hal-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: rgba(56, 189, 248, 0.14);
+  color: var(--accent-primary, #38bdf8);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+}
+
+.gallery-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gallery-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text-primary, #f8fafc);
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gallery-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.gallery-btn.primary-btn {
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  border: none;
+  color: #070a14;
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.35);
+}
+
+.gallery-btn.capture-btn {
+  background: rgba(244, 63, 94, 0.15);
+  border-color: rgba(244, 63, 94, 0.35);
+  color: #fb7185;
+}
+
+.gallery-btn.capture-btn:hover {
+  background: rgba(244, 63, 94, 0.25);
+}
+
+.gallery-btn.lock-vault-btn {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+}
+
+/* ==========================================================================
+   3. Neural Vision Search Bar & Filter Chips
+   ========================================================================== */
+
+.gallery-search-bar {
+  display: flex;
+  align-items: center;
+  position: relative;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border-radius: 12px;
+  padding: 0 12px;
+  height: 40px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gallery-search-bar:focus-within {
+  border-color: var(--accent-primary, #38bdf8);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+.search-icon {
+  font-size: 15px;
+  color: var(--text-secondary, #94a3b8);
+  margin-right: 8px;
+}
+
+.gallery-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary, #f8fafc);
+  font-size: 13px;
+  outline: none;
+  font-family: inherit;
+}
+
+.gallery-search-input::placeholder {
+  color: var(--text-muted, #64748b);
+}
+
+.clear-search-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-search-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.gallery-chips-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 0 6px 0;
+  scrollbar-width: none;
+}
+
+.gallery-chips-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.gallery-chip {
+  padding: 5px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary, #94a3b8);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.gallery-chip:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+}
+
+.gallery-chip.active-chip {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: var(--accent-primary, #38bdf8);
+  color: var(--accent-primary, #38bdf8);
+  font-weight: 600;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+}
+
+/* ==========================================================================
+   4. Album Navigation Tabs
+   ========================================================================== */
+
+.gallery-nav-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 0;
+  scrollbar-width: none;
+}
+
+.gallery-nav-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.gallery-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gallery-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.gallery-tab-btn.active {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: var(--accent-primary, #38bdf8);
+  color: #ffffff;
+  box-shadow: inset 0 0 12px rgba(56, 189, 248, 0.18);
+}
+
+.tab-icon {
+  font-size: 15px;
+}
+
+.tab-count {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-secondary, #94a3b8);
+}
+
+.gallery-tab-btn.active .tab-count {
+  background: var(--accent-primary, #38bdf8);
+  color: #070a14;
+}
+
+/* ==========================================================================
+   5. Media Grid & 120Hz Responsive Architecture
+   ========================================================================== */
+
+.gallery-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px 40px 16px;
+  scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.gallery-date-section {
+  margin-bottom: 24px;
+}
+
+.gallery-date-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: rgba(7, 10, 20, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.date-header-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary, #f8fafc);
+  letter-spacing: -0.01em;
+}
+
+.date-header-count {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted, #64748b);
+}
+
+/* 120Hz Responsive Grid Layout */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+  gap: 4px;
+  contain: content;
+}
+
+@media (min-width: 640px) {
+  .gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 6px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+  }
+}
+
+/* Media Thumbnail Item */
+.gallery-item {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #111827;
+  cursor: pointer;
+  transform: translateZ(0);
+  will-change: transform;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease;
+}
+
+.gallery-item:hover {
+  transform: scale(1.025);
+  z-index: 2;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.6), 0 0 16px rgba(56, 189, 248, 0.2);
+}
+
+.gallery-item:focus-visible {
+  outline: 2px solid var(--accent-primary, #38bdf8);
+  outline-offset: 2px;
+}
+
+.gallery-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.gallery-item:hover .gallery-thumb {
+  transform: scale(1.04);
+}
+
+/* Item Badges */
+.gallery-badge {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 3px 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.duration-pill {
+  bottom: 6px;
+  right: 6px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.duration-pill .badge-icon {
+  font-size: 9px;
+  color: #38bdf8;
+}
+
+.gallery-fav-indicator {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  cursor: pointer;
+  opacity: 0.85;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gallery-fav-indicator:hover {
+  opacity: 1;
+  transform: scale(1.15);
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.gallery-fav-indicator.is-fav {
+  opacity: 1;
+  background: rgba(244, 63, 94, 0.3);
+  filter: drop-shadow(0 0 6px rgba(244, 63, 94, 0.6));
+}
+
+.privacy-pill {
+  bottom: 6px;
+  left: 6px;
+  font-size: 10px;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #94a3b8;
+}
+
+.privacy-pill.privacy-safe {
+  background: rgba(16, 185, 129, 0.25);
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.4);
+}
+
+.privacy-pill.privacy-gps {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+.gallery-item-title-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 16px 8px 6px 8px;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
+  font-size: 11px;
+  font-weight: 500;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.gallery-item:hover .gallery-item-title-overlay {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   6. Vault Locked & Empty States
+   ========================================================================== */
+
+.gallery-vault-locked-state,
+.gallery-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  text-align: center;
+  padding: 32px 16px;
+}
+
+.vault-lock-icon,
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.5));
+}
+
+.vault-title,
+.empty-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.vault-desc,
+.empty-desc {
+  font-size: 13px;
+  color: var(--text-secondary, #94a3b8);
+  max-width: 380px;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.vault-unlock-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.vault-pin-input {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.15));
+  border-radius: 10px;
+  padding: 8px 14px;
+  color: #ffffff;
+  font-size: 14px;
+  outline: none;
+  width: 140px;
+  text-align: center;
+  letter-spacing: 2px;
+}
+
+.vault-pin-input:focus {
+  border-color: var(--accent-primary, #38bdf8);
+}
+
+/* ==========================================================================
+   7. Full-Screen Lightbox Viewer
+   ========================================================================== */
+
+.gallery-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(3, 6, 12, 0.94);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  display: flex;
+  flex-direction: column;
+  animation: lightboxFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes lightboxFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Lightbox Top Bar */
+.lightbox-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: rgba(13, 20, 36, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 20;
+}
+
+.lightbox-title-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 60%;
+}
+
+.lightbox-photo-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lightbox-photo-date {
+  font-size: 11px;
+  color: var(--text-muted, #64748b);
+}
+
+.lightbox-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lightbox-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lightbox-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: scale(1.08);
+}
+
+.lightbox-btn.fav-active {
+  background: rgba(244, 63, 94, 0.25);
+  border-color: #f43f5e;
+}
+
+/* Lightbox Viewport & Pan/Zoom Simulation */
+.lightbox-viewport {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox-media-wrapper {
+  transform-origin: center center;
+  transition: transform 0.15s ease-out;
+  max-width: 90%;
+  max-height: 85%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.lightbox-img {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+}
+
+.lightbox-video-play-hint {
+  position: absolute;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* Navigation Chevrons */
+.lightbox-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+.lightbox-nav-btn:hover {
+  background: rgba(0, 0, 0, 0.85);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.lightbox-nav-btn.prev-btn {
+  left: 20px;
+}
+
+.lightbox-nav-btn.next-btn {
+  right: 20px;
+}
+
+/* Lightbox Bottom Controls */
+.lightbox-bottom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: rgba(13, 20, 36, 0.6);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 20;
+}
+
+.lightbox-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lightbox-tool-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.lightbox-tool-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.zoom-level-pill {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-primary, #38bdf8);
+  min-width: 42px;
+  text-align: center;
+  font-family: var(--font-mono, monospace);
+}
+
+.safe-share-btn {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(52, 211, 153, 0.4);
+  color: #34d399;
+}
+
+.safe-share-btn:hover {
+  background: rgba(16, 185, 129, 0.28);
+}
+
+.safe-share-btn.already-stripped {
+  background: rgba(52, 211, 153, 0.2);
+  color: #a7f3d0;
+  cursor: default;
+}
+
+/* ==========================================================================
+   8. EXIF Inspector & Metadata Drawer
+   ========================================================================== */
+
+.gallery-metadata-drawer {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  top: 0;
+  width: 360px;
+  max-width: 100%;
+  background: rgba(13, 20, 36, 0.92);
+  backdrop-filter: blur(36px);
+  -webkit-backdrop-filter: blur(36px);
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 30;
+}
+
+.gallery-metadata-drawer.open {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.drawer-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.drawer-close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.drawer-close-btn:hover {
+  color: #ffffff;
+}
+
+.drawer-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.meta-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.meta-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.meta-val {
+  font-size: 13px;
+  color: #f8fafc;
+  font-family: var(--font-mono, monospace);
+  word-break: break-all;
+}
+
+.warning-text {
+  color: #fbbf24;
+}
+
+.safe-text {
+  color: #34d399;
+}
+
+.drawer-section-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 8px 0;
+}
+
+.drawer-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-primary, #38bdf8);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.meta-action-block {
+  margin-top: 12px;
+}
+
+.scrub-btn {
+  width: 100%;
+  justify-content: center;
+  background: rgba(244, 63, 94, 0.16);
+  border-color: rgba(244, 63, 94, 0.38);
+  color: #fb7185;
+}
+
+.scrub-btn:hover {
+  background: rgba(244, 63, 94, 0.28);
+}
+
+.meta-safe-badge {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  color: #34d399;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}

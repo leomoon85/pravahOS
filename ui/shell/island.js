@@ -24,7 +24,8 @@ export const DynamicIslandState = {
   FLIGHT: 'FLIGHT',
   AUTH_SCAN: 'AUTH_SCAN',
   POLICY_ALERT: 'POLICY_ALERT',
-  NTN_SOS: 'NTN_SOS'
+  NTN_SOS: 'NTN_SOS',
+  TIMER: 'TIMER'
 };
 
 export const ISLAND_DIMENSIONS = {
@@ -57,6 +58,11 @@ export const ISLAND_DIMENSIONS = {
     width: 330,
     height: 54,
     borderRadius: 27
+  },
+  [DynamicIslandState.TIMER]: {
+    width: 280,
+    height: 52,
+    borderRadius: 26
   }
 };
 
@@ -66,6 +72,13 @@ export const ISLAND_DIMENSIONS = {
 export const DEFAULT_ISLAND_PAYLOADS = {
   [DynamicIslandState.COMPACT]: {
     label: 'AIR-GAP SECURED'
+  },
+  [DynamicIslandState.TIMER]: {
+    remainingSec: 300,
+    formattedTime: '05:00',
+    label: 'Precision Timer',
+    isRunning: true,
+    progress: 1.0
   },
   [DynamicIslandState.MUSIC]: {
     title: 'Flowing Waves',
@@ -178,6 +191,9 @@ export class DynamicIslandController {
       case DynamicIslandState.POLICY_ALERT:
         this.customHaptics.heavyWarning();
         break;
+      case DynamicIslandState.TIMER:
+        this.customHaptics.selectionTick();
+        break;
       default:
         this.customHaptics.lightTap();
     }
@@ -251,6 +267,10 @@ export class DynamicIslandController {
     this.render();
     this.notifyListeners();
     return musicData.isPlaying;
+  }
+
+  setTimer(timerInfo = {}) {
+    return this.transitionTo(DynamicIslandState.TIMER, timerInfo);
   }
 
   setFlight(flightInfo = {}) {
@@ -352,6 +372,7 @@ export class DynamicIslandController {
       'state-auth-scan',
       'state-policy-alert',
       'state-ntn-sos',
+      'state-timer',
       'expanded'
     );
 
@@ -386,6 +407,10 @@ export class DynamicIslandController {
       case DynamicIslandState.NTN_SOS:
         this.container.classList.add('state-ntn-sos', 'expanded');
         this.renderNtnSos();
+        break;
+      case DynamicIslandState.TIMER:
+        this.container.classList.add('state-timer', 'expanded');
+        this.renderTimer();
         break;
     }
   }
@@ -556,6 +581,36 @@ export class DynamicIslandController {
 
         <div class="ntn-island-right">
           <span class="ntn-island-pill-tag">AIR-GAP RF</span>
+        </div>
+      </div>
+    `;
+  }
+
+  renderTimer() {
+    const payload = this.getPayload(DynamicIslandState.TIMER);
+    const progress = Math.max(0, Math.min(1, payload.progress ?? 1));
+    const circumference = Math.round(2 * Math.PI * 13);
+    const strokeDash = Math.round(circumference * (1 - progress));
+    const isRunning = payload.isRunning !== false;
+
+    this.container.innerHTML = `
+      <div class="island-morph-surface island-timer-surface">
+        <div class="island-timer-left">
+          <svg class="island-timer-svg" width="30" height="30" viewBox="0 0 32 32">
+            <circle class="ring-bg" cx="16" cy="16" r="13" stroke="rgba(255,255,255,0.15)" stroke-width="3" fill="none" />
+            <circle class="ring-fill" cx="16" cy="16" r="13" stroke="#00e5ff" stroke-width="3" fill="none"
+              stroke-dasharray="${circumference}" stroke-dashoffset="${strokeDash}" stroke-linecap="round"
+              transform="rotate(-90 16 16)" />
+          </svg>
+          <div class="island-timer-meta">
+            <span class="island-timer-title">${payload.label || 'Timer'}</span>
+            <span class="island-timer-digits">${payload.formattedTime || '00:00'}</span>
+          </div>
+        </div>
+        <div class="island-timer-right">
+          <span class="island-timer-pill ${isRunning ? 'running' : 'paused'}">
+            ${isRunning ? 'ACTIVE' : 'PAUSED'}
+          </span>
         </div>
       </div>
     `;

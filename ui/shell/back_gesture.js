@@ -253,6 +253,13 @@ export function executeUniversalBackStack() {
     return { layer: 'DIALER', action: 'CLOSE' };
   }
 
+  // 3b. Messages Stock Application Surface
+  const messagesRoot = document.getElementById('messages-root');
+  if (messagesRoot && messagesRoot.classList.contains('expanded')) {
+    window.messagesApp?.close();
+    return { layer: 'MESSAGES', action: 'CLOSE' };
+  }
+
   // 4. Living Drawer & Fast Jump Modal
   if (window.livingDrawer && window.livingDrawer.state === 'EXPANDED') {
     if (window.livingDrawer.activeFastJump) {

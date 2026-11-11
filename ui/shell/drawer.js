@@ -168,6 +168,17 @@ export const BUILTIN_APPS = [
 
   // --- [C] ---
   {
+    id: 'calculator',
+    name: 'Calculator & Soulver Math',
+    category: 'Computation & Math',
+    description: 'Real-time live preview evaluation, scientific trigonometry & offline converter',
+    icon: '🧮',
+    letter: 'C',
+    accent: '#f59e0b',
+    launchType: 'stock_app',
+    tags: ['calculator', 'math', 'converter', 'currency', 'trig', 'soulver']
+  },
+  {
     id: 'camera_pro',
     name: 'Camera IMX890 Pro',
     category: 'Vision & Sensors',
@@ -180,6 +191,17 @@ export const BUILTIN_APPS = [
     tags: ['camera', 'photo', 'sensor', 'imx890', 'vmo', 'raw']
   },
   {
+    id: 'clock',
+    name: 'Clock, Timer & World Clocks',
+    category: 'Time & Alarms',
+    description: 'Multi-alarm scheduler, dynamic UTC offsets, Dynamic Island timer & stopwatch',
+    icon: '⏱️',
+    letter: 'C',
+    accent: '#10b981',
+    launchType: 'stock_app',
+    tags: ['clock', 'alarm', 'timer', 'stopwatch', 'worldclock', 'dynamicisland']
+  },
+  {
     id: 'crypto_remit',
     name: 'Crypto Remittance (USDC)',
     category: 'Finance & Payments',
@@ -190,6 +212,32 @@ export const BUILTIN_APPS = [
     launchType: 'dag',
     scenario: 'crypto',
     tags: ['crypto', 'usdc', 'payment', 'transfer', 'remittance', 'wallet']
+  },
+
+  // --- [F] ---
+  {
+    id: 'files',
+    name: 'Files & Vault Storage',
+    category: 'Storage & Files',
+    description: 'Capacity breakdown, ZIP archive inspector & Titan M2 hardware-sealed vault',
+    icon: '📁',
+    letter: 'F',
+    accent: '#3b82f6',
+    launchType: 'stock_app',
+    tags: ['files', 'storage', 'vault', 'explorer', 'zip', 'titan']
+  },
+
+  // --- [G] ---
+  {
+    id: 'gallery',
+    name: 'Gallery & AI Neural Vision',
+    category: 'Media & Photos',
+    description: 'On-device neural vision search, EXIF privacy scrubber & locked safe album',
+    icon: '🖼️',
+    letter: 'G',
+    accent: '#8b5cf6',
+    launchType: 'stock_app',
+    tags: ['gallery', 'photos', 'exif', 'camera', 'neural', 'vision']
   },
 
   // --- [M] ---
@@ -217,6 +265,17 @@ export const BUILTIN_APPS = [
     scenario: 'memory',
     tags: ['memory', 'ram', 'compactor', 'zircon', 'kernel', 'cache']
   },
+  {
+    id: 'messages',
+    name: 'Messages & Air-Gap SMS',
+    category: 'Communications',
+    description: 'Zero-cloud post-quantum ML-KEM-768 sealed SMS with scheduled delivery',
+    icon: '💬',
+    letter: 'M',
+    accent: '#06b6d4',
+    launchType: 'stock_app',
+    tags: ['messages', 'sms', 'chat', 'postquantum', 'mlkem', 'texts']
+  },
 
   // --- [N] ---
   {
@@ -241,6 +300,19 @@ export const BUILTIN_APPS = [
     launchType: 'dag',
     scenario: 'ocr',
     tags: ['notes', 'ocr', 'vault', 'document', 'privacy', 'text']
+  },
+
+  // --- [P] ---
+  {
+    id: 'phone',
+    name: 'Phone & Fossify T9 Dialer',
+    category: 'Telephony & Voice',
+    description: 'Instant Fossify T9 contact dialer, call screening & 3GPP satellite SOS',
+    icon: '📞',
+    letter: 'P',
+    accent: '#10b981',
+    launchType: 'stock_app',
+    tags: ['phone', 'dialer', 't9', 'call', 'satellite', 'contacts']
   },
 
   // --- [S] ---
@@ -1053,9 +1125,9 @@ export class LivingDrawer {
                 <div class="metro-app-content">
                   <div class="metro-app-primary">
                     <span class="metro-app-name">${app.name}</span>
-                    <span class="metro-launch-badge ${app.launchType === 'dag' ? 'badge-dag' : 'badge-ephemeral'}">
+                    <span class="metro-launch-badge ${app.launchType === 'dag' ? 'badge-dag' : (app.launchType === 'stock_app' ? 'badge-stock' : 'badge-ephemeral')}">
                       <span class="badge-dot"></span>
-                      ${app.launchType === 'dag' ? 'DAG' : 'ZERO-TAX'}
+                      ${app.launchType === 'dag' ? 'DAG' : (app.launchType === 'stock_app' ? 'FLAGSHIP' : 'ZERO-TAX')}
                     </span>
                   </div>
                   <div class="metro-app-desc">${app.description || ''}</div>
@@ -1290,7 +1362,16 @@ export class LivingDrawer {
       this.onLaunchApp(app, app.launchType);
     }
 
-    if (app.launchType === 'ephemeral') {
+    if (app.launchType === 'stock_app') {
+      try {
+        if (typeof window !== 'undefined' && window.getAppRunner) {
+          window.getAppRunner().launch(app.id);
+        }
+      } catch (err) {
+        console.error('Failed to launch stock app:', err);
+      }
+      this.collapse();
+    } else if (app.launchType === 'ephemeral') {
       this.windowManager.openWindow(app);
       this.collapse();
     } else {

@@ -2721,6 +2721,26 @@ body.flex-mode .workspace-card {
   box-shadow: 0 10px 24px -6px rgba(99, 102, 241, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.35);
 }
 
+.icon-gallery {
+  background: linear-gradient(135deg, #a855f7, #7e22ce);
+  box-shadow: 0 10px 24px -6px rgba(168, 85, 247, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+}
+
+.icon-files {
+  background: linear-gradient(135deg, #0ea5e9, #0369a1);
+  box-shadow: 0 10px 24px -6px rgba(14, 165, 233, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+}
+
+.icon-calculator {
+  background: linear-gradient(135deg, #f97316, #c2410c);
+  box-shadow: 0 10px 24px -6px rgba(249, 115, 22, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+}
+
+.icon-clock {
+  background: linear-gradient(135deg, #14b8a6, #0f766e);
+  box-shadow: 0 10px 24px -6px rgba(20, 184, 166, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+}
+
 /* ========================================================================== */
 /* Consumer Smart Outcome Live Card (Apple Intelligence / Gemini Style)       */
 /* ========================================================================== */

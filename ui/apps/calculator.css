@@ -1,0 +1,706 @@
+/* Copyright 2026 The PravahOS Authors. All rights reserved. */
+/* Use of this source code is governed by a BSD-style license. */
+
+/**
+ * @file calculator.css
+ * Glassmorphic Luxury Keypad & Offline Unit Converter Stylesheet for PravahOS.
+ */
+
+:root {
+  --calc-bg: rgba(10, 15, 28, 0.94);
+  --calc-glass-bg: rgba(18, 27, 46, 0.76);
+  --calc-glass-border: 1px solid rgba(255, 255, 255, 0.14);
+  --calc-glass-specular: inset 0 1px 1px rgba(255, 255, 255, 0.25), inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+  --calc-glass-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.82), 0 0 32px -4px rgba(56, 189, 248, 0.14);
+  --calc-accent-cyan: var(--accent-cyan, #38bdf8);
+  --calc-accent-blue: var(--accent-primary, #0ea5e9);
+  --calc-accent-danger: var(--accent-danger, #f43f5e);
+  --calc-accent-amber: var(--accent-amber, #f59e0b);
+  --calc-accent-emerald: var(--accent-emerald, #10b981);
+  --calc-text-primary: var(--text-primary, #f8fafc);
+  --calc-text-secondary: var(--text-secondary, #94a3b8);
+  --calc-text-muted: var(--text-muted, #64748b);
+  --calc-font-sans: var(--font-sans, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif);
+  --calc-font-mono: var(--font-mono, 'JetBrains Mono', 'SF Mono', Consolas, monospace);
+  --calc-spring-easing: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pravah-calc-root {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  min-height: 680px;
+  margin: 0 auto;
+  border-radius: 28px;
+  overflow: hidden;
+  background: var(--calc-bg);
+  -webkit-backdrop-filter: blur(40px) saturate(210%);
+  backdrop-filter: blur(40px) saturate(210%);
+  border: var(--calc-glass-border);
+  box-shadow: var(--calc-glass-shadow);
+  display: flex;
+  flex-direction: column;
+  font-family: var(--calc-font-sans);
+  color: var(--calc-text-primary);
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.pravah-calc-root *,
+.pravah-calc-root *::before,
+.pravah-calc-root *::after {
+  box-sizing: border-box;
+}
+
+.calc-surface {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 1.25rem 1.25rem 1.5rem;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   Header & Pill Bar
+   ========================================================================== */
+
+.calc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.calc-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.calc-icon {
+  font-size: 1.25rem;
+  color: var(--calc-accent-cyan);
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.5));
+}
+
+.calc-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--calc-text-secondary);
+}
+
+.calc-tab-switcher {
+  display: flex;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 3px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.calc-tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--calc-text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.2s var(--calc-spring-easing);
+}
+
+.calc-tab-btn:hover {
+  color: var(--calc-text-primary);
+}
+
+.calc-tab-btn.active {
+  background: var(--calc-glass-bg);
+  color: var(--calc-text-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.calc-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.calc-pill-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--calc-text-secondary);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.32rem 0.65rem;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s var(--calc-spring-easing);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.calc-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--calc-text-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.calc-pill-btn.active {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: var(--calc-accent-cyan);
+  color: var(--calc-accent-cyan);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+}
+
+.calc-history-badge {
+  background: var(--calc-accent-cyan);
+  color: #070a14;
+  font-size: 0.66rem;
+  font-weight: 800;
+  border-radius: 10px;
+  padding: 1px 5px;
+  line-height: 1;
+}
+
+/* ==========================================================================
+   Main Workspace Views
+   ========================================================================== */
+
+.calc-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.calc-view {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  position: relative;
+  width: 100%;
+}
+
+.calc-view.active {
+  display: flex;
+  animation: calcViewFade 0.25s var(--calc-spring-easing);
+}
+
+@keyframes calcViewFade {
+  from { opacity: 0; transform: scale(0.985); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ==========================================================================
+   History Tape Drawer
+   ========================================================================== */
+
+.calc-history-tape {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: rgba(14, 21, 38, 0.95);
+  -webkit-backdrop-filter: blur(28px);
+  backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  padding: 0.85rem;
+  transform: translateY(-110%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.3s var(--calc-spring-easing), opacity 0.3s ease;
+}
+
+.calc-history-tape.open {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.calc-history-tape-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.calc-history-heading {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--calc-text-secondary);
+}
+
+.calc-btn-clear-tape {
+  background: transparent;
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  color: var(--calc-accent-danger);
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.calc-btn-clear-tape:hover {
+  background: rgba(244, 63, 94, 0.2);
+  border-color: var(--calc-accent-danger);
+}
+
+.calc-history-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding-right: 4px;
+}
+
+.calc-history-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.calc-history-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+.calc-history-empty {
+  font-size: 0.82rem;
+  color: var(--calc-text-muted);
+  text-align: center;
+  margin-top: 3rem;
+  font-style: italic;
+}
+
+.calc-history-item {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 0.45rem 0.65rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.calc-history-item:hover {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.35);
+  transform: translateX(2px);
+}
+
+.calc-hist-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.76rem;
+  color: var(--calc-text-secondary);
+  font-family: var(--calc-font-mono);
+}
+
+.calc-hist-time {
+  font-size: 0.65rem;
+  color: var(--calc-text-muted);
+}
+
+.calc-hist-result {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--calc-accent-cyan);
+  font-family: var(--calc-font-mono);
+  margin-top: 0.2rem;
+  text-align: right;
+}
+
+/* ==========================================================================
+   Live Instant Evaluation Display Panel
+   ========================================================================== */
+
+.calc-display-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 110px;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1rem;
+  background: rgba(14, 21, 38, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 18px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
+  text-align: right;
+  word-break: break-all;
+  overflow: hidden;
+}
+
+.calc-display-expr {
+  font-family: var(--calc-font-mono);
+  font-size: 1.85rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--calc-text-primary);
+  min-height: 2.3rem;
+  letter-spacing: -0.02em;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.calc-display-expr::-webkit-scrollbar {
+  height: 3px;
+}
+
+.calc-display-expr::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+}
+
+.calc-display-preview {
+  font-family: var(--calc-font-mono);
+  font-size: 1.15rem;
+  font-weight: 700;
+  min-height: 1.5rem;
+  color: var(--calc-accent-cyan);
+  opacity: 0.92;
+  letter-spacing: 0.02em;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.35));
+}
+
+/* ==========================================================================
+   Scientific Foldable Keypad Panel
+   ========================================================================== */
+
+.calc-sci-panel {
+  display: none;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.45rem;
+  margin-bottom: 0.65rem;
+  padding: 0.55rem;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  animation: sciPanelSlide 0.25s var(--calc-spring-easing);
+}
+
+.calc-sci-panel.open {
+  display: grid;
+}
+
+@keyframes sciPanelSlide {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.calc-key-sci {
+  background: rgba(30, 41, 59, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0.55rem 0.2rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s var(--calc-spring-easing);
+  font-family: var(--calc-font-mono);
+}
+
+.calc-key-sci:hover {
+  background: rgba(51, 65, 85, 0.85);
+  color: var(--calc-accent-cyan);
+  border-color: rgba(56, 189, 248, 0.35);
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   Tactile Glassmorphic Keypad Grid
+   ========================================================================== */
+
+.calc-keypad-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.55rem;
+  flex: 1;
+}
+
+.calc-key {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--calc-font-sans);
+  font-size: 1.3rem;
+  font-weight: 500;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  padding: 0.95rem 0;
+  transition: all 0.15s var(--calc-spring-easing);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  outline: none;
+}
+
+/* Number Keys */
+.calc-key-num {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--calc-text-primary);
+}
+
+.calc-key-num:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+/* Operator Keys */
+.calc-key-op {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: var(--calc-accent-cyan);
+  font-size: 1.45rem;
+  font-weight: 600;
+}
+
+.calc-key-op:hover {
+  background: rgba(56, 189, 248, 0.28);
+  border-color: var(--calc-accent-cyan);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(56, 189, 248, 0.25);
+}
+
+/* Action Keys (AC, ±, %, ⌫) */
+.calc-key-action {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.calc-key-action:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateY(-2px);
+}
+
+.calc-key-danger {
+  background: rgba(244, 63, 94, 0.16);
+  border-color: rgba(244, 63, 94, 0.35);
+  color: var(--calc-accent-danger);
+}
+
+.calc-key-danger:hover {
+  background: rgba(244, 63, 94, 0.26);
+  border-color: var(--calc-accent-danger);
+  box-shadow: 0 6px 18px rgba(244, 63, 94, 0.25);
+}
+
+/* Equals Key (High-Contrast Hero Accent) */
+.calc-key-equals {
+  background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  font-size: 1.6rem;
+  font-weight: 700;
+  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.42), inset 0 1px 2px rgba(255, 255, 255, 0.4);
+}
+
+.calc-key-equals:hover {
+  background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(56, 189, 248, 0.55);
+}
+
+/* Haptic Pulse Keyframe Animation */
+.haptic-pulse,
+.calc-key:active {
+  transform: scale(0.92) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 16px rgba(56, 189, 248, 0.6) !important;
+  transition: transform 0.08s ease, box-shadow 0.08s ease !important;
+}
+
+/* ==========================================================================
+   Unit & Currency Converter View
+   ========================================================================== */
+
+.converter-category-bar {
+  display: flex;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px;
+  border-radius: 14px;
+  margin-bottom: 1.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.conv-cat-pill {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--calc-text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.45rem 0.2rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.conv-cat-pill:hover {
+  color: var(--calc-text-primary);
+}
+
+.conv-cat-pill.active {
+  background: var(--calc-glass-bg);
+  color: var(--calc-accent-cyan);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.conv-card-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  position: relative;
+}
+
+.conv-field-card {
+  background: rgba(14, 21, 38, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 1rem 1.1rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  transition: border-color 0.2s ease;
+}
+
+.conv-field-card:focus-within {
+  border-color: var(--calc-accent-cyan);
+  box-shadow: 0 8px 24px rgba(56, 189, 248, 0.15);
+}
+
+.conv-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--calc-text-secondary);
+}
+
+.conv-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.conv-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  font-family: var(--calc-font-mono);
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--calc-text-primary);
+  outline: none;
+  width: 100%;
+}
+
+.conv-output {
+  color: var(--calc-accent-cyan);
+}
+
+.conv-select {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--calc-text-primary);
+  font-family: var(--calc-font-sans);
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0.4rem 0.65rem;
+  border-radius: 12px;
+  cursor: pointer;
+  outline: none;
+  min-width: 130px;
+  transition: all 0.2s ease;
+}
+
+.conv-select:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.conv-select option {
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+.conv-swap-container {
+  display: flex;
+  justify-content: center;
+  margin: -0.3rem 0;
+  z-index: 5;
+}
+
+.conv-btn-swap {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: var(--calc-accent-cyan);
+  font-size: 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: all 0.25s var(--calc-spring-easing);
+}
+
+.conv-btn-swap:hover {
+  transform: rotate(180deg) scale(1.1);
+  background: rgba(56, 189, 248, 0.2);
+  border-color: var(--calc-accent-cyan);
+}
+
+.conv-rate-note {
+  margin-top: 1.25rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  font-size: 0.76rem;
+  color: var(--calc-text-secondary);
+  text-align: center;
+  font-family: var(--calc-font-mono);
+}
+
+/* Responsive tweaks for smaller screens */
+@media (max-width: 380px) {
+  .calc-surface {
+    padding: 0.85rem;
+  }
+  .calc-display-expr {
+    font-size: 1.5rem;
+  }
+  .calc-key {
+    font-size: 1.1rem;
+    padding: 0.8rem 0;
+  }
+}

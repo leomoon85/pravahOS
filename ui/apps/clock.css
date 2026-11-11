@@ -1,0 +1,1118 @@
+/* ==========================================================================
+   PravahOS Flagship Clock, Alarms, Stopwatch & Precision Timer App
+   Copyright 2026 The PravahOS Authors. All rights reserved.
+   ========================================================================== */
+
+:root {
+  --clock-bg: #090a0f;
+  --clock-surface: rgba(22, 24, 34, 0.72);
+  --clock-surface-border: rgba(255, 255, 255, 0.08);
+  --clock-text-primary: #f0f3f8;
+  --clock-text-secondary: rgba(240, 243, 248, 0.6);
+  --clock-text-muted: rgba(240, 243, 248, 0.38);
+
+  --clock-accent-cyan: #00e5ff;
+  --clock-accent-emerald: #00e676;
+  --clock-accent-purple: #7c4dff;
+  --clock-accent-coral: #ff5252;
+  --clock-accent-amber: #ffab00;
+
+  --clock-font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+  --clock-font-mono: 'SF Pro Rounded', 'JetBrains Mono', 'Menlo', monospace;
+}
+
+/* Base Root Container */
+.clock-app-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 480px;
+  max-width: 680px;
+  margin: 0 auto;
+  background: var(--clock-bg);
+  color: var(--clock-text-primary);
+  font-family: var(--clock-font-sans);
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+/* Ambient Header */
+.clock-header {
+  padding: 1.2rem 1.4rem 0.6rem 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--clock-surface-border);
+  background: rgba(12, 14, 20, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 10;
+}
+
+.clock-header-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.clock-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(180deg, #ffffff 30%, rgba(255, 255, 255, 0.75) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Microkernel Telemetry Badge */
+.clock-kernel-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--clock-text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 3px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  letter-spacing: 0.02em;
+}
+
+.kernel-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--clock-accent-cyan);
+  box-shadow: 0 0 8px var(--clock-accent-cyan);
+  animation: kernelPulse 2.4s infinite ease-in-out;
+}
+
+@keyframes kernelPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.85); }
+}
+
+.kernel-cap-tag {
+  color: var(--clock-accent-cyan);
+  font-family: var(--clock-font-mono);
+}
+
+.kernel-divider {
+  color: var(--clock-text-muted);
+}
+
+.kernel-status {
+  color: var(--clock-accent-emerald);
+}
+
+/* Main Surface */
+.clock-main-surface {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1.2rem 1.4rem calc(5rem + env(safe-area-inset-bottom, 20px)) 1.4rem;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom Scrollbar */
+.clock-main-surface::-webkit-scrollbar {
+  width: 4px;
+}
+.clock-main-surface::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+
+/* ==========================================================================
+   TAB BAR (Floating Glassmorphic Pill)
+   ========================================================================== */
+.clock-tabs-bar {
+  position: absolute;
+  bottom: 1.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  background: rgba(20, 22, 32, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 32px;
+  padding: 4px 6px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  z-index: 20;
+  gap: 4px;
+}
+
+.clock-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 8px 14px;
+  border-radius: 24px;
+  color: var(--clock-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.clock-tab-btn:hover {
+  color: var(--clock-text-primary);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.clock-tab-btn.active {
+  color: #fff;
+  background: rgba(0, 229, 255, 0.15);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.25);
+}
+
+.clock-tab-icon {
+  font-size: 0.95rem;
+}
+
+/* ==========================================================================
+   1. ALARMS TAB
+   ========================================================================== */
+.alarm-tab-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.alarm-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.alarm-count-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--clock-accent-cyan);
+  background: rgba(0, 229, 255, 0.1);
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 229, 255, 0.2);
+}
+
+.alarm-btn-add {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fff;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.alarm-btn-add:hover {
+  background: rgba(0, 229, 255, 0.2);
+  border-color: var(--clock-accent-cyan);
+}
+
+/* Add Alarm Modal Form */
+.alarm-add-form {
+  background: rgba(24, 26, 38, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 1.2rem;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  margin-bottom: 0.5rem;
+}
+
+.form-title {
+  margin: 0 0 1rem 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--clock-accent-cyan);
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 0.8rem;
+}
+
+.form-row label {
+  font-size: 0.72rem;
+  color: var(--clock-text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.alarm-time-input,
+.alarm-text-input,
+.alarm-select {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.alarm-time-input:focus,
+.alarm-text-input:focus,
+.alarm-select:focus {
+  border-color: var(--clock-accent-cyan);
+}
+
+.form-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 1rem;
+}
+
+.alarm-btn-cancel,
+.alarm-btn-save {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.alarm-btn-cancel {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--clock-text-secondary);
+}
+
+.alarm-btn-save {
+  background: var(--clock-accent-cyan);
+  color: #000;
+}
+
+/* Alarm Card */
+.alarm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.alarm-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--clock-surface);
+  border: 1px solid var(--clock-surface-border);
+  border-radius: 18px;
+  padding: 1.1rem 1.3rem;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  transition: all 0.22s ease;
+}
+
+.alarm-card.disabled {
+  opacity: 0.45;
+}
+
+.alarm-card:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
+}
+
+.alarm-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.alarm-time-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.alarm-time-digits {
+  font-size: 2.1rem;
+  font-weight: 700;
+  font-family: var(--clock-font-mono);
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+
+.alarm-period {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--clock-text-secondary);
+}
+
+.alarm-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--clock-text-primary);
+}
+
+.alarm-submeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.alarm-repeat-days {
+  font-size: 0.72rem;
+  color: var(--clock-text-muted);
+}
+
+.alarm-sound-pill {
+  font-size: 0.68rem;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 7px;
+  border-radius: 10px;
+  color: var(--clock-text-secondary);
+}
+
+.alarm-snooze-indicator {
+  font-size: 0.68rem;
+  background: rgba(255, 171, 0, 0.15);
+  color: var(--clock-accent-amber);
+  border: 1px solid rgba(255, 171, 0, 0.3);
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+
+.alarm-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Custom Interactive Switch */
+.alarm-toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 28px;
+  cursor: pointer;
+}
+
+.alarm-toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.alarm-toggle-slider {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 28px;
+  transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.alarm-toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.alarm-toggle-switch input:checked + .alarm-toggle-slider {
+  background: var(--clock-accent-emerald);
+  box-shadow: 0 0 12px rgba(0, 230, 118, 0.35);
+}
+
+.alarm-toggle-switch input:checked + .alarm-toggle-slider:before {
+  transform: translateX(20px);
+}
+
+.alarm-btn-delete {
+  background: transparent;
+  border: none;
+  color: var(--clock-text-muted);
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 8px;
+  transition: all 0.18s ease;
+}
+
+.alarm-btn-delete:hover {
+  color: var(--clock-accent-coral);
+  background: rgba(255, 82, 82, 0.12);
+}
+
+/* ==========================================================================
+   2. WORLD CLOCK TAB
+   ========================================================================== */
+.world-tab-view {
+  display: flex;
+  flex-direction: column;
+}
+
+.world-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.world-city-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--clock-surface);
+  border: 1px solid var(--clock-surface-border);
+  border-radius: 18px;
+  padding: 1.1rem 1.3rem;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  transition: all 0.22s ease;
+}
+
+.world-city-card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+
+.world-card-left {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+}
+
+/* Analog Clock Face */
+.world-analog-clock {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(14, 16, 24, 0.9);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.15);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.analog-face {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.analog-center-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--clock-accent-cyan);
+  transform: translate(-50%, -50%);
+  z-index: 5;
+}
+
+.analog-hand {
+  position: absolute;
+  bottom: 50%;
+  left: 50%;
+  transform-origin: bottom center;
+  border-radius: 2px;
+}
+
+.analog-hand.hour {
+  width: 2.5px;
+  height: 14px;
+  background: #ffffff;
+  margin-left: -1.25px;
+  z-index: 2;
+}
+
+.analog-hand.minute {
+  width: 1.8px;
+  height: 19px;
+  background: rgba(255, 255, 255, 0.85);
+  margin-left: -0.9px;
+  z-index: 3;
+}
+
+.analog-hand.second {
+  width: 1px;
+  height: 21px;
+  background: var(--clock-accent-cyan);
+  margin-left: -0.5px;
+  z-index: 4;
+}
+
+.world-city-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.world-city-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.world-city-name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+
+.world-daynight-icon {
+  font-size: 0.85rem;
+}
+
+.world-country-name {
+  font-size: 0.74rem;
+  color: var(--clock-text-muted);
+}
+
+.world-pills-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.world-tz-pill {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 8px;
+  background: rgba(0, 229, 255, 0.12);
+  color: var(--clock-accent-cyan);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  font-family: var(--clock-font-mono);
+}
+
+.world-tz-pill.local {
+  background: rgba(0, 230, 118, 0.12);
+  color: var(--clock-accent-emerald);
+  border-color: rgba(0, 230, 118, 0.25);
+}
+
+.world-day-badge {
+  font-size: 0.68rem;
+  color: var(--clock-text-muted);
+}
+
+.world-card-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.world-digital-time {
+  font-size: 1.45rem;
+  font-weight: 700;
+  font-family: var(--clock-font-mono);
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.world-digital-24 {
+  font-size: 0.72rem;
+  color: var(--clock-text-muted);
+  font-family: var(--clock-font-mono);
+}
+
+/* ==========================================================================
+   3. STOPWATCH TAB
+   ========================================================================== */
+.stopwatch-tab-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding-top: 1rem;
+}
+
+.stopwatch-display-large {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  font-family: var(--clock-font-mono);
+  letter-spacing: -0.04em;
+  user-select: text;
+}
+
+.stopwatch-digits-minsec {
+  font-size: 4.8rem;
+  font-weight: 700;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 28px rgba(255, 255, 255, 0.2);
+}
+
+.stopwatch-separator {
+  font-size: 3.5rem;
+  font-weight: 600;
+  color: var(--clock-accent-cyan);
+  margin: 0 2px;
+}
+
+.stopwatch-digits-ms {
+  font-size: 2.8rem;
+  font-weight: 600;
+  color: var(--clock-accent-cyan);
+  font-variant-numeric: tabular-nums;
+  width: 2.2ch;
+}
+
+.stopwatch-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.8rem;
+  width: 100%;
+}
+
+.stopwatch-btn {
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  outline: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+
+.stopwatch-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.stopwatch-btn.secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--clock-text-primary);
+}
+
+.stopwatch-btn.secondary:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.stopwatch-btn.primary.start {
+  background: rgba(0, 230, 118, 0.18);
+  border-color: rgba(0, 230, 118, 0.4);
+  color: var(--clock-accent-emerald);
+}
+
+.stopwatch-btn.primary.start:hover {
+  background: rgba(0, 230, 118, 0.28);
+  box-shadow: 0 0 20px rgba(0, 230, 118, 0.35);
+}
+
+.stopwatch-btn.primary.stop {
+  background: rgba(255, 82, 82, 0.18);
+  border-color: rgba(255, 82, 82, 0.4);
+  color: var(--clock-accent-coral);
+}
+
+.stopwatch-btn.primary.stop:hover {
+  background: rgba(255, 82, 82, 0.28);
+  box-shadow: 0 0 20px rgba(255, 82, 82, 0.35);
+}
+
+/* Laps Split Table */
+.stopwatch-laps-wrap {
+  width: 100%;
+  max-height: 240px;
+  overflow-y: auto;
+  border-top: 1px solid var(--clock-surface-border);
+  padding-top: 0.8rem;
+}
+
+.stopwatch-laps-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--clock-font-mono);
+  font-size: 0.85rem;
+}
+
+.stopwatch-laps-table th {
+  text-align: left;
+  padding: 6px 10px;
+  font-size: 0.7rem;
+  color: var(--clock-text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+  border-bottom: 1px solid var(--clock-surface-border);
+}
+
+.stopwatch-laps-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.col-lap-num {
+  color: var(--clock-text-secondary);
+  font-weight: 600;
+}
+
+.col-lap-time {
+  font-weight: 700;
+  color: #fff;
+}
+
+.col-split-time {
+  color: var(--clock-text-muted);
+  text-align: right;
+}
+
+/* Fastest and Slowest Lap Highlighting */
+.lap-row.lap-fastest td {
+  color: var(--clock-accent-emerald);
+  background: rgba(0, 230, 118, 0.05);
+}
+
+.lap-row.lap-slowest td {
+  color: var(--clock-accent-coral);
+  background: rgba(255, 82, 82, 0.05);
+}
+
+.lap-badge {
+  display: inline-block;
+  font-size: 0.62rem;
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-left: 6px;
+  font-weight: 800;
+}
+
+.lap-badge.fastest {
+  background: rgba(0, 230, 118, 0.15);
+  border: 1px solid rgba(0, 230, 118, 0.3);
+  color: var(--clock-accent-emerald);
+}
+
+.lap-badge.slowest {
+  background: rgba(255, 82, 82, 0.15);
+  border: 1px solid rgba(255, 82, 82, 0.3);
+  color: var(--clock-accent-coral);
+}
+
+/* ==========================================================================
+   4. PRECISION COUNTDOWN TIMER TAB
+   ========================================================================== */
+.timer-tab-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding-top: 0.5rem;
+}
+
+.timer-ring-container {
+  position: relative;
+  width: 230px;
+  height: 230px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timer-svg-ring {
+  transform: rotate(-90deg);
+  filter: drop-shadow(0 0 16px rgba(0, 229, 255, 0.2));
+}
+
+.timer-center-content {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.timer-digits-display {
+  font-size: 3.2rem;
+  font-weight: 700;
+  font-family: var(--clock-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(0, 229, 255, 0.25);
+}
+
+.timer-sublabel {
+  font-size: 0.78rem;
+  color: var(--clock-text-secondary);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.timer-presets-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  max-width: 380px;
+}
+
+.timer-preset-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--clock-text-secondary);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.timer-preset-btn:hover {
+  background: rgba(0, 229, 255, 0.15);
+  color: #fff;
+  border-color: rgba(0, 229, 255, 0.35);
+}
+
+.timer-preset-btn.active {
+  background: rgba(0, 229, 255, 0.22);
+  color: var(--clock-accent-cyan);
+  border-color: var(--clock-accent-cyan);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.3);
+}
+
+.timer-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.8rem;
+  width: 100%;
+}
+
+.timer-btn {
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  outline: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+
+.timer-btn.secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--clock-text-primary);
+}
+
+.timer-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.timer-btn.primary.start {
+  background: rgba(0, 230, 118, 0.18);
+  border-color: rgba(0, 230, 118, 0.4);
+  color: var(--clock-accent-emerald);
+}
+
+.timer-btn.primary.start:hover {
+  background: rgba(0, 230, 118, 0.28);
+  box-shadow: 0 0 20px rgba(0, 230, 118, 0.35);
+}
+
+.timer-btn.primary.pause {
+  background: rgba(255, 171, 0, 0.18);
+  border-color: rgba(255, 171, 0, 0.4);
+  color: var(--clock-accent-amber);
+}
+
+.timer-btn.primary.pause:hover {
+  background: rgba(255, 171, 0, 0.28);
+  box-shadow: 0 0 20px rgba(255, 171, 0, 0.35);
+}
+
+/* ==========================================================================
+   RINGING ALARM MODAL OVERLAY
+   ========================================================================== */
+.alarm-ringing-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.3s ease;
+}
+
+.alarm-ringing-modal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: rgba(22, 24, 34, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 28px;
+  padding: 2.2rem 2.4rem;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 229, 255, 0.2);
+  max-width: 340px;
+}
+
+.ringing-bell-pulse {
+  font-size: 3rem;
+  margin-bottom: 0.8rem;
+  animation: bellShake 1.2s infinite ease-in-out;
+}
+
+@keyframes bellShake {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(18deg); }
+  40% { transform: rotate(-18deg); }
+  60% { transform: rotate(10deg); }
+  80% { transform: rotate(-10deg); }
+}
+
+.ringing-time {
+  margin: 0;
+  font-size: 3rem;
+  font-weight: 700;
+  font-family: var(--clock-font-mono);
+  color: #fff;
+}
+
+.ringing-label {
+  margin: 0.4rem 0 0.2rem 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--clock-accent-cyan);
+}
+
+.ringing-sound {
+  margin: 0 0 1.5rem 0;
+  font-size: 0.78rem;
+  color: var(--clock-text-muted);
+}
+
+.ringing-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.ringing-btn {
+  width: 100%;
+  padding: 12px 18px;
+  border-radius: 16px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.ringing-btn.snooze {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.ringing-btn.snooze:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.ringing-btn.dismiss {
+  background: var(--clock-accent-coral);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(255, 82, 82, 0.4);
+}
+
+.ringing-btn.dismiss:hover {
+  transform: scale(1.02);
+}
+
+/* ==========================================================================
+   DYNAMIC ISLAND TIMER STATE STYLES
+   ========================================================================== */
+.dynamic-island.state-timer {
+  border-color: rgba(0, 229, 255, 0.45);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8), 0 0 24px rgba(0, 229, 255, 0.2);
+}
+
+.island-timer-surface {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  padding: 0 12px;
+}
+
+.island-timer-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.island-timer-svg {
+  flex-shrink: 0;
+}
+
+.island-timer-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.island-timer-title {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+}
+
+.island-timer-digits {
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-family: var(--clock-font-mono);
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+.island-timer-pill {
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 8px;
+  letter-spacing: 0.04em;
+}
+
+.island-timer-pill.running {
+  background: rgba(0, 230, 118, 0.2);
+  color: var(--clock-accent-emerald);
+  border: 1px solid rgba(0, 230, 118, 0.35);
+}
+
+.island-timer-pill.paused {
+  background: rgba(255, 171, 0, 0.2);
+  color: var(--clock-accent-amber);
+  border: 1px solid rgba(255, 171, 0, 0.35);
+}

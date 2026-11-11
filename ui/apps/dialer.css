@@ -1,0 +1,1211 @@
+/* Copyright 2026 The PravahOS Authors. All rights reserved. */
+/* Use of this source code is governed by a BSD-style license. */
+
+/**
+ * dialer.css
+ * PravahOS Flagship Phone & Contacts Stock App Styling.
+ * High-performance frosted glassmorphic UI, tactile numeric keypad,
+ * live call screen, and responsive mobile architecture.
+ */
+
+:root {
+  --phone-bg: #090d16;
+  --phone-surface: rgba(22, 30, 49, 0.75);
+  --phone-glass-border: rgba(255, 255, 255, 0.12);
+  --phone-glass-highlight: rgba(255, 255, 255, 0.05);
+  --phone-primary: #38bdf8;
+  --phone-emerald: #10b981;
+  --phone-emerald-hover: #059669;
+  --phone-crimson: #ef4444;
+  --phone-crimson-hover: #dc2626;
+  --phone-amber: #f59e0b;
+  --phone-text: #f8fafc;
+  --phone-text-muted: #94a3b8;
+  --phone-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.phone-dialer-root {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  background: var(--phone-bg);
+  color: var(--phone-text);
+  font-family: var(--phone-font);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.pravah-phone-app {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  box-sizing: border-box;
+  background: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.08), transparent 70%),
+              radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.05), transparent 60%),
+              var(--phone-bg);
+}
+
+/* ==========================================================================
+   Header Bar
+   ========================================================================== */
+
+.phone-app-header {
+  height: 60px;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--phone-glass-border);
+  z-index: 10;
+}
+
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-glyph {
+  font-size: 1.5rem;
+  filter: drop-shadow(0 2px 6px rgba(56, 189, 248, 0.4));
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+
+.brand-subtitle {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--phone-primary);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.btn-satellite-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fde68a;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-satellite-pill:hover {
+  background: rgba(245, 158, 11, 0.28);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-satellite-pill:active {
+  transform: scale(0.96);
+}
+
+/* ==========================================================================
+   Main Body & Views
+   ========================================================================== */
+
+.phone-app-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   Tab 1: Keypad & T9 Search View
+   ========================================================================== */
+
+.tab-keypad-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px 20px 20px 20px;
+  overflow-y: auto;
+}
+
+.digits-display-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 90px;
+  margin-bottom: 8px;
+}
+
+.t9-match-banner {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+.t9-suggestion-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(56, 189, 248, 0.14);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  padding: 5px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  animation: fadeInT9 0.25s ease-out;
+  transition: all 0.18s ease;
+}
+
+.t9-suggestion-chip:hover {
+  background: rgba(56, 189, 248, 0.25);
+  transform: scale(1.02);
+}
+
+@keyframes fadeInT9 {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.match-avatar {
+  font-size: 1rem;
+}
+
+.match-name {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #fff;
+}
+
+.match-num {
+  font-size: 0.78rem;
+  color: var(--phone-text-muted);
+}
+
+.match-call-hint {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--phone-emerald);
+  margin-left: 4px;
+}
+
+.t9-no-match {
+  font-size: 0.75rem;
+  color: var(--phone-text-muted);
+  font-style: italic;
+}
+
+.dialed-digits-field {
+  font-size: 2.1rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: #fff;
+  text-align: center;
+  word-break: break-all;
+  max-width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.digits-placeholder {
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: rgba(148, 163, 184, 0.45);
+}
+
+/* Glassmorphic Keypad Grid */
+.glass-keypad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px 18px;
+  max-width: 320px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.keypad-glass-btn {
+  aspect-ratio: 1 / 1;
+  max-width: 82px;
+  max-height: 82px;
+  margin: 0 auto;
+  width: 100%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--phone-glass-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2),
+              inset 0 1px 1px var(--phone-glass-highlight);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  transition: all 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.keypad-glass-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.24);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3),
+              inset 0 1px 2px rgba(255, 255, 255, 0.18);
+  transform: translateY(-2px);
+}
+
+.keypad-glass-btn:active {
+  transform: scale(0.92);
+  background: rgba(56, 189, 248, 0.25);
+  border-color: var(--phone-primary);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+}
+
+.k-digit {
+  font-size: 1.8rem;
+  font-weight: 600;
+  line-height: 1.1;
+  color: #fff;
+}
+
+.k-letters {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--phone-text-muted);
+  margin-top: 1px;
+}
+
+.k-sub {
+  font-size: 0.7rem;
+  color: var(--phone-text-muted);
+}
+
+/* Keypad Action Row (Call, SOS, Backspace) */
+.dialer-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  max-width: 320px;
+  margin: 12px auto 0 auto;
+  width: 100%;
+}
+
+.btn-glass-action {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--phone-glass-border);
+  color: #fff;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-glass-action:hover {
+  background: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
+}
+
+.btn-glass-action:active {
+  transform: scale(0.92);
+}
+
+.btn-sos-quick {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.btn-sos-quick:hover {
+  background: rgba(239, 68, 68, 0.25);
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.4);
+}
+
+.btn-backspace {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.btn-backspace.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.btn-call-emerald {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.45),
+              inset 0 1px 2px rgba(255, 255, 255, 0.4);
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.btn-call-emerald:hover {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.65);
+  transform: translateY(-2px) scale(1.04);
+}
+
+.btn-call-emerald:active {
+  transform: scale(0.94);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+}
+
+.call-icon {
+  font-size: 1.85rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* ==========================================================================
+   Tab 2: Recents (Call History) View
+   ========================================================================== */
+
+.tab-recents-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.recents-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.recents-header h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: #fff;
+}
+
+.recents-counter {
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 3px 10px;
+  border-radius: 9999px;
+  color: var(--phone-text-muted);
+}
+
+.recents-list-scroll {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.recents-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--phone-text-muted);
+  font-size: 0.9rem;
+}
+
+.recent-call-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--phone-glass-border);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.recent-call-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateX(2px);
+}
+
+.recent-type-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.badge-incoming {
+  background: rgba(16, 185, 129, 0.18);
+  color: var(--phone-emerald);
+}
+
+.badge-outgoing {
+  background: rgba(56, 189, 248, 0.18);
+  color: var(--phone-primary);
+}
+
+.badge-missed {
+  background: rgba(239, 68, 68, 0.18);
+  color: var(--phone-crimson);
+}
+
+.recent-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.recent-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.recent-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.recent-name.missed-text {
+  color: #f87171;
+}
+
+.pill-satellite-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: rgba(245, 158, 11, 0.2);
+  color: #fcd34d;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.pill-spam-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.recent-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--phone-text-muted);
+}
+
+.btn-recents-call {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  transition: transform 0.15s ease;
+}
+
+.btn-recents-call:hover {
+  transform: scale(1.18);
+}
+
+/* ==========================================================================
+   Tab 3: Contacts View
+   ========================================================================== */
+
+.tab-contacts-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.contacts-search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--phone-glass-border);
+  border-radius: 12px;
+  padding: 8px 14px;
+  margin-bottom: 14px;
+}
+
+.search-lens {
+  font-size: 0.95rem;
+  color: var(--phone-text-muted);
+}
+
+.contacts-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.contacts-search-input::placeholder {
+  color: var(--phone-text-muted);
+}
+
+.btn-clear-search {
+  background: transparent;
+  border: none;
+  color: var(--phone-text-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.contacts-scroll-view {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 4px;
+}
+
+.contacts-section-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--phone-text-muted);
+  margin-top: 4px;
+}
+
+.favorites-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.favorite-contact-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--phone-glass-border);
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.18s ease;
+}
+
+.favorite-contact-card:hover {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.4);
+  transform: translateY(-2px);
+}
+
+.fav-avatar {
+  font-size: 1.6rem;
+  margin-bottom: 4px;
+}
+
+.fav-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.fav-cat {
+  font-size: 0.65rem;
+  color: var(--phone-text-muted);
+}
+
+.contacts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.contact-row-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--phone-glass-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.contact-row-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.contact-avatar-pill {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+}
+
+.contact-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.contact-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.contact-num {
+  font-size: 0.8rem;
+  color: var(--phone-text-muted);
+}
+
+.contact-cat {
+  font-size: 0.75rem;
+  color: var(--phone-primary);
+}
+
+.btn-contact-quickcall {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.btn-contact-quickcall:hover {
+  transform: scale(1.15);
+}
+
+/* ==========================================================================
+   Tab 4: 3GPP Rel-17 Satellite SOS View
+   ========================================================================== */
+
+.tab-sos-view {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.sos-hero-card {
+  max-width: 420px;
+  width: 100%;
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 20px;
+  padding: 24px;
+  text-align: center;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.satellite-radar-icon {
+  font-size: 3rem;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 0 16px rgba(239, 68, 68, 0.6));
+  animation: orbitPulse 2.5s infinite ease-in-out;
+}
+
+@keyframes orbitPulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 14px rgba(239, 68, 68, 0.4)); }
+  50% { transform: scale(1.08); filter: drop-shadow(0 0 24px rgba(239, 68, 68, 0.8)); }
+}
+
+.sos-hero-card h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  color: #fca5a5;
+}
+
+.sos-hero-desc {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--phone-text-muted);
+  margin-bottom: 20px;
+}
+
+.sos-spec-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.spec-tile {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px 10px;
+  border-radius: 10px;
+  text-align: left;
+}
+
+.spec-label {
+  display: block;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: var(--phone-text-muted);
+  margin-bottom: 2px;
+}
+
+.spec-val {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.btn-sos-broadcast {
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.45);
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.btn-sos-broadcast:hover {
+  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+  box-shadow: 0 10px 30px rgba(239, 68, 68, 0.7);
+  transform: translateY(-2px);
+}
+
+.btn-sos-broadcast:active {
+  transform: scale(0.97);
+}
+
+.sos-legal-note {
+  font-size: 0.68rem;
+  color: var(--phone-text-muted);
+  margin-top: 10px;
+}
+
+/* ==========================================================================
+   Bottom Navigation Tab Bar
+   ========================================================================== */
+
+.phone-tab-bar {
+  height: 64px;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--phone-glass-border);
+  z-index: 10;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.phone-tab-bar.hidden {
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.phone-tab-btn {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--phone-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.phone-tab-btn:hover {
+  color: #fff;
+}
+
+.phone-tab-btn.active {
+  color: var(--phone-primary);
+}
+
+.phone-tab-btn.tab-sos.active {
+  color: #f87171;
+}
+
+.tab-icon {
+  font-size: 1.25rem;
+  margin-bottom: 2px;
+}
+
+.tab-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   Simulated Live In-Call Screen Overlay
+   ========================================================================== */
+
+.incall-fullscreen-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 50% 25%, rgba(56, 189, 248, 0.18), transparent 60%),
+              radial-gradient(circle at 50% 85%, rgba(16, 185, 129, 0.12), transparent 50%),
+              #070b13;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 30px 24px 34px 24px;
+  animation: slideUpInCall 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.incall-fullscreen-overlay.sos-active {
+  background: radial-gradient(circle at 50% 25%, rgba(239, 68, 68, 0.25), transparent 60%),
+              #0d0507;
+}
+
+@keyframes slideUpInCall {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.incall-top-status {
+  text-align: center;
+}
+
+.incall-carrier-tag {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--phone-primary);
+  background: rgba(56, 189, 248, 0.12);
+  padding: 4px 12px;
+  border-radius: 9999px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  margin-bottom: 6px;
+}
+
+.sos-active .incall-carrier-tag {
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.incall-duration-counter {
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.incall-contact-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.incall-avatar-pulse {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.incall-avatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.8rem;
+  z-index: 2;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.pulse-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  animation: pulseAvatar 2.8s infinite ease-out;
+}
+
+.sos-active .pulse-ring {
+  border-color: rgba(239, 68, 68, 0.6);
+}
+
+.ring-1 {
+  width: 100px;
+  height: 100px;
+  animation-delay: 0s;
+}
+
+.ring-2 {
+  width: 118px;
+  height: 118px;
+  animation-delay: 1.2s;
+}
+
+@keyframes pulseAvatar {
+  0% { transform: scale(0.85); opacity: 0.8; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+.incall-contact-name {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 4px 0;
+}
+
+.incall-contact-number {
+  font-size: 0.95rem;
+  color: var(--phone-text-muted);
+  margin: 0;
+}
+
+.incall-sos-flag {
+  margin-top: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+/* In-Call 6-Tile Glass Controls */
+.incall-controls-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px 14px;
+  max-width: 320px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.incall-tile-btn {
+  aspect-ratio: 1 / 1;
+  max-width: 76px;
+  max-height: 76px;
+  margin: 0 auto;
+  width: 100%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--phone-glass-border);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  outline: none;
+}
+
+.incall-tile-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  transform: translateY(-2px);
+}
+
+.incall-tile-btn.active {
+  background: rgba(56, 189, 248, 0.35);
+  border-color: var(--phone-primary);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.5);
+  color: #fff;
+}
+
+.tile-icon {
+  font-size: 1.45rem;
+  line-height: 1;
+  margin-bottom: 3px;
+}
+
+.tile-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* In-Call Keypad Collapsible Drawer */
+.incall-keypad-drawer {
+  display: none;
+  margin: 10px auto;
+  max-width: 280px;
+  width: 100%;
+}
+
+.incall-keypad-drawer.visible {
+  display: block;
+}
+
+.incall-mini-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.incall-dtmf-btn {
+  padding: 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--phone-glass-border);
+  color: #fff;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 600;
+  transition: background 0.12s ease;
+}
+
+.incall-dtmf-btn:active {
+  background: var(--phone-primary);
+}
+
+/* End Call Action */
+.incall-end-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.btn-end-call-crimson {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.5),
+              inset 0 1px 2px rgba(255, 255, 255, 0.4);
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.btn-end-call-crimson:hover {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+  box-shadow: 0 10px 32px rgba(239, 68, 68, 0.7);
+  transform: translateY(-2px) scale(1.05);
+}
+
+.btn-end-call-crimson:active {
+  transform: scale(0.92);
+}
+
+.end-icon {
+  font-size: 1.85rem;
+  transform: rotate(135deg);
+}
+
+/* Incoming Call Action Buttons */
+.incoming-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  max-width: 300px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.btn-incoming-decline {
+  padding: 14px 24px;
+  border-radius: 30px;
+  background: var(--phone-crimson);
+  color: #fff;
+  border: none;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+}
+
+.btn-incoming-answer {
+  padding: 14px 24px;
+  border-radius: 30px;
+  background: var(--phone-emerald);
+  color: #fff;
+  border: none;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+}
