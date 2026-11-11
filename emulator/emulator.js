@@ -1224,6 +1224,29 @@ class PhoneEmulatorApp {
         this.renderHUD(this.hud.state);
       }
 
+      if (data.type === 'PRAVAH_TORCH_STATE') {
+        const torchMod = this.container.querySelector('#phone-torch-module');
+        if (torchMod) {
+          torchMod.classList.toggle('active', Boolean(data.active));
+        }
+        this.pulseDynamicIsland(data.active ? 'TORCH ON' : 'TORCH OFF');
+      }
+
+      if (data.type === 'PRAVAH_SET_POWER_PROFILE') {
+        if (data.profile) {
+          this.pulseDynamicIsland(`PWR: ${data.profile} [${data.quantization}]`);
+        }
+      }
+
+      if (data.type === 'PRAVAH_SET_VOLUME') {
+        const vol = Number(data.volume);
+        if (!isNaN(vol)) {
+          if (this.sensory) this.sensory.audio.setMasterVolume(vol);
+          this.hud.setVolume(vol);
+          this.showVolumeSlider();
+        }
+      }
+
       if (data.type === 'PRAVAH_IME_EVENT') {
         const timeStr = new Date().toLocaleTimeString();
         const list = this.container.querySelector('#fidl-event-list');

@@ -500,6 +500,7 @@ function renderWorkspace() {
   const completed = task.nodes.filter(n => n.status === 'COMPLETED').length;
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
   progressFill.style.width = `${pct}%`;
+  window.controlShade?.updateTaskProgress(pct, `Step ${completed} of ${total}: ${task.nodes[Math.min(completed, Math.max(0, total - 1))]?.capabilityId || 'Done'}`);
 
   // Render DAG nodes & connector arrows
   let html = '';
@@ -1176,27 +1177,106 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   initDrawerIfReady();
 
-    // Direct swipe up gesture detection on bottom viewport edge
-    let touchStartY = 0;
-    let touchStartTime = 0;
-    window.addEventListener('touchstart', (e) => {
-      if (e.touches && e.touches[0]) {
-        touchStartY = e.touches[0].clientY;
-        touchStartTime = Date.now();
-      }
-    }, { passive: true });
+  // Initialize Control Center & Hardware Shade
+  function initShadeIfReady() {
+    const shadeEl = document.getElementById('control-shade');
+    if (!shadeEl) return;
+    if (window.controlShade) return;
 
-    window.addEventListener('touchend', (e) => {
-      if (e.changedTouches && e.changedTouches[0]) {
-        const dy = e.changedTouches[0].clientY - touchStartY;
-        const dt = Date.now() - touchStartTime;
-        // Swipe up from bottom area (dy < -60px within 500ms)
-        if (dy < -60 && dt < 500 && touchStartY > window.innerHeight - 160) {
-          window.livingDrawer?.expand();
+    if (window.PravahShade?.ControlCenterShade) {
+      window.controlShade = new window.PravahShade.ControlCenterShade({
+        container: shadeEl,
+        backdrop: document.getElementById('control-shade-backdrop'),
+        pullTrigger: document.getElementById('shade-pull-trigger'),
+        torchBeamContainer: document.getElementById('screen-torch-beam'),
+        brightnessFilter: document.getElementById('shade-brightness-filter'),
+        initialToggles: {
+          airgap: ShellState.offline
+        },
+        onStateChange: (state) => {
+          const pullTab = document.getElementById('shade-pull-trigger');
+          if (pullTab) {
+            pullTab.style.opacity = (state === 'EXPANDED') ? '0' : '1';
+            pullTab.style.pointerEvents = (state === 'EXPANDED') ? 'none' : 'auto';
+          }
+        },
+        onAirGapChange: (offline) => {
+          ShellState.offline = offline;
+          renderAmbientHeader();
+          window.livingDrawer?.updateTelemetry({ airgap: offline });
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'PRAVAH_SET_AIRGAP', offline }, '*');
+          }
+        },
+        onTorchChange: (active) => {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'PRAVAH_TORCH_STATE', active }, '*');
+          }
+        },
+        onPowerProfileChange: (profile) => {
+          const npuEl = document.getElementById('npu-val');
+          if (npuEl) {
+            npuEl.textContent = `${profile.quantization} • ${profile.powerDraw}`;
+          }
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({
+              type: 'PRAVAH_SET_POWER_PROFILE',
+              profile: profile.id,
+              quantization: profile.quantization,
+              npuFreq: profile.npuFreq,
+              powerDraw: profile.powerDraw
+            }, '*');
+          }
+        },
+        onVolumeChange: (vol) => {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'PRAVAH_SET_VOLUME', volume: vol }, '*');
+          }
         }
+      });
+
+      // Ambient header click: tapping header or top bar opens shade
+      const ambientHeader = document.querySelector('.ambient-header');
+      if (ambientHeader) {
+        ambientHeader.addEventListener('click', (e) => {
+          if (e.target.closest('#offline-badge') || e.target.closest('#authority-badge')) {
+            return;
+          }
+          window.PravahHaptics?.haptics.lightTap();
+          window.controlShade?.toggle();
+        });
       }
-    }, { passive: true });
+    } else {
+      setTimeout(initShadeIfReady, 50);
+    }
   }
+
+  initShadeIfReady();
+
+  // Direct swipe up / down gesture detection on viewport edges
+  let touchStartY = 0;
+  let touchStartTime = 0;
+  window.addEventListener('touchstart', (e) => {
+    if (e.touches && e.touches[0]) {
+      touchStartY = e.touches[0].clientY;
+      touchStartTime = Date.now();
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchend', (e) => {
+    if (e.changedTouches && e.changedTouches[0]) {
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      const dt = Date.now() - touchStartTime;
+      // Swipe up from bottom area (dy < -60px within 500ms)
+      if (dy < -60 && dt < 500 && touchStartY > window.innerHeight - 160) {
+        window.livingDrawer?.expand();
+      }
+      // Swipe down from top area (dy > 60px within 500ms)
+      if (dy > 60 && dt < 500 && touchStartY < 160) {
+        window.controlShade?.expand();
+      }
+    }
+  }, { passive: true });
 
   // Initialize Spring-Damping Gesture Physics & 120Hz Momentum Inertia
   initModalSheetSpringPhysics();
@@ -1371,6 +1451,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('offline-badge').addEventListener('click', () => {
     ShellState.offline = !ShellState.offline;
     renderAmbientHeader();
+    window.livingDrawer?.updateTelemetry({ airgap: ShellState.offline });
+    window.controlShade?.setAirGap(ShellState.offline);
   });
 
   // Authority badge toggle
@@ -1398,6 +1480,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         ShellState.offline = Boolean(data.offline);
         renderAmbientHeader();
         window.livingDrawer?.updateTelemetry({ airgap: ShellState.offline });
+        window.controlShade?.setAirGap(ShellState.offline);
         break;
 
       case 'PRAVAH_SET_AUTHORITY':
@@ -1438,10 +1521,16 @@ document.addEventListener('DOMContentLoaded', async () => {
           const g = data.gesture;
           const canvas = document.getElementById('dag-canvas');
           if (g.name === 'SWIPE_UP') {
-            window.livingDrawer?.expand();
+            if (window.controlShade && window.controlShade.state === 'EXPANDED') {
+              window.controlShade.collapse();
+            } else {
+              window.livingDrawer?.expand();
+            }
           } else if (g.name === 'SWIPE_DOWN') {
             if (window.livingDrawer && window.livingDrawer.state === 'EXPANDED') {
               window.livingDrawer.collapse();
+            } else if (window.controlShade && window.controlShade.state === 'COLLAPSED') {
+              window.controlShade.expand();
             } else {
               const modal = document.getElementById('approval-modal-backdrop');
               if (modal && modal.classList.contains('active')) {
@@ -1452,6 +1541,40 @@ document.addEventListener('DOMContentLoaded', async () => {
             const vel = g.name === 'SWIPE_LEFT' ? 700 : -700;
             canvas.scrollBy({ left: vel * 0.45, behavior: 'smooth' });
           }
+        }
+        break;
+
+      case 'PRAVAH_TOGGLE_SHADE':
+        if (window.controlShade) {
+          window.controlShade.toggle();
+        } else {
+          initShadeIfReady();
+          setTimeout(() => window.controlShade?.toggle(), 80);
+        }
+        break;
+
+      case 'PRAVAH_OPEN_SHADE':
+        if (window.controlShade) {
+          window.controlShade.expand();
+        } else {
+          initShadeIfReady();
+          setTimeout(() => window.controlShade?.expand(), 80);
+        }
+        break;
+
+      case 'PRAVAH_CLOSE_SHADE':
+        window.controlShade?.collapse();
+        break;
+
+      case 'PRAVAH_SET_BRIGHTNESS':
+        if (typeof data.brightness === 'number') {
+          window.controlShade?.setBrightness(data.brightness);
+        }
+        break;
+
+      case 'PRAVAH_SET_VOLUME':
+        if (typeof data.volume === 'number') {
+          window.controlShade?.setVolume(data.volume);
         }
         break;
 

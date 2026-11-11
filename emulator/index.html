@@ -66,6 +66,9 @@
 
       <!-- Touch Software Keyboard & Voice Pipeline Controls -->
       <div class="toolbar-group">
+        <button id="btn-toggle-control-shade" class="tb-btn" title="Toggle PravahOS Control Center & Hardware Shade">
+          ▾ Control Shade
+        </button>
         <button id="btn-toggle-soft-kbd" class="tb-btn" title="Toggle On-Screen Mobile Touch Keyboard">
           ⌨ Keyboard
         </button>
@@ -112,6 +115,12 @@
 
         <!-- Right Hardware Button: Power / Lock -->
         <div id="btn-hw-power" class="hw-button hw-btn-power" title="Hardware Power / Lock Button (Click: Sleep/Wake, Long Press: Power Menu)"></div>
+
+        <!-- Hardware Flashlight LED & Optical Beam Simulation (Phone Body) -->
+        <div id="phone-torch-module" class="phone-torch-module" title="Hardware Flashlight LED & Optical Cone Beam">
+          <div class="torch-emitter"></div>
+          <div class="torch-optical-beam"></div>
+        </div>
 
         <!-- Phone Chassis -->
         <div class="phone-chassis" id="phone-chassis">
@@ -727,6 +736,23 @@
 
       document.getElementById('btn-pwr-cancel').addEventListener('click', () => {
         app.hidePowerModal();
+      });
+
+      // Control Center & Hardware Shade toggles (Toolbar & Mobile Status Bar)
+      const btnControlShade = document.getElementById('btn-toggle-control-shade');
+      btnControlShade?.addEventListener('click', () => {
+        if (app.iframe && app.iframe.contentWindow) {
+          app.iframe.contentWindow.postMessage({ type: 'PRAVAH_TOGGLE_SHADE' }, '*');
+          app.pulseDynamicIsland('CONTROL SHADE');
+        }
+      });
+
+      const mobileStatusBar = document.querySelector('.mobile-status-bar');
+      mobileStatusBar?.addEventListener('click', () => {
+        if (app.iframe && app.iframe.contentWindow) {
+          app.iframe.contentWindow.postMessage({ type: 'PRAVAH_TOGGLE_SHADE' }, '*');
+          app.pulseDynamicIsland('CONTROL SHADE');
+        }
       });
 
       // Virtual Keyboard & Voice Dictation toolbar toggles

@@ -7,11 +7,33 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="../keyboard/keyboard.css">
   <link rel="stylesheet" href="drawer.css">
+  <link rel="stylesheet" href="shade.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+
+  <!-- Screen Brightness Filter Dimming Overlay -->
+  <div id="shade-brightness-filter" class="shade-brightness-filter"></div>
+
+  <!-- Screen Flashlight Beam Simulation Overlay -->
+  <div id="screen-torch-beam" class="screen-torch-beam"></div>
+
+  <!-- Control Shade Pull-Down Trigger Tab -->
+  <div id="shade-pull-trigger" class="shade-pull-trigger" title="Tap or Swipe Down to open Control Center & Hardware Shade">
+    <div class="shade-pull-handle"></div>
+    <div class="shade-pull-label">
+      <span class="shade-pull-chevron">▾</span>
+      <span>Control Center</span>
+    </div>
+  </div>
+
+  <!-- Control Shade Backdrop -->
+  <div id="control-shade-backdrop" class="shade-backdrop"></div>
+
+  <!-- Control Center & Hardware Shade Surface -->
+  <div id="control-shade" class="control-shade collapsed" aria-label="PravahOS Control Center & Hardware Shade"></div>
 
   <!-- 1. Ambient Status Header -->
   <header class="ambient-header">
@@ -215,6 +237,7 @@
   <script type="module" src="island.js"></script>
   <script type="module" src="../keyboard/voice.js"></script>
   <script type="module" src="../keyboard/keyboard.js"></script>
+  <script type="module" src="shade.js"></script>
   <script type="module" src="drawer.js"></script>
   <script src="shell.js"></script>
 </body>
