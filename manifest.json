@@ -1,0 +1,100 @@
+{
+  "name": "PravahOS Phone Emulator & Dynamic Shell",
+  "short_name": "PravahOS",
+  "description": "Deterministic microkernel mobile operating system, AArch64 sensory phone emulator, and dynamic experience shell.",
+  "id": "/emulator/",
+  "start_url": "/emulator/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
+  "orientation": "portrait-primary",
+  "background_color": "#070a14",
+  "theme_color": "#38bdf8",
+  "categories": [
+    "utilities",
+    "developer-tools",
+    "productivity",
+    "emulation"
+  ],
+  "icons": [
+    {
+      "src": "/assets/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-maskable.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Mobile Phone Emulator",
+      "short_name": "Emulator",
+      "description": "Open PravahOS Mobile Phone Emulator with sensory and HAL digitizer",
+      "url": "/emulator/",
+      "icons": [{ "src": "/assets/icons/icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Dynamic Experience Shell",
+      "short_name": "Dynamic Shell",
+      "description": "Open PravahOS Dynamic Experience Shell & Composer",
+      "url": "/ui/shell/",
+      "icons": [{ "src": "/assets/icons/icon-192.svg", "sizes": "192x192" }]
+    }
+  ],
+  "pravah_theme_tokens": {
+    "default": "twilight",
+    "themes": {
+      "twilight": {
+        "id": "twilight",
+        "name": "Celestial Twilight",
+        "primary": "#38bdf8",
+        "bg": "#070a14",
+        "desc": "Cosmic sapphire, deep indigo & starlight glow"
+      },
+      "botanical": {
+        "id": "botanical",
+        "name": "Botanical Sage",
+        "primary": "#34d399",
+        "bg": "#09130e",
+        "desc": "Pixel 9 matcha, calm bamboo & deep forest moss"
+      },
+      "sunset": {
+        "id": "sunset",
+        "name": "Sunset California",
+        "primary": "#fb923c",
+        "bg": "#150a12",
+        "desc": "Warm golden amber, twilight rose & peach glass"
+      },
+      "titanium": {
+        "id": "titanium",
+        "name": "Titanium Minimal",
+        "primary": "#e2e8f0",
+        "bg": "#0a0c10",
+        "desc": "iPhone 16 Pro brushed slate, platinum & monochrome"
+      },
+      "solar": {
+        "id": "solar",
+        "name": "Solar Dawn (Light)",
+        "primary": "#0284c7",
+        "bg": "#f1f5f9",
+        "desc": "Luminous daylight frosted glass & ocean cyan"
+      }
+    }
+  }
+}

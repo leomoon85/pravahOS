@@ -4,3 +4,4 @@
 export * from './camera_capability.js';
 export * from './notes_capability.js';
 export * from './wallet_capability.js';
+export * from './satellite_capability.js';

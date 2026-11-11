@@ -1994,6 +1994,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.lockScreen?.lock();
   });
 
+  // Guided Walkthrough Onboarding Tour Trigger
+  document.getElementById('btn-take-tour')?.addEventListener('click', () => {
+    window.hapticEngine?.triggerMedium();
+    window.pravahTour?.start({ force: true });
+  });
+
   // ==========================================================================
   // Consumer App Squircle Grid & Floating Dock Shortcuts
   // ==========================================================================

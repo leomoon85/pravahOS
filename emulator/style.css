@@ -1646,6 +1646,295 @@ body {
   transform: rotate(180deg);
 }
 
+/* ========================================================================== */
+/* Neural Vision Viewfinder HUD & AR Overlays                                  */
+/* ========================================================================== */
+
+.vision-hud-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  overflow: hidden;
+}
+
+/* Real-Time Scanning Reticle Frame */
+.reticle-frame {
+  position: absolute;
+  top: 14%;
+  left: 9%;
+  right: 9%;
+  bottom: 16%;
+  border: 1px dashed rgba(0, 229, 255, 0.35);
+  border-radius: 12px;
+  pointer-events: none;
+  transition: all 0.3s ease;
+}
+
+.reticle-corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: var(--accent-cyan);
+  border-style: solid;
+  border-width: 0;
+  filter: drop-shadow(0 0 6px var(--accent-cyan));
+}
+
+.reticle-corner.tl {
+  top: -2px;
+  left: -2px;
+  border-top-width: 3px;
+  border-left-width: 3px;
+  border-top-left-radius: 8px;
+}
+
+.reticle-corner.tr {
+  top: -2px;
+  right: -2px;
+  border-top-width: 3px;
+  border-right-width: 3px;
+  border-top-right-radius: 8px;
+}
+
+.reticle-corner.bl {
+  bottom: -2px;
+  left: -2px;
+  border-bottom-width: 3px;
+  border-left-width: 3px;
+  border-bottom-left-radius: 8px;
+}
+
+.reticle-corner.br {
+  bottom: -2px;
+  right: -2px;
+  border-bottom-width: 3px;
+  border-right-width: 3px;
+  border-bottom-right-radius: 8px;
+}
+
+/* Scanning Reticle Laser Sweep */
+.reticle-laser-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.6) 20%, #ffffff 50%, rgba(0, 229, 255, 0.6) 80%, transparent);
+  box-shadow: 0 0 10px #00e5ff, 0 0 20px rgba(0, 229, 255, 0.5);
+  animation: laserScan 2.5s ease-in-out infinite alternate;
+}
+
+@keyframes laserScan {
+  0% {
+    top: 4%;
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1.0;
+  }
+  100% {
+    top: 94%;
+    opacity: 0.7;
+  }
+}
+
+/* Dynamic AR Bounding Boxes Container */
+.vision-ar-boxes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ar-box {
+  position: absolute;
+  border: 1.5px solid #00e5ff;
+  background: rgba(0, 229, 255, 0.08);
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.35);
+  border-radius: 4px;
+  transition: all 0.15s ease-out;
+  pointer-events: none;
+}
+
+.ar-box.total {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.5);
+}
+
+.ar-box.header {
+  border-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.10);
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
+}
+
+.ar-box.barcode, .ar-box.qr {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.45);
+}
+
+.ar-tag {
+  position: absolute;
+  top: -19px;
+  left: -1px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid currentColor;
+  color: #00e5ff;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.ar-box.total .ar-tag {
+  color: #10b981;
+}
+
+.ar-box.header .ar-tag {
+  color: #a78bfa;
+}
+
+.ar-box.barcode .ar-tag, .ar-box.qr .ar-tag {
+  color: #f59e0b;
+}
+
+/* Floating Receipt Total AR Pill */
+.vision-total-pill {
+  position: absolute;
+  top: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1.5px solid #10b981;
+  backdrop-filter: blur(10px);
+  padding: 6px 14px;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35);
+  pointer-events: auto;
+  z-index: 12;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  animation: pillFloat 3s ease-in-out infinite alternate;
+}
+
+.vision-total-pill.hidden {
+  opacity: 0;
+  transform: translate(-50%, -10px);
+  pointer-events: none;
+}
+
+@keyframes pillFloat {
+  0% { transform: translate(-50%, 0); }
+  100% { transform: translate(-50%, -4px); }
+}
+
+.pill-badge-icon {
+  font-size: 1.1rem;
+}
+
+.pill-text-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.pill-title {
+  font-size: 0.55rem;
+  font-family: var(--font-mono);
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+}
+
+.pill-amount {
+  font-size: 0.95rem;
+  font-family: var(--font-mono);
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.pill-math-tag {
+  font-family: var(--font-mono);
+  font-size: 0.60rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid #10b981;
+}
+
+.pill-math-tag.discrepancy {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+/* Zero-Cloud-Leak Air-Gap Badge */
+.vision-airgap-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(6, 11, 21, 0.85);
+  border: 1px solid rgba(0, 229, 255, 0.4);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  padding: 3px 8px;
+  font-family: var(--font-mono);
+  font-size: 0.60rem;
+  font-weight: 700;
+  color: #00e5ff;
+  z-index: 8;
+  letter-spacing: 0.5px;
+}
+
+.vision-latency {
+  color: #94a3b8;
+  font-size: 0.55rem;
+  margin-left: 2px;
+}
+
+/* Smart Scan & Parse Action Button */
+.btn-smart-scan {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.22), rgba(124, 77, 255, 0.32));
+  border: 1.5px solid #00e5ff;
+  border-radius: 22px;
+  padding: 7px 13px;
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 0.70rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.3);
+  letter-spacing: 0.3px;
+}
+
+.btn-smart-scan:hover {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.38), rgba(124, 77, 255, 0.48));
+  box-shadow: 0 0 22px rgba(0, 229, 255, 0.6);
+  transform: translateY(-1px) scale(1.03);
+}
+
+.btn-smart-scan:active {
+  transform: scale(0.96);
+}
+
+.scan-sparkle {
+  font-size: 0.95rem;
+}
+
 /* On-Screen Thermal Alert Banner HUD */
 .thermal-warning-hud {
   position: absolute;

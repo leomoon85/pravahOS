@@ -1,0 +1,27 @@
+{
+  "name": "pravah-os",
+  "version": "1.0.0",
+  "description": "PravahOS - Microkernel Mobile Platform, Dynamic Experience Composer & Sensory Phone Emulator",
+  "type": "module",
+  "main": "serve.js",
+  "scripts": {
+    "start": "node serve.js",
+    "serve": "node serve.js",
+    "desktop": "powershell -ExecutionPolicy Bypass -File ./launch_desktop.ps1",
+    "test": "node --test runtime/tests/*.test.js ui/tests/*.test.js emulator/tests/*.test.js"
+  },
+  "keywords": [
+    "pravah-os",
+    "mobile-os",
+    "phone-emulator",
+    "dynamic-shell",
+    "pwa",
+    "standalone-desktop",
+    "microkernel"
+  ],
+  "author": "PravahOS Authors",
+  "license": "BSD-3-Clause",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

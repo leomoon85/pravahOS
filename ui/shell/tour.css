@@ -1,0 +1,521 @@
+/* Copyright 2026 The PravahOS Authors. All rights reserved. */
+/* Use of this source code is governed by a BSD-style license. */
+
+/**
+ * @file tour.css
+ * PravahOS Interactive Consumer Onboarding Tour Styles.
+ *
+ * Implements luxury liquid glassmorphism, dynamic spotlight focus ring,
+ * spring-like fluid transitions, responsive viewport clamping, and tactile controls.
+ */
+
+/* ============================================================================
+   1. Spotlight Overlay & Fullscreen Backdrop
+   ============================================================================ */
+
+.pravah-tour-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99990;
+  pointer-events: auto;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif);
+}
+
+.pravah-tour-overlay.tour-visible {
+  display: block;
+  opacity: 1;
+}
+
+/* Dimmed frosted backdrop layer */
+.tour-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(3, 7, 18, 0.74);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  transition: opacity 0.35s ease;
+}
+
+/* ============================================================================
+   2. Dynamic Spotlight Cutout Ring
+   ============================================================================ */
+
+.tour-spotlight-ring {
+  position: fixed;
+  pointer-events: none;
+  z-index: 99995;
+  box-sizing: border-box;
+  border-radius: 18px;
+  /* Massive outer box shadow produces the dark masking around the cutout */
+  box-shadow: 
+    0 0 0 9999px rgba(3, 7, 18, 0.78),
+    0 0 0 2px var(--accent-cyan, #38bdf8),
+    inset 0 0 16px rgba(56, 189, 248, 0.25),
+    0 0 32px var(--accent-glow, rgba(56, 189, 248, 0.45));
+  transition: 
+    top 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    left 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    width 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    height 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    border-radius 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.35s ease;
+  opacity: 1;
+}
+
+.tour-spotlight-ring.ring-hidden {
+  opacity: 0;
+  transform: scale(0.92);
+}
+
+/* Pulsing radar halo around spotlight */
+.tour-spotlight-ring::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border: 1.5px solid var(--accent-cyan, #38bdf8);
+  border-radius: inherit;
+  opacity: 0.6;
+  animation: tourRingPulse 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes tourRingPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.75;
+  }
+  50% {
+    transform: scale(1.025);
+    opacity: 0.25;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.75;
+  }
+}
+
+/* ============================================================================
+   3. Frosted Glass Tooltip Card
+   ============================================================================ */
+
+.tour-tooltip-card {
+  position: fixed;
+  z-index: 100000;
+  width: min(450px, calc(100vw - 32px));
+  max-width: 450px;
+  background: var(--glass-bg, rgba(14, 21, 38, 0.88));
+  backdrop-filter: var(--glass-blur, blur(36px) saturate(210%) brightness(105%));
+  -webkit-backdrop-filter: var(--glass-blur, blur(36px) saturate(210%) brightness(105%));
+  border: var(--glass-border, 1px solid rgba(255, 255, 255, 0.16));
+  box-shadow: 
+    0 24px 60px -8px rgba(0, 0, 0, 0.82),
+    0 0 36px -4px var(--accent-glow, rgba(56, 189, 248, 0.28)),
+    inset 0 1px 1px rgba(255, 255, 255, 0.25);
+  border-radius: 22px;
+  padding: 22px 24px;
+  box-sizing: border-box;
+  color: var(--text-primary, #f8fafc);
+  transition: 
+    top 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    left 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.32s ease;
+  animation: tourCardEnter 0.42s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  pointer-events: auto;
+}
+
+@keyframes tourCardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Centered modal fallback when step has no UI element */
+.tour-tooltip-card.card-centered {
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+}
+
+/* ============================================================================
+   4. Card Header & Badges
+   ============================================================================ */
+
+.tour-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.tour-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tour-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: var(--accent-cyan, #38bdf8);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.tour-step-counter {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  color: var(--text-muted, #94a3b8);
+  font-weight: 600;
+}
+
+.tour-btn-dismiss {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary, #94a3b8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.82rem;
+  line-height: 1;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.tour-btn-dismiss:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: scale(1.08);
+}
+
+/* ============================================================================
+   5. Card Body & Typography
+   ============================================================================ */
+
+.tour-card-body {
+  margin-bottom: 18px;
+}
+
+.tour-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.tour-glyph-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(129, 140, 248, 0.15));
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+}
+
+.tour-title-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.tour-step-title {
+  margin: 0;
+  font-size: 1.18rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+  line-height: 1.25;
+}
+
+.tour-step-subtitle {
+  margin-top: 2px;
+  font-size: 0.8rem;
+  color: var(--accent-cyan, #38bdf8);
+  font-weight: 600;
+}
+
+.tour-step-desc {
+  margin: 10px 0 14px 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--text-secondary, #cbd5e1);
+}
+
+/* Key feature pill highlight */
+.tour-feature-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.78rem;
+  color: var(--text-primary, #f1f5f9);
+  margin-bottom: 12px;
+}
+
+.tour-feature-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-cyan, #38bdf8);
+  box-shadow: 0 0 8px var(--accent-cyan, #38bdf8);
+  flex-shrink: 0;
+}
+
+/* ============================================================================
+   6. Interactive Preview Mini-Widgets
+   ============================================================================ */
+
+.tour-interactive-widget {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.tour-widget-label {
+  width: 100%;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #94a3b8);
+  font-family: var(--font-mono, monospace);
+  margin-bottom: 2px;
+}
+
+.tour-mini-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.tour-mini-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: var(--accent-cyan, #38bdf8);
+  transform: translateY(-1px);
+}
+
+.tour-mini-btn.active {
+  background: var(--accent-cyan, #38bdf8);
+  color: #070a14;
+  border-color: var(--accent-cyan, #38bdf8);
+  font-weight: 700;
+}
+
+/* ============================================================================
+   7. Card Footer & Stepper Navigation
+   ============================================================================ */
+
+.tour-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Step progress dots */
+.tour-step-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tour-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  border: none;
+  padding: 0;
+}
+
+.tour-dot:hover {
+  background: rgba(255, 255, 255, 0.5);
+  transform: scale(1.2);
+}
+
+.tour-dot.active {
+  width: 22px;
+  border-radius: 9999px;
+  background: var(--accent-cyan, #38bdf8);
+  box-shadow: 0 0 10px var(--accent-glow, rgba(56, 189, 248, 0.5));
+}
+
+/* Nav action buttons */
+.tour-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tour-btn-skip {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: color 0.18s ease;
+}
+
+.tour-btn-skip:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.tour-btn-back {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text-primary, #e2e8f0);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.tour-btn-back:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.tour-btn-back:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.tour-btn-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, var(--accent-cyan, #38bdf8), var(--accent-secondary, #818cf8));
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #070a14;
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px var(--accent-glow, rgba(56, 189, 248, 0.35));
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tour-btn-next:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 6px 20px var(--accent-glow, rgba(56, 189, 248, 0.5));
+}
+
+.tour-btn-next:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+/* ============================================================================
+   8. Status Bar / Help Trigger Button Styling
+   ============================================================================ */
+
+.status-tour-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: var(--accent-cyan, #38bdf8);
+}
+
+.status-tour-btn:hover {
+  background: rgba(56, 189, 248, 0.25);
+  border-color: var(--accent-cyan, #38bdf8);
+  box-shadow: 0 0 12px var(--accent-glow, rgba(56, 189, 248, 0.4));
+}
+
+.status-tour-btn .status-tour-dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-cyan, #38bdf8);
+  box-shadow: 0 0 6px var(--accent-cyan, #38bdf8);
+}
+
+/* ============================================================================
+   9. Mobile & Foldable Responsive Adaptations
+   ============================================================================ */
+
+@media (max-width: 480px) {
+  .tour-tooltip-card {
+    width: calc(100vw - 24px);
+    padding: 18px 18px;
+    border-radius: 18px;
+  }
+
+  .tour-card-header {
+    margin-bottom: 10px;
+  }
+
+  .tour-step-title {
+    font-size: 1.05rem;
+  }
+
+  .tour-step-desc {
+    font-size: 0.82rem;
+  }
+
+  .tour-btn-next {
+    padding: 7px 12px;
+    font-size: 0.78rem;
+  }
+}

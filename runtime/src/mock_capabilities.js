@@ -5,6 +5,7 @@ import { RiskLevel, AuthorityLevel } from './types.js';
 import { CameraCapability, CameraCapabilityDescriptor } from './capabilities/camera_capability.js';
 import { NotesCapability, NotesCapabilityDescriptor } from './capabilities/notes_capability.js';
 import { WalletCapability, WalletCapabilityDescriptor } from './capabilities/wallet_capability.js';
+import { SatelliteSosCapability, SatelliteSosDescriptor } from './capabilities/satellite_capability.js';
 
 export {
   CameraCapability,
@@ -12,7 +13,9 @@ export {
   NotesCapability,
   NotesCapabilityDescriptor,
   WalletCapability,
-  WalletCapabilityDescriptor
+  WalletCapabilityDescriptor,
+  SatelliteSosCapability,
+  SatelliteSosDescriptor
 };
 
 export const CoreCapabilities = {
@@ -102,5 +105,15 @@ export const CoreCapabilities = {
   CryptoWalletTransact: {
     descriptor: WalletCapabilityDescriptor,
     implementation: new WalletCapability()
+  },
+
+  // Pluggable Native Capability: 3GPP Rel-17 NTN Emergency SOS (emergency.satellite_sos)
+  SatelliteSos: {
+    descriptor: SatelliteSosDescriptor,
+    implementation: new SatelliteSosCapability()
+  },
+  'emergency.satellite_sos': {
+    descriptor: SatelliteSosDescriptor,
+    implementation: new SatelliteSosCapability()
   }
 };

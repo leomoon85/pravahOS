@@ -40,7 +40,11 @@ const CameraSensorNames = {
 const CameraPattern = {
   SMPTE_BARS: 'smpte',
   SYNTHETIC_SCENE: 'synthetic',
-  WEBCAM: 'webcam'
+  WEBCAM: 'webcam',
+  DOCUMENT: 'document',
+  RECEIPT: 'receipt',
+  BARCODE: 'barcode',
+  QR_CODE: 'qr'
 };
 
 const CameraFormat = {
@@ -111,6 +115,10 @@ const RfPowerRailState = {
 // 2. Camera Sensor & Viewfinder Bridge
 // ============================================================================
 
+const VisionBridgeModule = (typeof module !== 'undefined' && typeof require === 'function')
+  ? (() => { try { return require('./vision_pipeline.js'); } catch (_) { return null; } })()
+  : (typeof window !== 'undefined' ? window.VisionPipeline : null);
+
 /**
  * CameraSensorBridge
  * Models mobile camera sensor stream acquisition, SMPTE test pattern generation,
@@ -177,9 +185,8 @@ class CameraSensorBridge {
   }
 
   setPattern(pattern) {
-    if (pattern !== CameraPattern.SMPTE_BARS &&
-        pattern !== CameraPattern.SYNTHETIC_SCENE &&
-        pattern !== CameraPattern.WEBCAM) {
+    const valid = Object.values(CameraPattern);
+    if (!valid.includes(pattern)) {
       throw new Error(`Unsupported camera pattern: ${pattern}`);
     }
     this.patternType = pattern;
@@ -343,6 +350,12 @@ class CameraSensorBridge {
       }
     } else if (this.patternType === CameraPattern.SYNTHETIC_SCENE) {
       this.renderSyntheticScene(ctx, w, h);
+    } else if (this.patternType === CameraPattern.DOCUMENT) {
+      this.renderDocumentPattern(ctx, w, h);
+    } else if (this.patternType === CameraPattern.RECEIPT) {
+      this.renderReceiptPattern(ctx, w, h);
+    } else if (this.patternType === CameraPattern.BARCODE || this.patternType === CameraPattern.QR_CODE) {
+      this.renderBarcodePattern(ctx, w, h);
     } else {
       // Default: SMPTE 75% Color Bars
       this.renderSmpteBars(ctx, w, h);
@@ -515,6 +528,97 @@ class CameraSensorBridge {
     ctx.fill();
     ctx.strokeStyle = '#00e5ff';
     ctx.stroke();
+  }
+
+  renderDocumentPattern(ctx, w, h) {
+    if (VisionBridgeModule?.SyntheticPatterns?.generateDocumentPattern) {
+      const p = VisionBridgeModule.SyntheticPatterns.generateDocumentPattern(w, h);
+      p.renderToCanvas(ctx, w, h);
+    } else {
+      ctx.fillStyle = '#0a0f1d';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#fafafa';
+      ctx.fillRect(w * 0.1, h * 0.1, w * 0.8, h * 0.8);
+      ctx.fillStyle = '#1e293b';
+      ctx.font = '12px monospace';
+      ctx.fillText('DOCUMENT PATTERN', w / 2, h / 2);
+    }
+  }
+
+  renderReceiptPattern(ctx, w, h) {
+    if (VisionBridgeModule?.SyntheticPatterns?.generateReceiptPattern) {
+      const p = VisionBridgeModule.SyntheticPatterns.generateReceiptPattern(w, h);
+      p.renderToCanvas(ctx, w, h);
+    } else {
+      ctx.fillStyle = '#050811';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#fffdf5';
+      ctx.fillRect(w * 0.15, h * 0.08, w * 0.7, h * 0.84);
+      ctx.fillStyle = '#10b981';
+      ctx.font = 'bold 12px monospace';
+      ctx.fillText('RETAIL RECEIPT', w / 2, h / 2);
+    }
+  }
+
+  renderBarcodePattern(ctx, w, h) {
+    if (VisionBridgeModule?.SyntheticPatterns?.generateBarcodePattern) {
+      const p = VisionBridgeModule.SyntheticPatterns.generateBarcodePattern(w, h);
+      p.renderToCanvas(ctx, w, h);
+    } else {
+      ctx.fillStyle = '#060d1b';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(w * 0.2, h * 0.2, w * 0.6, h * 0.6);
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 14px monospace';
+      ctx.fillText('BARCODE / QR', w / 2, h / 2);
+    }
+  }
+
+  /**
+   * Acquires a 24-bit packed RGB888 camera buffer (Uint8Array) matching active pattern.
+   * Total length = width * height * 3.
+   * @param {number} [width=412]
+   * @param {number} [height=600]
+   * @returns {Uint8Array|Object} RGB888 packed buffer or synthetic pattern descriptor.
+   */
+  getRGB888Buffer(width = 412, height = 600) {
+    const w = Math.round(width);
+    const h = Math.round(height);
+
+    if (this.patternType === CameraPattern.DOCUMENT && VisionBridgeModule?.SyntheticPatterns) {
+      return VisionBridgeModule.SyntheticPatterns.generateDocumentPattern(w, h);
+    }
+    if (this.patternType === CameraPattern.RECEIPT && VisionBridgeModule?.SyntheticPatterns) {
+      return VisionBridgeModule.SyntheticPatterns.generateReceiptPattern(w, h);
+    }
+    if ((this.patternType === CameraPattern.BARCODE || this.patternType === CameraPattern.QR_CODE) && VisionBridgeModule?.SyntheticPatterns) {
+      return VisionBridgeModule.SyntheticPatterns.generateBarcodePattern(w, h);
+    }
+
+    // Default: Synthesize standard SMPTE 75% Color Bars into RGB888 buffer
+    const buffer = new Uint8Array(w * h * 3);
+    const colors = CameraSensorBridge.getSmpteColors();
+    const barWidth = Math.max(1, Math.floor(w / colors.length));
+
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const barIdx = Math.min(colors.length - 1, Math.floor(x / barWidth));
+        const c = colors[barIdx];
+        const offset = (y * w + x) * 3;
+        buffer[offset] = c.r;
+        buffer[offset + 1] = c.g;
+        buffer[offset + 2] = c.b;
+      }
+    }
+
+    return {
+      buffer,
+      width: w,
+      height: h,
+      format: CameraFormat.RGB888,
+      timestamp: Date.now()
+    };
   }
 
   renderHudOverlays(ctx, w, h) {

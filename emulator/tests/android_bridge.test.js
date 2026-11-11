@@ -1,15 +1,15 @@
 // Copyright 2026 The PravahOS Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license.
 
-import { describe, it, beforeEach } from 'node:test';
-import assert from 'node:assert/strict';
+const { describe, it, beforeEach } = require('node:test');
+const assert = require('node:assert/strict');
 
-import {
+const {
   AndroidAppId,
   AndroidAppState,
   EmulatorAndroidApps,
   EmulatorAndroidBridge
-} from '../android_bridge.js';
+} = require('../android_bridge.js');
 
 describe('PravahOS Emulator Android Bridge & Container Runner', () => {
   let bridge;

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="p-bg-grad-512" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0e172e" />
+      <stop offset="100%" stop-color="#070a14" />
+    </linearGradient>
+    <linearGradient id="p-accent-grad-512" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="45%" stop-color="#818cf8" />
+      <stop offset="100%" stop-color="#c084fc" />
+    </linearGradient>
+    <filter id="p-glow-512" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Squircle Base -->
+  <rect x="24" y="24" width="464" height="464" rx="112" ry="112" fill="url(#p-bg-grad-512)" stroke="#1e293b" stroke-width="6" />
+
+  <!-- Ambient Flow Halo -->
+  <circle cx="256" cy="256" r="170" fill="none" stroke="url(#p-accent-grad-512)" stroke-width="3" opacity="0.35" />
+  <circle cx="256" cy="256" r="195" fill="none" stroke="url(#p-accent-grad-512)" stroke-width="1.5" stroke-dasharray="8 12" opacity="0.2" />
+
+  <!-- Pravah 'P' Emblem with Dynamic Flow -->
+  <g filter="url(#p-glow-512)">
+    <!-- Vertical stem -->
+    <rect x="168" y="128" width="42" height="256" rx="21" fill="url(#p-accent-grad-512)" />
+    <!-- Flow loop -->
+    <path d="M 184 128 H 288 C 342 128 364 165 364 208 C 364 251 342 288 288 288 H 194" fill="none" stroke="url(#p-accent-grad-512)" stroke-width="42" stroke-linecap="round" stroke-linejoin="round" />
+    <!-- Dynamic orbital flow dot -->
+    <circle cx="282" cy="208" r="16" fill="#38bdf8" />
+  </g>
+</svg>

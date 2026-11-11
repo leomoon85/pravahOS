@@ -23,7 +23,8 @@ export const DynamicIslandState = {
   MUSIC: 'MUSIC',
   FLIGHT: 'FLIGHT',
   AUTH_SCAN: 'AUTH_SCAN',
-  POLICY_ALERT: 'POLICY_ALERT'
+  POLICY_ALERT: 'POLICY_ALERT',
+  NTN_SOS: 'NTN_SOS'
 };
 
 export const ISLAND_DIMENSIONS = {
@@ -51,6 +52,11 @@ export const ISLAND_DIMENSIONS = {
     width: 340,
     height: 118,
     borderRadius: 28
+  },
+  [DynamicIslandState.NTN_SOS]: {
+    width: 330,
+    height: 54,
+    borderRadius: 27
   }
 };
 
@@ -88,6 +94,12 @@ export const DEFAULT_ISLAND_PAYLOADS = {
     description: 'Transfer ₹5,000 to Alice (alice@okhdfcbank)',
     caller: '/core/uia/task_fin_01',
     requiresApproval: true
+  },
+  [DynamicIslandState.NTN_SOS]: {
+    status: 'NTN LOCKED • BURST SENT',
+    satellite: 'StarLink-NTN-402',
+    band: 'L-Band (1621.25 MHz)',
+    margin: '+4.2 dB'
   }
 };
 
@@ -339,6 +351,7 @@ export class DynamicIslandController {
       'state-flight',
       'state-auth-scan',
       'state-policy-alert',
+      'state-ntn-sos',
       'expanded'
     );
 
@@ -369,6 +382,10 @@ export class DynamicIslandController {
       case DynamicIslandState.POLICY_ALERT:
         this.container.classList.add('state-policy-alert', 'expanded');
         this.renderPolicyAlert();
+        break;
+      case DynamicIslandState.NTN_SOS:
+        this.container.classList.add('state-ntn-sos', 'expanded');
+        this.renderNtnSos();
         break;
     }
   }
@@ -516,6 +533,32 @@ export class DynamicIslandController {
         this.approvePolicy();
       });
     }
+  }
+
+  renderNtnSos() {
+    const payload = this.getPayload(DynamicIslandState.NTN_SOS);
+    const statusText = payload.status || 'NTN LOCKED • BURST SENT';
+    const satName = payload.satellite || 'StarLink-NTN-402';
+    const margin = payload.margin || '+4.2 dB';
+
+    this.container.innerHTML = `
+      <div class="island-morph-surface island-ntn-surface">
+        <div class="ntn-island-left">
+          <div class="ntn-satellite-beacon">
+            <span class="ntn-sat-icon">🛰️</span>
+            <div class="beacon-wave-ring"></div>
+          </div>
+          <div class="ntn-island-info">
+            <span class="ntn-island-status">${statusText}</span>
+            <span class="ntn-island-sat">${satName} • ${margin} margin</span>
+          </div>
+        </div>
+
+        <div class="ntn-island-right">
+          <span class="ntn-island-pill-tag">AIR-GAP RF</span>
+        </div>
+      </div>
+    `;
   }
 }
 

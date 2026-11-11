@@ -23,11 +23,14 @@ const MIME_TYPES = {
   '.js': 'text/javascript; charset=utf-8',
   '.mjs': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.webmanifest': 'application/manifest+json; charset=utf-8',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon'
+  '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
+  '.wasm': 'application/wasm'
 };
 
 const server = http.createServer((req, res) => {
@@ -67,11 +70,17 @@ const server = http.createServer((req, res) => {
         return;
       }
 
-      res.writeHead(200, {
+      const headers = {
         'Content-Type': contentType,
         'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Access-Control-Allow-Origin': '*'
-      });
+        'Access-Control-Allow-Origin': '*',
+        'Service-Worker-Allowed': '/'
+      };
+      if (reqPath.endsWith('manifest.json') || ext === '.webmanifest') {
+        headers['Content-Type'] = 'application/manifest+json; charset=utf-8';
+      }
+
+      res.writeHead(200, headers);
       res.end(content);
     });
   });

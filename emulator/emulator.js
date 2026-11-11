@@ -862,6 +862,19 @@ class PhoneEmulatorApp {
       this.dormancySupervisor = null;
     }
 
+    // On-Device Neural Vision Intelligence Subsystem
+    const VisionModule = (typeof require === 'function')
+      ? (() => { try { return require('./vision_pipeline.js'); } catch (_) { return null; } })()
+      : (typeof window !== 'undefined' ? window.VisionPipeline : null);
+
+    if (VisionModule && VisionModule.VisionPipeline) {
+      this.visionPipeline = new VisionModule.VisionPipeline();
+      this.visionModule = VisionModule;
+    } else {
+      this.visionPipeline = null;
+      this.visionModule = null;
+    }
+
     // Touch visualization state
     this.touchTrails = [];
     this.simulatedPinch = false;
@@ -892,6 +905,14 @@ class PhoneEmulatorApp {
     this.cameraCanvas = this.container.querySelector('#camera-viewfinder-canvas');
     this.audioCanvas = this.container.querySelector('#audio-visualizer-canvas');
     this.thermalWarningHud = this.container.querySelector('#thermal-warning-hud');
+
+    // Neural Vision HUD elements
+    this.visionHudOverlay = this.container.querySelector('#vision-hud-overlay');
+    this.visionArBoxes = this.container.querySelector('#vision-ar-boxes');
+    this.visionTotalPill = this.container.querySelector('#vision-total-pill');
+    this.visionTotalVal = this.container.querySelector('#vision-total-val');
+    this.visionMathStatus = this.container.querySelector('#vision-math-status');
+    this.visionLatencyBadge = this.container.querySelector('#vision-latency-badge');
 
     if (this.bridge && this.iframe) {
       this.bridge.targetIframe = this.iframe;
@@ -1150,9 +1171,66 @@ class PhoneEmulatorApp {
     if (btnCamFlip) btnCamFlip.addEventListener('click', switchCameraSensor);
     if (btnCamSwitchSensor) btnCamSwitchSensor.addEventListener('click', switchCameraSensor);
 
+    // Neural Vision "Smart Scan & Parse" shutter action
+    const btnSmartScan = this.container.querySelector('#btn-smart-scan');
+    const btnCamSmartScanPanel = this.container.querySelector('#btn-cam-smart-scan-panel');
+
+    const triggerSmartScan = () => {
+      if (!this.sensory?.camera || !this.visionPipeline) return;
+      const result = this.visionPipeline.executeSmartScan(this.sensory.camera);
+
+      if (valCamSnaps) valCamSnaps.textContent = String(this.sensory.camera.capturedPhotos.length);
+      const itemsCount = result.visionAnalysis.itemizedReceipt?.itemCount || 0;
+      const totalAmount = result.visionAnalysis.itemizedReceipt?.total
+        ? `${result.visionAnalysis.itemizedReceipt.currency}${result.visionAnalysis.itemizedReceipt.total.toFixed(2)}`
+        : 'PARSED';
+      this.pulseDynamicIsland(`🧠 SCAN: ${itemsCount} ITEMS • ${totalAmount} [0-LEAK]`);
+
+      const thumb = this.container.querySelector('#gallery-thumb-placeholder');
+      if (thumb) thumb.textContent = `OCR #${result.mediaCaptureRecord.photoId.slice(-4)}`;
+
+      this.updateVisionAnalysis();
+
+      // Log FIDL Capability Transaction
+      const fidlMsg = {
+        timestamp: new Date().toISOString().substring(11, 23),
+        type: 'CAPABILITY_INVOCATION',
+        app: 'PravahOS Neural Vision',
+        summary: `media.camera.capture -> vision.ocr_extract [${result.visionAnalysis.classification.type}] (0 bytes network, AIR-GAP SAFE)`
+      };
+      const evList = this.container.querySelector('#fidl-event-list');
+      if (evList) {
+        const div = document.createElement('div');
+        div.className = 'event-entry';
+        div.innerHTML = `<span class="ev-time">${fidlMsg.timestamp}</span> <span class="ev-type" style="color:var(--accent-cyan);">VISION_OCR</span> <span class="ev-payload">${fidlMsg.summary}</span>`;
+        evList.prepend(div);
+      }
+
+      // Dispatch to Shell iframe if connected
+      if (this.iframe && this.iframe.contentWindow) {
+        this.iframe.contentWindow.postMessage({
+          type: 'PRAVAH_VISION_PARSED',
+          result
+        }, '*');
+      }
+
+      return result;
+    };
+
+    if (btnSmartScan) btnSmartScan.addEventListener('click', triggerSmartScan);
+    if (btnCamSmartScanPanel) {
+      btnCamSmartScanPanel.addEventListener('click', () => {
+        toggleCameraLayer(true);
+        triggerSmartScan();
+      });
+    }
+
     if (selCamPattern) {
       selCamPattern.addEventListener('change', (e) => {
-        if (this.sensory) this.sensory.camera.setPattern(e.target.value);
+        if (this.sensory) {
+          this.sensory.camera.setPattern(e.target.value);
+          this.updateVisionAnalysis(e.target.value);
+        }
       });
     }
 
@@ -1160,11 +1238,25 @@ class PhoneEmulatorApp {
       btnCamPatternToggle.addEventListener('click', () => {
         if (!this.sensory) return;
         const current = this.sensory.camera.patternType;
-        const next = current === 'smpte' ? 'synthetic' : 'smpte';
+        const patterns = ['smpte', 'receipt', 'document', 'barcode', 'synthetic'];
+        const nextIdx = (patterns.indexOf(current) + 1) % patterns.length;
+        const next = patterns[nextIdx];
         this.sensory.camera.setPattern(next);
         if (selCamPattern) selCamPattern.value = next;
         this.pulseDynamicIsland(`PATTERN: ${next.toUpperCase()}`);
+        this.updateVisionAnalysis(next);
       });
+    }
+
+    // Hook camera frame tick to periodically refresh neural vision HUD
+    if (this.sensory?.camera) {
+      const origFrameTick = this.sensory.camera.onFrameTick;
+      this.sensory.camera.onFrameTick = (frameId) => {
+        if (origFrameTick) origFrameTick(frameId);
+        if (frameId % 20 === 0 && this.cameraLayer && this.cameraLayer.classList.contains('active')) {
+          this.updateVisionAnalysis();
+        }
+      };
     }
 
     // Zoom pills
@@ -1331,6 +1423,72 @@ class PhoneEmulatorApp {
     if (this.powerModal) {
       this.powerModal.classList.remove('active');
     }
+  }
+
+  /**
+   * Refreshes real-time on-device neural vision analysis and AR overlay HUD.
+   */
+  updateVisionAnalysis(pattern) {
+    if (!this.visionPipeline || !this.sensory?.camera) return;
+    const pat = pattern || this.sensory.camera.patternType;
+    if (pat === 'smpte') {
+      if (this.visionArBoxes) this.visionArBoxes.innerHTML = '';
+      if (this.visionTotalPill) this.visionTotalPill.classList.add('hidden');
+      return;
+    }
+
+    try {
+      const frameData = this.sensory.camera.getRGB888Buffer(412, 600);
+      const analysis = this.visionPipeline.analyzeFrame(frameData, 412, 600);
+
+      // Render AR Bounding Boxes
+      if (this.visionArBoxes && Array.isArray(analysis.boundingBoxes)) {
+        this.visionArBoxes.innerHTML = analysis.boundingBoxes.map((b) => {
+          const x = b.box.x;
+          const y = b.box.y;
+          const w = b.box.width;
+          const h = b.box.height;
+          let boxClass = 'ar-box';
+          if (b.type && b.type.includes('TOTAL')) boxClass += ' total';
+          else if (b.type && b.type.includes('HEADER')) boxClass += ' header';
+          else if (b.type && (b.type.includes('BARCODE') || b.type.includes('QR'))) boxClass += ' qr';
+
+          const rawTag = b.text ? (b.text.length > 22 ? b.text.slice(0, 22) + '...' : b.text) : b.label;
+          const cleanTag = String(rawTag).replace(/[&<>"']/g, '');
+          return `
+            <div class="${boxClass}" style="left:${x}px; top:${y}px; width:${w}px; height:${h}px;">
+              <span class="ar-tag">${cleanTag}</span>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Update Detected Total Floating AR Pill
+      if (this.visionTotalPill) {
+        if (analysis.itemizedReceipt && analysis.itemizedReceipt.total) {
+          this.visionTotalPill.classList.remove('hidden');
+          if (this.visionTotalVal) {
+            this.visionTotalVal.textContent = `${analysis.itemizedReceipt.currency}${analysis.itemizedReceipt.total.toFixed(2)}`;
+          }
+          if (this.visionMathStatus) {
+            if (analysis.itemizedReceipt.isValidMath) {
+              this.visionMathStatus.textContent = '✓ MATH OK';
+              this.visionMathStatus.className = 'pill-math-tag verified';
+            } else {
+              this.visionMathStatus.textContent = `Δ ${analysis.itemizedReceipt.mathVariance}`;
+              this.visionMathStatus.className = 'pill-math-tag discrepancy';
+            }
+          }
+        } else {
+          this.visionTotalPill.classList.add('hidden');
+        }
+      }
+
+      // Update Latency Badge
+      if (this.visionLatencyBadge) {
+        this.visionLatencyBadge.textContent = `${analysis.inferenceTimeMs.toFixed(1)}ms`;
+      }
+    } catch (_) {}
   }
 
   pulseDynamicIsland(text) {

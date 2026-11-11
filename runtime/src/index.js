@@ -9,6 +9,8 @@ export * from './mock_capabilities.js';
 export * from './inference.js';
 export * from './offline_runner.js';
 export * from './capabilities/index.js';
+export * from './capabilities.js';
+export * from './satellite_ntn.js';
 export * from './memory.js';
 export * from './planner.js';
 export * from './compat/android_bridge.js';
