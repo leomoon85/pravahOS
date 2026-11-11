@@ -624,11 +624,13 @@ function renderWorkspace() {
   const subEl = document.getElementById('task-sub');
   const progressFill = document.getElementById('progress-fill');
   const canvas = document.getElementById('dag-canvas');
+  const outcomeCard = document.getElementById('consumer-outcome-card');
 
   if (!ShellState.currentTask) {
     if (titleEl) titleEl.textContent = "Your Day's Flow";
-    if (subEl) subEl.textContent = 'Ask Pravah or select a flow below to start.';
+    if (subEl) subEl.textContent = 'Ask Pravah or select an app or flow below to start.';
     if (progressFill) progressFill.style.width = '0%';
+    if (outcomeCard) outcomeCard.style.display = 'none';
     if (canvas) canvas.innerHTML = '<div class="dag-empty-state"><span class="empty-sparkle">✧</span><p>Ready when you are. Tell Pravah what you want to achieve.</p></div>';
     return;
   }
@@ -642,6 +644,42 @@ function renderWorkspace() {
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
   progressFill.style.width = `${pct}%`;
   window.controlShade?.updateTaskProgress(pct, `Step ${completed} of ${total}: ${task.nodes[Math.min(completed, Math.max(0, total - 1))]?.capabilityId || 'Done'}`);
+
+  // Update Consumer Smart Outcome Live Card
+  if (outcomeCard) {
+    outcomeCard.style.display = 'flex';
+    const headlineEl = document.getElementById('outcome-headline');
+    const summaryEl = document.getElementById('outcome-summary');
+    const badgeEl = document.getElementById('outcome-status-badge');
+    const iconGlowEl = document.getElementById('outcome-icon-glow');
+
+    if (headlineEl) headlineEl.textContent = task.goal;
+    const isCompleted = completed === total && total > 0;
+    if (badgeEl) {
+      badgeEl.textContent = isCompleted ? '✓ Executed' : (task.state === 'WAITING_FOR_APPROVAL' ? 'Action Needed' : 'Processing ✦');
+      badgeEl.className = `outcome-badge ${isCompleted ? 'badge-success' : 'badge-pending'}`;
+    }
+    if (iconGlowEl) {
+      iconGlowEl.textContent = isCompleted ? '✨' : '⚙️';
+    }
+
+    // Friendly human summary derived from task outputs
+    let summaryText = `All ${total} autonomous steps orchestrated on-device with zero cloud telemetry egress.`;
+    if (task.nodes.some(n => n.output?.flightNumber)) {
+      const f = task.nodes.find(n => n.output?.flightNumber)?.output;
+      summaryText = `Flight ${f.flightNumber} is ${f.status} from ${f.departure} to ${f.arrival}. Terminal ${f.terminal}, Gate ${f.gate}. Calendar boarding alert active.`;
+    } else if (task.nodes.some(n => n.output?.txnId)) {
+      const p = task.nodes.find(n => n.output?.txnId)?.output;
+      summaryText = `Payment of ${p.amount} to ${p.recipient} completed securely via local ledger. Reference: ${p.txnId}.`;
+    } else if (task.nodes.some(n => n.output?.sensorName)) {
+      const c = task.nodes.find(n => n.output?.sensorName)?.output;
+      summaryText = `High-resolution document captured with ${c.sensorName}. Smart private note encrypted locally.`;
+    } else if (task.nodes.some(n => n.output?.cleanAmount)) {
+      const r = task.nodes.find(n => n.output?.cleanAmount)?.output;
+      summaryText = `Receipt parsed: ${r.cleanAmount}. Sensitive PII phone numbers redacted and saved to local expenses.`;
+    }
+    if (summaryEl) summaryEl.textContent = summaryText;
+  }
 
   // Render DAG nodes & connector arrows
   let html = '';
@@ -1716,6 +1754,170 @@ document.addEventListener('DOMContentLoaded', async () => {
     ShellState.telemetry.cpu = Math.min(80, Math.max(8, ShellState.telemetry.cpu + Math.floor(Math.random() * 5 - 2)));
     renderAmbientHeader();
   }, 2500);
+
+  // ==========================================================================
+  // Modern Consumer Desktop: Clock & Date Ticker
+  // ==========================================================================
+  function updateDesktopLiveClock() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const timeStr = `${hours}:${minutes}`;
+
+    const statusClock = document.getElementById('shell-status-clock');
+    if (statusClock) statusClock.textContent = timeStr;
+
+    const heroTime = document.getElementById('desktop-hero-time');
+    if (heroTime) heroTime.textContent = timeStr;
+
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const dateStr = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+
+    const heroDate = document.getElementById('desktop-hero-date');
+    if (heroDate) heroDate.textContent = dateStr;
+  }
+  updateDesktopLiveClock();
+  setInterval(updateDesktopLiveClock, 1000);
+
+  // ==========================================================================
+  // Dynamic Luxury Wallpaper & Color Themes Engine
+  // ==========================================================================
+  function applyTheme(themeId) {
+    if (!themeId) themeId = 'twilight';
+    document.documentElement.setAttribute('data-theme', themeId);
+    document.body.setAttribute('data-theme', themeId);
+    try {
+      localStorage.setItem('pravah_theme', themeId);
+    } catch (_) {}
+
+    document.querySelectorAll('.theme-preview-card').forEach(card => {
+      if (card.dataset.themeId === themeId) {
+        card.classList.add('active');
+      } else {
+        card.classList.remove('active');
+      }
+    });
+
+    // Notify iframe parent / emulator of theme update
+    if (window.parent) {
+      window.parent.postMessage({ type: 'PRAVAH_THEME_CHANGED', themeId }, '*');
+    }
+  }
+
+  const savedTheme = (() => {
+    try {
+      return localStorage.getItem('pravah_theme') || 'twilight';
+    } catch (_) {
+      return 'twilight';
+    }
+  })();
+  applyTheme(savedTheme);
+
+  // Wallpaper & Themes Modal controls
+  const themeModal = document.getElementById('theme-modal-backdrop');
+  function openThemeModal() {
+    if (themeModal) themeModal.style.display = 'flex';
+    window.hapticEngine?.triggerLight();
+  }
+  function closeThemeModal() {
+    if (themeModal) themeModal.style.display = 'none';
+  }
+
+  document.getElementById('btn-theme-switcher')?.addEventListener('click', openThemeModal);
+  document.getElementById('app-tile-themes')?.addEventListener('click', openThemeModal);
+  document.getElementById('btn-close-theme-modal')?.addEventListener('click', closeThemeModal);
+  themeModal?.addEventListener('click', (e) => {
+    if (e.target === themeModal) closeThemeModal();
+  });
+
+  document.querySelectorAll('.theme-preview-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const themeId = card.dataset.themeId;
+      if (themeId) {
+        applyTheme(themeId);
+        window.hapticEngine?.triggerMedium();
+      }
+    });
+  });
+
+  // Quick Lock Button (triggers 1Hz AOD & Biometric Lock)
+  document.getElementById('btn-quick-lock')?.addEventListener('click', () => {
+    window.hapticEngine?.triggerHeavy();
+    window.lockScreen?.lock();
+  });
+
+  // ==========================================================================
+  // Consumer App Squircle Grid & Floating Dock Shortcuts
+  // ==========================================================================
+  // 1. Phone App
+  const launchPhone = () => {
+    window.hapticEngine?.triggerLight();
+    window.telecomDialer?.open();
+  };
+  document.getElementById('app-tile-phone')?.addEventListener('click', launchPhone);
+  document.getElementById('dock-btn-phone')?.addEventListener('click', launchPhone);
+
+  // 2. Messages App
+  const launchMessages = () => {
+    window.hapticEngine?.triggerLight();
+    const input = document.getElementById('intent-input');
+    if (input) {
+      input.value = "Send a secure offline note: 'Arrived safely at Bengaluru Airport'";
+      input.focus();
+    }
+  };
+  document.getElementById('app-tile-messages')?.addEventListener('click', launchMessages);
+  document.getElementById('dock-btn-messages')?.addEventListener('click', launchMessages);
+
+  // 3. Camera App
+  const launchCamera = () => {
+    window.hapticEngine?.triggerLight();
+    window.parent?.postMessage({ type: 'PRAVAH_OPEN_CAMERA' }, '*');
+    executeTask('camera_note');
+  };
+  document.getElementById('app-tile-camera')?.addEventListener('click', launchCamera);
+  document.getElementById('dock-btn-camera')?.addEventListener('click', launchCamera);
+
+  // 4. Maps App
+  document.getElementById('app-tile-maps')?.addEventListener('click', () => {
+    window.hapticEngine?.triggerLight();
+    executeTask('android_maps');
+  });
+
+  // 5. Music App
+  document.getElementById('app-tile-music')?.addEventListener('click', () => {
+    window.hapticEngine?.triggerLight();
+    executeTask('android_spotify');
+  });
+
+  // 6. Wallet App
+  document.getElementById('app-tile-wallet')?.addEventListener('click', () => {
+    window.hapticEngine?.triggerLight();
+    executeTask('payment');
+  });
+
+  // 7. App Hub / Zero-Tax AOT Installer
+  document.getElementById('app-tile-installer')?.addEventListener('click', () => {
+    window.hapticEngine?.triggerLight();
+    window.parent?.postMessage({ type: 'PRAVAH_OPEN_INSTALLER' }, '*');
+  });
+
+  // 8. Living Drawer Dock Trigger
+  document.getElementById('dock-btn-drawer')?.addEventListener('click', () => {
+    window.hapticEngine?.triggerLight();
+    window.livingDrawer?.toggle();
+  });
+
+  // Developer / Technical Verification Drawer Toggle
+  const devToggleBtn = document.getElementById('btn-toggle-dev-tools');
+  const devDrawer = document.getElementById('dev-inspection-drawer');
+  devToggleBtn?.addEventListener('click', () => {
+    if (!devDrawer) return;
+    const isCollapsed = devDrawer.classList.toggle('collapsed');
+    devToggleBtn.classList.toggle('expanded', !isCollapsed);
+    window.hapticEngine?.triggerLight();
+  });
 
   // Hardware Emulator Bridge Listener
   window.addEventListener('message', async (event) => {
