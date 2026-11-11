@@ -1,0 +1,63 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+library pravah.task;
+
+using zx;
+using pravah.capability;
+
+/// Formal task states.
+type TaskState = strict enum : uint8 {
+    CREATED = 0;
+    UNDERSTOOD = 1;
+    PLANNED = 2;
+    AUTHORIZED = 3;
+    EXECUTING = 4;
+    WAITING_FOR_INPUT = 5;
+    WAITING_FOR_APPROVAL = 6;
+    VERIFYING = 7;
+    COMPLETED = 8;
+    FAILED = 9;
+    PAUSED = 10;
+    CANCELLED = 11;
+};
+
+/// A node in the autonomous task execution graph.
+type TaskNode = struct {
+    node_id string:64;
+    capability_id string:128;
+    dependencies vector<string:64>:16;
+    risk_level pravah.capability.RiskLevel;
+    authority_required pravah.capability.AuthorityLevel;
+};
+
+/// Protocol exposed by the Autonomous Task Engine in the Unified Intelligence Authority.
+@discoverable
+open protocol TaskManager {
+    /// Submit a high-level intent to plan and execute.
+    flexible SubmitIntent(struct {
+        intent_raw string:1024;
+    }) -> (struct {
+        task_id string:64;
+        initial_state TaskState;
+    });
+
+    /// Query the live state and audit log of a task.
+    flexible GetTaskStatus(struct {
+        task_id string:64;
+    }) -> (struct {
+        task_id string:64;
+        state TaskState;
+        progress_percentage uint8;
+    });
+
+    /// Approve an operation paused at WAITING_FOR_APPROVAL.
+    flexible ApproveNode(struct {
+        task_id string:64;
+        node_id string:64;
+    }) -> () error pravah.capability.CapabilityError;
+
+    /// Cancel a running or paused task.
+    flexible CancelTask(struct {
+        task_id string:64;
+    }) -> () error pravah.capability.CapabilityError;
+};

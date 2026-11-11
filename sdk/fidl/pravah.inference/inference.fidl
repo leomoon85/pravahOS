@@ -1,0 +1,100 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+library pravah.inference;
+
+using zx;
+
+/// Specialist model roles in PravahOS distributed inference fabric.
+type ModelRole = strict enum : uint16 {
+    INTENT = 1;
+    ENTITY = 2;
+    CONTEXT = 3;
+    PLANNING = 4;
+    VISION = 5;
+    SPEECH = 6;
+    CLASSIFICATION = 7;
+    RETRIEVAL = 8;
+    SUMMARIZATION = 9;
+    VERIFICATION = 10;
+};
+
+/// Target hardware acceleration tier for inference.
+type HardwareAccelerator = strict enum : uint8 {
+    CPU = 0;
+    GPU = 1;
+    NPU = 2;
+    DSP = 3;
+};
+
+/// Quantization format of the specialist model weights.
+type QuantizationFormat = strict enum : uint8 {
+    FP32 = 0;
+    FP16 = 1;
+    BF16 = 2;
+    INT8 = 3;
+    INT4 = 4;
+};
+
+/// Model metadata describing hardware requirements and operational limits.
+type ModelDescriptor = struct {
+    model_id string:128;
+    role ModelRole;
+    version string:32;
+    preferred_accelerator HardwareAccelerator;
+    quantization QuantizationFormat;
+    memory_footprint_bytes uint64;
+    max_context_tokens uint32;
+    is_resident bool;
+};
+
+/// Inference error definitions.
+type InferenceError = strict enum : uint32 {
+    MODEL_NOT_FOUND = 1;
+    ACCELERATOR_UNAVAILABLE = 2;
+    OUT_OF_MEMORY = 3;
+    THERMAL_THROTTLED = 4;
+    TIMEOUT = 5;
+    MALFORMED_INPUT = 6;
+    EXECUTION_FAILED = 7;
+};
+
+/// Tokenized or structured inference request payload.
+type InferenceRequest = resource struct {
+    model_id string:128;
+    input_vmo zx.Handle:VMO;
+    max_output_tokens uint32;
+    temperature_centi uint16; // temperature * 100
+};
+
+/// Core protocol for specialist inference engines.
+@discoverable
+open protocol SpecialistInference {
+    /// Get model capabilities and hardware constraints.
+    flexible GetModelDescriptor() -> (struct {
+        descriptor ModelDescriptor;
+    });
+
+    /// Run inference synchronously or stream via channel.
+    flexible Infer(InferenceRequest) -> (resource struct {
+        output_vmo zx.Handle:VMO;
+        tokens_evaluated uint32;
+    }) error InferenceError;
+
+    /// Unload model weights to reclaim NPU/GPU/CPU RAM under system memory pressure.
+    flexible Unload() -> () error InferenceError;
+};
+
+/// Model registry managed by Unified Intelligence Authority.
+@discoverable
+open protocol ModelRegistry {
+    flexible RegisterModel(resource struct {
+        descriptor ModelDescriptor;
+        provider client_end:SpecialistInference;
+    }) -> () error InferenceError;
+
+    flexible FindSpecialist(struct {
+        role ModelRole;
+    }) -> (resource struct {
+        provider client_end:SpecialistInference;
+    }) error InferenceError;
+};

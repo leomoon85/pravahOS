@@ -1,0 +1,57 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+library pravah.policy;
+
+using zx;
+using pravah.capability;
+
+/// Risk decision outcome.
+type PolicyDecision = strict enum : uint8 {
+    ALLOW = 0;              // Deterministically approved for immediate execution
+    REQUIRE_USER_APPROVAL = 1; // Execution blocked pending explicit user authorization
+    DENY = 2;               // Denied due to lack of authority, constraint violation, or security boundary
+};
+
+/// Policy rejection reason.
+type DenialReason = strict enum : uint16 {
+    NONE = 0;
+    INSUFFICIENT_AUTHORITY = 1;
+    POLICY_CONSTRAINT_VIOLATED = 2;
+    RATE_LIMIT_EXCEEDED = 3;
+    FINANCIAL_LIMIT_EXCEEDED = 4;
+    UNTRUSTED_EXTERNAL_SOURCE = 5;
+    SYSTEM_RESTRICTED = 6;
+};
+
+/// Identity context of the caller or originating entity.
+type CallerIdentity = struct {
+    component_url string:256;
+    is_system_trusted bool;
+    delegated_authority pravah.capability.AuthorityLevel;
+};
+
+/// Security evaluation request evaluated by deterministic policy runtime.
+type PolicyEvaluationRequest = struct {
+    caller CallerIdentity;
+    target_capability_id string:128;
+    risk_level pravah.capability.RiskLevel;
+    originating_context_source string:128; // e.g., "user_spoken", "email_body", "web_content"
+};
+
+/// Core policy gate. AI has no authority here; this is deterministic.
+@discoverable
+open protocol PolicyGate {
+    /// Evaluate whether an action is permitted, blocked, or requires explicit human confirmation.
+    flexible Evaluate(PolicyEvaluationRequest) -> (struct {
+        decision PolicyDecision;
+        reason DenialReason;
+        audit_token uint64;
+    });
+
+    /// Log execution outcome for tamper-evident audit trails.
+    flexible AuditLog(struct {
+        audit_token uint64;
+        success bool;
+        execution_time_us uint64;
+    }) -> ();
+};

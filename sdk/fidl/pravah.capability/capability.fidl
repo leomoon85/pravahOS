@@ -1,0 +1,59 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+library pravah.capability;
+
+using zx;
+
+/// Risk levels defining policy gates for capability invocation.
+type RiskLevel = strict enum : uint8 {
+    READ_ONLY = 0;       // Passive inspection, no state mutation
+    REVERSIBLE = 1;      // Modifies state with automated rollback compensation
+    CONSEQUENTIAL = 2;   // Significant mutation (e.g., writes, external network actions)
+    IRREVERSIBLE = 3;    // Destructive changes, financial actions, sensitive operations
+};
+
+/// Authority level required to invoke a capability.
+type AuthorityLevel = strict enum : uint8 {
+    OBSERVE = 0; // Read-only observation
+    PREPARE = 1; // Prepare plan / draft; requires user approval prior to execution
+    EXECUTE = 2; // Autonomous execution within bounded scope
+    MANAGE  = 3; // Ongoing autonomous domain management
+};
+
+/// Capability metadata describing requirements and behavior.
+type CapabilityDescriptor = struct {
+    id string:128;
+    version string:32;
+    risk_level RiskLevel;
+    required_authority AuthorityLevel;
+    is_idempotent bool;
+    timeout_ms uint64;
+};
+
+/// Generic capability execution error codes.
+type CapabilityError = strict enum : uint32 {
+    INTERNAL = 1;
+    UNAUTHORIZED = 2;
+    POLICY_VIOLATION = 3;
+    INVALID_INPUT = 4;
+    RESOURCE_UNAVAILABLE = 5;
+    TIMEOUT = 6;
+    EXECUTION_FAILED = 7;
+};
+
+/// Core invocation contract for all PravahOS capabilities.
+@discoverable
+open protocol CapabilityProvider {
+    /// Inspect the descriptor of this capability.
+    flexible GetDescriptor() -> (struct {
+        descriptor CapabilityDescriptor;
+    });
+
+    /// Execute the capability with typed payload buffer.
+    flexible Execute(resource struct {
+        input_payload zx.Handle:VMO;
+        execution_context_token zx.Handle:EVENTPAIR;
+    }) -> (resource struct {
+        output_payload zx.Handle:VMO;
+    }) error CapabilityError;
+};
