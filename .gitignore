@@ -1,0 +1,25 @@
+# Build outputs
+out/
+dist/
+*.tmp
+
+# Private keys & cryptographic secrets (Strict Security Boundary)
+*.pem
+*.key
+*.pk8
+*.priv
+build/panther/keys/*.pem
+build/panther/keys/*.key
+build/panther/keys/*.priv
+
+# Dependencies
+node_modules/
+.npm/
+
+# OS and Editor artifacts
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.vscode/
+.idea/
