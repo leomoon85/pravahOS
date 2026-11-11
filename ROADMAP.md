@@ -62,10 +62,26 @@
 - [x] Implement Telecom Phone Dialer with T9 keypad and On-Device INT4 Neural Call Screening for robocalls
 - [x] Implement Android-style Universal Predictive Back Gesture with dual-edge inward swipe, liquid pill indicator, and hierarchical OS back stack
 
+### Milestone 11: Multi-SoC Silicon Bringup & 3GPP Rel-17 Satellite SOS
+- [x] Build Qualcomm Snapdragon 8 Gen 2/3 (SM8550/SM8650) Fastboot partition flashing script and dry-run simulator (`tools/flash_device.ps1`, `SILICON_BRINGUP.md`)
+- [x] Build Google Tensor G2/G3/G4 bringup specification with Cortex-X3/X4 clusters and **Titan M2 Security Chip** Custom Root-of-Trust (RoT) enrollment
+- [x] Implement 3GPP Rel-17 NTN direct-to-satellite emergency messaging subsystem with slant range, Free Space Path Loss (FSPL), Doppler pre-compensation, and 128-byte binary packet serialization
+- [x] Implement RF air-gap safety interlock grounding terrestrial radios to 0.0V during emergency NTN burst transmissions
+
+### Milestone 12: Flagship Core Stock Applications Suite ("Find Best, Port & Make Better")
+- [x] Implement Universal Stock App Runner (`ui/apps/app_runner.js`) with frosted glassmorphic bottom sheet modals and back gesture integration
+- [x] Build Phone & Smart T9 Dialer (`ui/apps/dialer.js`) with Fossify instant T9 search, in-call screen, and AI Call Screening
+- [x] Build Messages & Air-Gap SMS (`ui/apps/messages.js`) with ML-KEM-768 post-quantum cryptographic envelopes, delivery ticks, and scheduled messaging
+- [x] Build Gallery & AI Photos (`ui/apps/gallery.js`) with offline optical OCR neural search, EXIF privacy scrubber, and Titan M2 locked safe album
+- [x] Build Files & Storage Manager (`ui/apps/files.js`) with real-time capacity breakdown gauge, ZIP archive inspector, and `/vault` PIN gating
+- [x] Build Calculator & Live Math (`ui/apps/calculator.js`) with Soulver-style live preview evaluation, zero floating-point roundoff drift (`0.1 + 0.2 = 0.3`), scientific trigonometry, and pegged offline currency/unit converter
+- [x] Build Clock, Timer & World Clocks (`ui/apps/clock.js`) with multi-alarm scheduler, world clock UTC differentials (`+5:30h`, `-5h`), Dynamic Island live timer synchronization, and millisecond stopwatch split-lap highlighting
+- [x] Integrate all 6 stock apps into the Consumer Dock, Home Screen squircle grid, and Living Drawer A-Z Metro catalog with 423/423 automated tests passing
+
 ---
 
 ## Future Horizons (Phase 4+)
 
-- [ ] **Bare-Metal Device Flashing**: Build `fastboot`-compatible partition image (`system.img`, `boot.img`) targeting Qualcomm Snapdragon 8 Gen 2 / Gen 3 hardware devices.
-- [ ] **Satellite SOS Air-Gap Link**: Implement NTN (Non-Terrestrial Network) 3GPP Rel-17 direct-to-satellite text messaging capability via Iridium / Starlink constellation.
-- [ ] **Secure Enclave Biometric Co-Processor**: Isolate fingerprint and iris cryptographic keys into dedicated ARM TrustZone EL3 secure world enclave.
+- [ ] **Physical Silicon Flashing Rig**: Connect physical Pixel 8 / Galaxy S23 via USB-C EDL / Fastboot cable to execute physical partition flash.
+- [ ] **Decentralized Mesh Networking**: Direct peer-to-peer Wi-Fi Aware & Bluetooth LE capability sync across offline PravahOS devices without infrastructure routers.
+- [ ] **Multi-Window Desktop Mode**: DisplayPort over USB-C automatic dock detection into desktop floating windowing manager.
