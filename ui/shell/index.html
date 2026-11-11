@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PravahOS Dynamic Shell & Experience Composer</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- 1. Ambient Status Header -->
+  <header class="ambient-header">
+    <div class="brand-section">
+      <div class="os-logo">P</div>
+      <div class="brand-text">
+        <h1>PravahOS</h1>
+        <span>Dynamic Experience Shell</span>
+      </div>
+    </div>
+
+    <div class="ambient-telemetry">
+      <div id="offline-badge" class="telemetry-badge badge-offline" style="cursor: pointer;" title="Click to toggle offline/online simulation">
+        <div class="badge-pulse-dot"></div>
+        <span class="label">AIR-GAP:</span>
+        <span class="val">SECURED OFFLINE</span>
+      </div>
+
+      <div id="authority-badge" class="telemetry-badge badge-authority" style="cursor: pointer;" title="Click to cycle authority level">
+        <span class="label">AUTHORITY:</span>
+        <span id="authority-val" class="val">EXECUTE</span>
+      </div>
+
+      <div class="telemetry-badge">
+        <span class="label">NPU:</span>
+        <span id="npu-val" class="val">42%</span>
+      </div>
+
+      <div class="telemetry-badge">
+        <span class="label">CPU / TEMP:</span>
+        <span id="cpu-val" class="val">19% • 41°C</span>
+      </div>
+
+      <div class="telemetry-badge">
+        <span class="label">SECURE RAM:</span>
+        <span id="mem-val" class="val">468 MB / 2048 MB</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- 2. Shell Container -->
+  <main class="shell-container">
+
+    <!-- Intent Bar Surface -->
+    <section class="intent-card">
+      <div class="intent-input-row">
+        <div class="intent-input-wrap">
+          <span class="intent-search-icon">✧</span>
+          <input 
+            type="text" 
+            id="intent-input" 
+            class="intent-input" 
+            placeholder="Describe your goal (e.g., &quot;Check flight AI-202 and set reminder&quot;)..."
+            value="Check flight AI-202 and set reminder 2 hours before departure"
+          >
+        </div>
+        <button id="btn-mic" class="btn btn-mic" title="Simulate voice stream input">🎤</button>
+        <button id="btn-submit-intent" class="btn btn-primary">Execute Intent</button>
+      </div>
+
+      <div class="scenario-chips">
+        <span>Scenarios:</span>
+        <button class="chip" data-scenario="flight">✈ Flight AI-202 & Reminder</button>
+        <button class="chip" data-scenario="payment">💳 Transfer ₹5,000 (Policy Gate Trigger)</button>
+        <button class="chip" data-scenario="memory">⚡ Compact Secure Memory</button>
+        <button class="chip" data-scenario="ocr">📄 Receipt OCR & Privacy Redact</button>
+      </div>
+    </section>
+
+    <!-- Workspace & Audit Side-by-Side -->
+    <div class="workspace-section">
+
+      <!-- Dynamic Task Workspace -->
+      <section class="workspace-card">
+        <div class="workspace-header">
+          <div class="task-title-group">
+            <h2 id="task-title">Active Task Workspace</h2>
+            <p id="task-sub">Awaiting intent input...</p>
+          </div>
+          <div>
+            <div style="font-size: 0.7rem; color: var(--text-muted); text-align: right; text-transform: uppercase; font-weight: 600;">
+              Topological DAG Progress
+            </div>
+            <div class="progress-track">
+              <div id="progress-fill" class="progress-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DAG Canvas with topological stages -->
+        <div id="dag-canvas" class="dag-canvas">
+          <!-- Populated dynamically by shell.js -->
+        </div>
+      </section>
+
+      <!-- Side Panel: Tamper-Evident Audit Inspector -->
+      <aside class="side-panel">
+        <div class="audit-card">
+          <div class="audit-header">
+            <h3>Policy & Audit Trail</h3>
+            <span id="audit-integrity-badge" class="audit-integrity-badge integrity-valid">
+              ✔ CHAIN INTACT
+            </span>
+          </div>
+
+          <div id="audit-stream" class="audit-stream">
+            <!-- Dynamically populated -->
+          </div>
+
+          <div class="audit-controls">
+            <button id="btn-tamper-audit" class="btn btn-secondary btn-sm" title="Simulate hash corruption in block #1 to demo tamper detection">
+              Simulate Tamper
+            </button>
+            <button id="btn-repair-audit" class="btn btn-secondary btn-sm" title="Re-seal hash chain">
+              Re-seal Ledger
+            </button>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+
+  </main>
+
+  <!-- 3. Policy Gate Approval Modal -->
+  <div id="approval-modal-backdrop" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-icon-shield">⚠</div>
+        <div class="modal-title-group">
+          <h3 id="modal-action-title">Policy Gate: Authorization Required</h3>
+          <p>Deterministic security boundary reached. Human confirmation mandatory.</p>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <div class="diff-row">
+          <span class="k">Target Capability:</span>
+          <span id="diff-cap" class="v">financial.transfer</span>
+        </div>
+        <div class="diff-row">
+          <span class="k">Evaluated Risk:</span>
+          <span id="diff-risk" class="v" style="color: var(--accent-danger);">IRREVERSIBLE (Level 3)</span>
+        </div>
+        <div class="diff-row">
+          <span class="k">Gate Policy Rule:</span>
+          <span id="diff-reason" class="v">FINANCIAL_LIMIT_EXCEEDED</span>
+        </div>
+        <div class="diff-row" style="flex-direction: column; gap: 4px;">
+          <span class="k">Payload Parameters:</span>
+          <span id="diff-params" class="v" style="font-size: 0.72rem; background: rgba(0,0,0,0.4); padding: 6px; border-radius: 4px; overflow-x: auto;">
+            {}
+          </span>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="btn-deny-gate" class="btn btn-deny">Deny Action</button>
+        <button id="btn-approve-gate" class="btn btn-approve">Approve & Execute</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="shell.js"></script>
+</body>
+</html>

@@ -41,6 +41,12 @@ include_directories(
 set(KERNEL_SRCS
     arch/arm64/boot.S
     arch/arm64/uart_pl011.c
+    lib/string.c
+    mm/pmm.c
+    mm/vmm.c
+    object/handle.c
+    object/vmo.c
+    object/channel.c
     main.c
 )
 

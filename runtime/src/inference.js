@@ -6,6 +6,9 @@
  * Based on sdk/fidl/pravah.inference/inference.fidl
  */
 
+import { ZeroNetworkSandbox, ModelFormat } from './offline_runner.js';
+export { ZeroNetworkSandbox, ModelFormat };
+
 export const ModelRole = Object.freeze({
   INTENT: 1,
   ENTITY: 2,
@@ -58,10 +61,12 @@ export class SpecialistInferenceProvider {
       version: descriptor.version || '1.0.0',
       preferred_accelerator: descriptor.preferred_accelerator ?? HardwareAccelerator.NPU,
       quantization: descriptor.quantization ?? QuantizationFormat.INT8,
+      format: descriptor.format || ModelFormat.GGUF,
       memory_footprint_bytes: descriptor.memory_footprint_bytes ?? 256 * 1024 * 1024,
       max_context_tokens: descriptor.max_context_tokens ?? 4096,
       is_resident: descriptor.is_resident ?? true
     };
+    this.offlineEngine = descriptor.offlineEngine || null;
     this.isLoaded = true;
   }
 
@@ -83,18 +88,32 @@ export class SpecialistInferenceProvider {
       throw new Error(InferenceError.OUT_OF_MEMORY);
     }
 
-    const startTime = Date.now();
-    const output = await this._executeInference(request);
-    const latencyMs = Math.max(1, Date.now() - startTime);
+    // Execute strictly under Zero-Network Sandbox (Tier 2 on-device isolation)
+    return await ZeroNetworkSandbox.run(async () => {
+      const startTime = Date.now();
+      let output;
+      if (this.offlineEngine && typeof this.offlineEngine.execute === 'function') {
+        const engineRes = await this.offlineEngine.execute(request, {
+          accelerator: accelerator ?? this.descriptor.preferred_accelerator
+        });
+        output = await this._executeInference(request, engineRes);
+      } else {
+        output = await this._executeInference(request);
+      }
+      const latencyMs = Math.max(1, Date.now() - startTime);
 
-    return {
-      model_id: this.descriptor.model_id,
-      role: this.descriptor.role,
-      output,
-      tokens_evaluated: estimatedInputTokens + Math.ceil(JSON.stringify(output).length / 4),
-      accelerator_used: accelerator ?? this.descriptor.preferred_accelerator,
-      latency_ms: latencyMs
-    };
+      return {
+        model_id: this.descriptor.model_id,
+        role: this.descriptor.role,
+        output,
+        tokens_evaluated: estimatedInputTokens + Math.ceil(JSON.stringify(output).length / 4),
+        accelerator_used: accelerator ?? this.descriptor.preferred_accelerator,
+        latency_ms: latencyMs,
+        quantization: this.descriptor.quantization,
+        format: this.descriptor.format,
+        zero_network_verified: true
+      };
+    }, { modelId: this.descriptor.model_id, role: this.descriptor.role });
   }
 
   async _executeInference(request) {
@@ -104,6 +123,9 @@ export class SpecialistInferenceProvider {
   async unload() {
     this.isLoaded = false;
     this.descriptor.is_resident = false;
+    if (this.offlineEngine && typeof this.offlineEngine.unload === 'function') {
+      await this.offlineEngine.unload();
+    }
     return true;
   }
 }
@@ -118,10 +140,12 @@ export class IntentSpecialist extends SpecialistInferenceProvider {
       role: ModelRole.INTENT,
       version: '1.0.0',
       preferred_accelerator: options.preferred_accelerator ?? HardwareAccelerator.NPU,
-      quantization: QuantizationFormat.INT8,
-      memory_footprint_bytes: 128 * 1024 * 1024,
-      max_context_tokens: 2048,
-      is_resident: true
+      quantization: options.quantization ?? QuantizationFormat.INT8,
+      format: options.format ?? ModelFormat.GGUF,
+      memory_footprint_bytes: options.memory_footprint_bytes ?? 128 * 1024 * 1024,
+      max_context_tokens: options.max_context_tokens ?? 2048,
+      is_resident: options.is_resident ?? true,
+      offlineEngine: options.offlineEngine || null
     });
   }
 
@@ -200,10 +224,12 @@ export class EntitySpecialist extends SpecialistInferenceProvider {
       role: ModelRole.ENTITY,
       version: '1.0.0',
       preferred_accelerator: options.preferred_accelerator ?? HardwareAccelerator.NPU,
-      quantization: QuantizationFormat.INT8,
-      memory_footprint_bytes: 128 * 1024 * 1024,
-      max_context_tokens: 2048,
-      is_resident: true
+      quantization: options.quantization ?? QuantizationFormat.INT8,
+      format: options.format ?? ModelFormat.GGUF,
+      memory_footprint_bytes: options.memory_footprint_bytes ?? 128 * 1024 * 1024,
+      max_context_tokens: options.max_context_tokens ?? 2048,
+      is_resident: options.is_resident ?? true,
+      offlineEngine: options.offlineEngine || null
     });
   }
 
@@ -264,10 +290,12 @@ export class PlanningSpecialist extends SpecialistInferenceProvider {
       role: ModelRole.PLANNING,
       version: '1.0.0',
       preferred_accelerator: options.preferred_accelerator ?? HardwareAccelerator.GPU,
-      quantization: QuantizationFormat.FP16,
-      memory_footprint_bytes: 512 * 1024 * 1024,
-      max_context_tokens: 4096,
-      is_resident: true
+      quantization: options.quantization ?? QuantizationFormat.FP16,
+      format: options.format ?? ModelFormat.GGUF,
+      memory_footprint_bytes: options.memory_footprint_bytes ?? 512 * 1024 * 1024,
+      max_context_tokens: options.max_context_tokens ?? 4096,
+      is_resident: options.is_resident ?? true,
+      offlineEngine: options.offlineEngine || null
     });
   }
 
@@ -370,10 +398,12 @@ export class VerificationSpecialist extends SpecialistInferenceProvider {
       role: ModelRole.VERIFICATION,
       version: '1.0.0',
       preferred_accelerator: options.preferred_accelerator ?? HardwareAccelerator.CPU,
-      quantization: QuantizationFormat.FP32,
-      memory_footprint_bytes: 64 * 1024 * 1024,
-      max_context_tokens: 2048,
-      is_resident: true
+      quantization: options.quantization ?? QuantizationFormat.FP32,
+      format: options.format ?? ModelFormat.TENSOR,
+      memory_footprint_bytes: options.memory_footprint_bytes ?? 64 * 1024 * 1024,
+      max_context_tokens: options.max_context_tokens ?? 2048,
+      is_resident: options.is_resident ?? true,
+      offlineEngine: options.offlineEngine || null
     });
   }
 
@@ -468,10 +498,12 @@ export class SummarizationSpecialist extends SpecialistInferenceProvider {
       role: ModelRole.SUMMARIZATION,
       version: '1.0.0',
       preferred_accelerator: options.preferred_accelerator ?? HardwareAccelerator.NPU,
-      quantization: QuantizationFormat.INT8,
-      memory_footprint_bytes: 256 * 1024 * 1024,
-      max_context_tokens: 4096,
-      is_resident: true
+      quantization: options.quantization ?? QuantizationFormat.INT8,
+      format: options.format ?? ModelFormat.ONNX,
+      memory_footprint_bytes: options.memory_footprint_bytes ?? 256 * 1024 * 1024,
+      max_context_tokens: options.max_context_tokens ?? 4096,
+      is_resident: options.is_resident ?? true,
+      offlineEngine: options.offlineEngine || null
     });
   }
 
@@ -495,10 +527,12 @@ export class ClassificationSpecialist extends SpecialistInferenceProvider {
       role: ModelRole.CLASSIFICATION,
       version: '1.0.0',
       preferred_accelerator: options.preferred_accelerator ?? HardwareAccelerator.CPU,
-      quantization: QuantizationFormat.INT8,
-      memory_footprint_bytes: 64 * 1024 * 1024,
+      quantization: options.quantization ?? QuantizationFormat.INT8,
+      format: options.format ?? ModelFormat.TENSOR,
+      memory_footprint_bytes: options.memory_footprint_bytes ?? 64 * 1024 * 1024,
       max_context_tokens: 2048,
-      is_resident: true
+      is_resident: options.is_resident ?? true,
+      offlineEngine: options.offlineEngine || null
     });
   }
 
@@ -586,8 +620,11 @@ export class ModelRegistry {
  * thermal throttling mitigation, memory constraints, and telemetry.
  */
 export class InferenceFabricRouter {
-  constructor({ registry } = {}) {
+  constructor({ registry, offlineRunner = null, memoryCoordinator = null, isOffline = false } = {}) {
     this.registry = registry || new ModelRegistry();
+    this.offlineRunner = offlineRunner;
+    this.memoryCoordinator = memoryCoordinator;
+    this.isOffline = Boolean(isOffline);
     this.accelerators = {
       [HardwareAccelerator.NPU]: { available: true, throttled: false },
       [HardwareAccelerator.GPU]: { available: true, throttled: false },
@@ -598,8 +635,21 @@ export class InferenceFabricRouter {
       totalInferences: 0,
       fallbacksOccurred: 0,
       totalTokensEvaluated: 0,
-      throttledErrors: 0
+      throttledErrors: 0,
+      zeroNetworkInferences: 0
     };
+  }
+
+  setOfflineMode(offline = true) {
+    this.isOffline = Boolean(offline);
+  }
+
+  isOfflineMode() {
+    return this.isOffline;
+  }
+
+  isZeroNetworkEnforced() {
+    return ZeroNetworkSandbox.isEnforced();
   }
 
   setAcceleratorStatus(accelerator, { available, throttled }) {
@@ -671,18 +721,22 @@ export class InferenceFabricRouter {
       this.metrics.fallbacksOccurred++;
     }
 
-    const result = await provider.infer(
-      {
-        model_id: desc.model_id,
-        input,
-        max_output_tokens: maxOutputTokens,
-        temperature_centi: temperatureCenti
-      },
-      { accelerator: resolvedAccelerator }
-    );
+    // Execute under Zero-Network Sandbox (guaranteeing zero socket access during inference)
+    const result = await ZeroNetworkSandbox.run(async () => {
+      return await provider.infer(
+        {
+          model_id: desc.model_id,
+          input,
+          max_output_tokens: maxOutputTokens,
+          temperature_centi: temperatureCenti
+        },
+        { accelerator: resolvedAccelerator }
+      );
+    }, { role: desc.role, modelId: desc.model_id, isOffline: this.isOffline });
 
     this.metrics.totalInferences++;
     this.metrics.totalTokensEvaluated += result.tokens_evaluated || 0;
+    this.metrics.zeroNetworkInferences++;
 
     return result;
   }

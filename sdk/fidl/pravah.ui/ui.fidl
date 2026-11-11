@@ -1,0 +1,144 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+library pravah.ui;
+
+using zx;
+using pravah.capability;
+using pravah.task;
+using pravah.policy;
+
+/// Declarative UI component types supported by the PravahOS Dynamic Experience Composer (DEC).
+type ComponentType = strict enum : uint16 {
+    ROOT_CONTAINER = 0;
+    SURFACE = 1;
+    WORKSPACE = 2;
+    DAG_VIEW = 3;
+    DAG_NODE = 4;
+    DAG_EDGE = 5;
+    APPROVAL_MODAL = 6;
+    AUDIT_VIEWER = 7;
+    INTENT_BAR = 8;
+    AMBIENT_HEADER = 9;
+    METRIC_BADGE = 10;
+    CAPABILITY_CARD = 11;
+    BUTTON = 12;
+    TEXT_BLOCK = 13;
+    INPUT_FIELD = 14;
+    PROGRESS_BAR = 15;
+    DIFF_VIEWER = 16;
+    ALERT_BANNER = 17;
+};
+
+/// Visual semantic variants for UI theming and safety signaling.
+type VisualVariant = strict enum : uint8 {
+    DEFAULT = 0;
+    PRIMARY = 1;
+    ACCENT = 2;
+    SUCCESS = 3;
+    WARNING = 4;
+    DANGER = 5;
+    MUTED = 6;
+    NEUTRAL = 7;
+};
+
+/// Surface orientation and placement roles in the Scenic/Flatland compositor.
+type SurfaceRole = strict enum : uint8 {
+    AMBIENT = 0;         // Always-visible hardware, trust, and ambient status
+    INTENT = 1;          // Intent submission bar and proactive suggestions
+    WORKSPACE = 2;       // Active task DAG visual workspace and capability cards
+    APPROVAL_MODAL = 3;  // High-priority modal gate for irreversible operations
+    AUDIT_INSPECTOR = 4; // Tamper-evident cryptographic audit log drawer
+    SYSTEM_TOAST = 5;    // Transient system notifications
+};
+
+/// Visual status of an executing DAG node in the workspace.
+type NodeVisualStatus = strict enum : uint8 {
+    PENDING = 0;
+    RUNNING = 1;
+    WAITING_APPROVAL = 2;
+    COMPLETED = 3;
+    FAILED = 4;
+    BLOCKED = 5;
+    SKIPPED = 6;
+};
+
+/// Hardware telemetry metrics displayed in Ambient header.
+type HardwareTelemetry = struct {
+    npu_utilization_pct uint8;
+    gpu_utilization_pct uint8;
+    cpu_utilization_pct uint8;
+    active_frequency_mhz uint16;
+    temperature_celsius uint8;
+    offline_mode bool;
+    memory_used_mb uint32;
+    memory_total_mb uint32;
+};
+
+/// Declarative element node in the DEC scene graph.
+type UIElement = struct {
+    id string:64;
+    component_type ComponentType;
+    role SurfaceRole;
+    variant VisualVariant;
+    title string:128;
+    subtitle string:256;
+    value string:1024;
+    status NodeVisualStatus;
+    properties_json string:4096;
+    children vector<UIElement>:32;
+};
+
+/// View composition package emitted by the DEC to Scenic/Flatland.
+type ViewComposition = struct {
+    surface_id string:64;
+    role SurfaceRole;
+    timestamp_ns uint64;
+    root UIElement;
+    associated_task_id string:64;
+    requires_user_focus bool;
+};
+
+/// Protocol for the Dynamic Experience Composer.
+/// Subscribed to by Scenic/Flatland user-shell or Web Shell.
+@discoverable
+open protocol ExperienceComposer {
+    /// Render dynamic Task Workspace for an active or completed task.
+    flexible ComposeTaskWorkspace(struct {
+        task_id string:64;
+    }) -> (struct {
+        workspace ViewComposition;
+    }) error pravah.capability.CapabilityError;
+
+    /// Render Policy Gate modal when a task hits an irreversible/consequential gate.
+    flexible ComposeApprovalModal(struct {
+        task_id string:64;
+        node_id string:64;
+        caller pravah.policy.CallerIdentity;
+        risk_level pravah.capability.RiskLevel;
+        reason pravah.policy.DenialReason;
+        audit_token uint64;
+    }) -> (struct {
+        modal ViewComposition;
+    }) error pravah.capability.CapabilityError;
+
+    /// Render Ambient Status surface with offline mode, hardware load, and authority.
+    flexible ComposeAmbientHeader(struct {
+        telemetry HardwareTelemetry;
+        current_authority pravah.capability.AuthorityLevel;
+    }) -> (struct {
+        ambient ViewComposition;
+    });
+
+    /// Render Tamper-Evident Audit Log Viewer.
+    flexible ComposeAuditInspector(struct {
+        filter_task_id string:64;
+        max_entries uint16;
+    }) -> (struct {
+        audit ViewComposition;
+    });
+
+    /// Emit real-time visual composition changes to the display server.
+    flexible -> OnCompositionUpdated(struct {
+        composition ViewComposition;
+    });
+};

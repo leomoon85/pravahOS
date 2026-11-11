@@ -26,7 +26,7 @@ CFLAGS   := -Wall -Wextra -O2 -g -ffreestanding -nostdlib -mgeneral-regs-only -I
 ASFLAGS  := -g -Iinclude
 LDFLAGS  := -T linker.ld -nostdlib -static --gc-sections
 
-SRCS_C   := main.c arch/arm64/uart_pl011.c
+SRCS_C   := main.c arch/arm64/uart_pl011.c lib/string.c mm/pmm.c mm/vmm.c object/handle.c object/vmo.c object/channel.c
 SRCS_S   := arch/arm64/boot.S
 
 OBJS     := $(patsubst %.c,$(BUILD_DIR)/%.o,$(SRCS_C)) \
@@ -42,6 +42,9 @@ all: $(TARGET_BIN)
 
 $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)/arch/arm64
+	@mkdir -p $(BUILD_DIR)/lib
+	@mkdir -p $(BUILD_DIR)/mm
+	@mkdir -p $(BUILD_DIR)/object
 	@mkdir -p $(OUTPUT_DIR)
 
 $(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)

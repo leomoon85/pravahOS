@@ -33,3 +33,15 @@ export const PolicyDecision = Object.freeze({
   REQUIRE_USER_APPROVAL: 'REQUIRE_USER_APPROVAL',
   DENY: 'DENY'
 });
+
+export const OperationalTier = Object.freeze({
+  TIER_1_LOCAL_CORE: 1,      // Local core OS operations: SystemTime, Memory facts, Policy check, Local state
+  TIER_2_OFFLINE_AI: 2,       // Specialist AI inference: Intent, Entity, Planning, Verification under Zero-Network Sandbox
+  TIER_3_CONNECTED_SYNC: 3    // External network queries: Live flight tracker, Cloud sync, External web lookup
+});
+
+export const NetworkState = Object.freeze({
+  ONLINE: 'ONLINE',
+  OFFLINE: 'OFFLINE',
+  DEGRADED: 'DEGRADED'
+});
