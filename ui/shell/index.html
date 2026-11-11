@@ -14,6 +14,13 @@
 </head>
 <body>
 
+  <!-- Ambient Liquid Glow Background Orbs -->
+  <div class="ambient-glow-layer" aria-hidden="true">
+    <div class="ambient-glow-orb ambient-glow-orb-1"></div>
+    <div class="ambient-glow-orb ambient-glow-orb-2"></div>
+    <div class="ambient-glow-orb ambient-glow-orb-3"></div>
+  </div>
+
   <!-- Screen Brightness Filter Dimming Overlay -->
   <div id="shade-brightness-filter" class="shade-brightness-filter"></div>
 
@@ -41,7 +48,7 @@
       <div class="os-logo">P</div>
       <div class="brand-text">
         <h1>PravahOS</h1>
-        <span>Dynamic Experience Shell</span>
+        <span>Dynamic Experience</span>
       </div>
     </div>
 
@@ -90,35 +97,37 @@
     <section class="intent-card">
       <div class="intent-input-row">
         <div class="intent-input-wrap">
-          <span class="intent-search-icon">✧</span>
+          <span class="intent-search-icon">✦</span>
           <input 
             type="text" 
             id="intent-input" 
             class="intent-input" 
-            placeholder="Describe your goal (e.g., &quot;Check flight AI-202 and set reminder&quot;)..."
+            placeholder="Ask Pravah anything (e.g., &quot;Check flight AI-202 and set reminder&quot;)..."
             value="Check flight AI-202 and set reminder 2 hours before departure"
           >
         </div>
         <button id="btn-mic" class="btn btn-mic" title="Simulate voice stream input">🎤</button>
-        <button id="btn-submit-intent" class="btn btn-primary">Execute Intent</button>
+        <button id="btn-submit-intent" class="btn btn-primary btn-ask-pravah">
+          <span class="btn-shimmer-text">Ask Pravah ✦</span>
+        </button>
       </div>
 
       <div class="scenario-chips">
-        <span>Scenarios:</span>
-        <button class="chip" data-scenario="camera_note">📷 Document Photo & Note (Scenario 6)</button>
-        <button class="chip" data-scenario="flight">✈ Flight AI-202 & Reminder</button>
-        <button class="chip" data-scenario="payment">💳 Transfer ₹5,000 (Policy Gate Trigger)</button>
-        <button class="chip" data-scenario="crypto">🪙 250 USDC Remittance</button>
-        <button class="chip" data-scenario="memory">⚡ Compact Secure Memory</button>
-        <button class="chip" data-scenario="ocr">📄 Receipt OCR & Privacy Redact</button>
+        <span class="scenario-label">Quick Flows:</span>
+        <button class="chip chip-photo" data-scenario="camera_note"><span class="chip-glow-dot"></span>📷 Smart Photo & Note</button>
+        <button class="chip chip-flight" data-scenario="flight"><span class="chip-glow-dot"></span>✈ Flight AI-202 & Reminder</button>
+        <button class="chip chip-payment" data-scenario="payment"><span class="chip-glow-dot"></span>💳 Send ₹5,000 (Protected Gate)</button>
+        <button class="chip chip-crypto" data-scenario="crypto"><span class="chip-glow-dot"></span>🪙 250 USDC Remittance</button>
+        <button class="chip chip-memory" data-scenario="memory"><span class="chip-glow-dot"></span>⚡ Deep Memory Optimization</button>
+        <button class="chip chip-ocr" data-scenario="ocr"><span class="chip-glow-dot"></span>📄 Instant Receipt OCR</button>
       </div>
 
-      <div class="scenario-chips android-chips-row" style="margin-top: 6px;">
-        <span style="color: var(--accent-emerald); font-weight: 700;">🤖 Android Apps (Starnix):</span>
-        <button class="chip chip-android" data-scenario="android_whatsapp">💬 WhatsApp (Camera VMO)</button>
-        <button class="chip chip-android" data-scenario="android_spotify">🎵 Spotify (Audio HAL)</button>
-        <button class="chip chip-android" data-scenario="android_maps">🗺 Maps (GNSS Sensor)</button>
-        <button class="chip chip-android" data-scenario="android_uber">🚗 Uber (Policy Gate Gated)</button>
+      <div class="scenario-chips android-chips-row">
+        <span class="scenario-label label-android">🤖 Android Apps:</span>
+        <button class="chip chip-android" data-scenario="android_whatsapp"><span class="chip-glow-dot dot-emerald"></span>💬 WhatsApp (Camera VMO)</button>
+        <button class="chip chip-android" data-scenario="android_spotify"><span class="chip-glow-dot dot-violet"></span>🎵 Spotify (Audio HAL)</button>
+        <button class="chip chip-android" data-scenario="android_maps"><span class="chip-glow-dot dot-cyan"></span>🗺 Live Maps (GNSS Sensor)</button>
+        <button class="chip chip-android" data-scenario="android_uber"><span class="chip-glow-dot dot-amber"></span>🚗 Reserve Uber (Gated)</button>
       </div>
     </section>
 
@@ -129,13 +138,11 @@
       <section class="workspace-card">
         <div class="workspace-header">
           <div class="task-title-group">
-            <h2 id="task-title">Active Task Workspace</h2>
-            <p id="task-sub">Awaiting intent input...</p>
+            <h2 id="task-title">Your Day's Flow</h2>
+            <p id="task-sub">Ready to coordinate your apps & tasks securely</p>
           </div>
-          <div>
-            <div style="font-size: 0.7rem; color: var(--text-muted); text-align: right; text-transform: uppercase; font-weight: 600;">
-              Topological DAG Progress
-            </div>
+          <div class="progress-wrapper">
+            <div class="progress-title">Active Steps</div>
             <div class="progress-track">
               <div id="progress-fill" class="progress-fill" style="width: 0%;"></div>
             </div>
@@ -148,13 +155,16 @@
         </div>
       </section>
 
-      <!-- Side Panel: Tamper-Evident Audit Inspector -->
+      <!-- Side Panel: Tamper-Evident Security & Trust Enclave -->
       <aside class="side-panel">
         <div class="audit-card">
           <div class="audit-header">
-            <h3>Policy & Audit Trail</h3>
+            <div class="audit-header-title">
+              <h3>Security & Trust Shield</h3>
+              <p>On-Device Cryptographic Verification</p>
+            </div>
             <span id="audit-integrity-badge" class="audit-integrity-badge integrity-valid">
-              ✔ CHAIN INTACT
+              🛡 SECURE
             </span>
           </div>
 
@@ -163,11 +173,11 @@
           </div>
 
           <div class="audit-controls">
-            <button id="btn-tamper-audit" class="btn btn-secondary btn-sm" title="Simulate hash corruption in block #1 to demo tamper detection">
-              Simulate Tamper
+            <button id="btn-tamper-audit" class="btn btn-secondary btn-sm" title="Simulate hash alteration to demo instant tamper detection">
+              Test Security Shield
             </button>
-            <button id="btn-repair-audit" class="btn btn-secondary btn-sm" title="Re-seal hash chain">
-              Re-seal Ledger
+            <button id="btn-repair-audit" class="btn btn-secondary btn-sm" title="Re-verify and seal cryptographic hash chain">
+              Re-seal Trust Shield
             </button>
           </div>
         </div>
@@ -182,37 +192,37 @@
     <div class="modal-card">
       <div class="modal-drag-handle" title="Drag down to dismiss or fling"></div>
       <div class="modal-header">
-        <div class="modal-icon-shield">⚠</div>
+        <div class="modal-icon-shield">🛡</div>
         <div class="modal-title-group">
-          <h3 id="modal-action-title">Policy Gate: Authorization Required</h3>
-          <p>Deterministic security boundary reached. Human confirmation mandatory.</p>
+          <h3 id="modal-action-title">Security & Trust Check</h3>
+          <p>Deterministic security boundary reached. Your confirmation is required.</p>
         </div>
       </div>
 
       <div class="modal-body">
         <div class="diff-row">
-          <span class="k">Target Capability:</span>
+          <span class="k">Action Request:</span>
           <span id="diff-cap" class="v">financial.transfer</span>
         </div>
         <div class="diff-row">
-          <span class="k">Evaluated Risk:</span>
+          <span class="k">Protection Level:</span>
           <span id="diff-risk" class="v" style="color: var(--accent-danger);">IRREVERSIBLE (Level 3)</span>
         </div>
         <div class="diff-row">
-          <span class="k">Gate Policy Rule:</span>
+          <span class="k">Security Policy:</span>
           <span id="diff-reason" class="v">FINANCIAL_LIMIT_EXCEEDED</span>
         </div>
         <div class="diff-row" style="flex-direction: column; gap: 4px;">
-          <span class="k">Payload Parameters:</span>
-          <span id="diff-params" class="v" style="font-size: 0.72rem; background: rgba(0,0,0,0.4); padding: 6px; border-radius: 4px; overflow-x: auto;">
+          <span class="k">Verified Parameters:</span>
+          <span id="diff-params" class="v" style="font-size: 0.74rem; background: rgba(0,0,0,0.35); padding: 8px 10px; border-radius: 8px; overflow-x: auto;">
             {}
           </span>
         </div>
       </div>
 
       <div class="modal-actions">
-        <button id="btn-deny-gate" class="btn btn-deny">Deny Action</button>
-        <button id="btn-approve-gate" class="btn btn-approve">Approve & Execute</button>
+        <button id="btn-deny-gate" class="btn btn-deny">Decline</button>
+        <button id="btn-approve-gate" class="btn btn-approve">Authorize & Continue ✦</button>
       </div>
     </div>
   </div>

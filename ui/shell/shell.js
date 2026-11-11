@@ -478,6 +478,147 @@ function renderAmbientHeader() {
   }
 }
 
+// Consumer Friendly Metadata Dictionary
+const CapabilityMetadata = {
+  'travel.flight_info': { name: 'Flight Tracker', icon: '✈', color: '#00e5ff' },
+  'calendar.reminder': { name: 'Boarding Reminder', icon: '🗓', color: '#7c4dff' },
+  'banking.account_verify': { name: 'Verified Account', icon: '🛡', color: '#00e676' },
+  'financial.transfer': { name: 'Instant Bank Transfer', icon: '💸', color: '#ffab00' },
+  'financial.crypto_transfer': { name: 'USDC Settlement', icon: '🪙', color: '#fbbf24' },
+  'system.memory.compact': { name: 'Neural Memory Cleanup', icon: '⚡', color: '#00e5ff' },
+  'vision.document.scan': { name: 'Document Capture', icon: '📷', color: '#a855f7' },
+  'vision.ocr.redact': { name: 'Privacy Redaction', icon: '📄', color: '#ec4899' },
+  'starnix.whatsapp.camera': { name: 'WhatsApp Camera VMO', icon: '💬', color: '#25d366' },
+  'starnix.spotify.audio': { name: 'Spotify Audio HAL', icon: '🎵', color: '#1db954' },
+  'starnix.location.gnss': { name: 'Autonomous GNSS', icon: '🗺', color: '#38bdf8' },
+  'starnix.storage.sandbox': { name: 'Sandbox Vector Tiles', icon: '📦', color: '#6366f1' },
+  'financial.payment.uber_fare': { name: 'Uber Fare Authorization', icon: '🚗', color: '#00e5ff' }
+};
+
+function formatConsumerOutput(capabilityId, output) {
+  if (!output) return '';
+
+  // 1. Flight Output
+  if (capabilityId === 'travel.flight_info' || capabilityId.includes('flight')) {
+    const dep = output.departure || 'DEL';
+    const arr = output.arrival || 'BLR';
+    const depCode = dep.split(' ')[0];
+    const arrCode = arr.split(' ')[0];
+    return `
+      <div class="human-output-card flight-card">
+        <div class="flight-route-header">
+          <div class="flight-city-col">
+            <span class="flight-iata">${depCode}</span>
+            <span class="flight-city-name">${dep}</span>
+          </div>
+          <div class="flight-arrow-group">
+            <div class="flight-path-line"></div>
+            <span class="flight-plane-glyph">✈</span>
+          </div>
+          <div class="flight-city-col text-right">
+            <span class="flight-iata">${arrCode}</span>
+            <span class="flight-city-name">${arr}</span>
+          </div>
+        </div>
+        <div class="flight-pill-row">
+          <span class="flight-status-chip"><span class="chip-dot"></span>${output.status || 'ON TIME'}</span>
+          <span class="flight-info-chip">🕒 Dep: ${output.departureTime || '10:30 AM'}</span>
+          <span class="flight-info-chip">Terminal ${output.terminal || 'T3'} • Gate ${output.gate || '14B'}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // 2. Financial / Payment Output
+  if (capabilityId.includes('transfer') || capabilityId.includes('payment') || capabilityId.includes('banking') || capabilityId.includes('crypto')) {
+    const amount = output.amount || output.fareDeducted || (output.availableBalance ? `Balance: ${output.availableBalance}` : null);
+    const recipient = output.recipient || output.verifiedRecipient || output.driverAssigned || (output.kycStatus ? `Status: ${output.kycStatus}` : null);
+    const txId = output.transactionId || (output.kycStatus ? 'Identity Verified' : null);
+
+    return `
+      <div class="human-output-card financial-card">
+        <div class="financial-hero">
+          ${amount ? `<div class="financial-amount">${amount}</div>` : ''}
+          <span class="financial-badge-success">✔ ${output.status || 'SETTLED'}</span>
+        </div>
+        <div class="financial-meta">
+          ${recipient ? `<span>To: <strong>${recipient}</strong></span>` : ''}
+          ${txId ? `<span>Ref: <code class="nano-code">${txId}</code></span>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  // 3. Calendar Reminder Output
+  if (capabilityId.includes('reminder') || capabilityId.includes('calendar')) {
+    return `
+      <div class="human-output-card reminder-card">
+        <div class="reminder-icon-box">🔔</div>
+        <div class="reminder-body">
+          <div class="reminder-headline">${output.event || output.title || 'Scheduled Reminder'}</div>
+          <div class="reminder-schedule">Set for <strong>${output.scheduledTime || output.time || '08:30 AM'}</strong></div>
+        </div>
+        <span class="reminder-status-chip">Active</span>
+      </div>
+    `;
+  }
+
+  // 4. Memory Optimization Output
+  if (capabilityId.includes('memory')) {
+    return `
+      <div class="human-output-card memory-card">
+        <div class="memory-stat-row">
+          <div class="memory-stat">
+            <span class="stat-num">${output.ramReclaimedMb || 128} MB</span>
+            <span class="stat-desc">RAM Freed</span>
+          </div>
+          <div class="memory-divider"></div>
+          <div class="memory-stat">
+            <span class="stat-num">${output.neuralCacheFlushed ? 'Purged' : 'Optimized'}</span>
+            <span class="stat-desc">Cache Flushed</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // 5. Document / OCR / Privacy Scan Output
+  if (capabilityId.includes('scan') || capabilityId.includes('ocr') || capabilityId.includes('redact') || capabilityId.includes('document')) {
+    return `
+      <div class="human-output-card doc-card">
+        <div class="doc-title-row">
+          <span class="doc-glyph">🛡</span>
+          <span class="doc-name">${output.documentType || output.ocrSummary || 'Secured On-Device Note'}</span>
+        </div>
+        <div class="doc-chips">
+          ${output.redactedPiiCount ? `<span class="doc-chip-safe">✓ ${output.redactedPiiCount} PII Redacted</span>` : ''}
+          ${output.airGapProtected || output.airGapEnforced ? `<span class="doc-chip-airgap">🔒 Air-Gap Protected</span>` : ''}
+          ${output.classification ? `<span class="doc-chip-safe">🏷 ${output.classification}</span>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  // 6. Generic formatted output with clean key-values and expandable raw data
+  const entries = Object.entries(output).filter(([k, v]) => typeof v !== 'object' || v === null);
+  return `
+    <div class="human-output-card generic-card">
+      <div class="generic-summary-grid">
+        ${entries.slice(0, 4).map(([k, v]) => `
+          <div class="generic-meta-item">
+            <span class="generic-k">${k.replace(/([A-Z])/g, ' $1').toLowerCase()}</span>
+            <span class="generic-v">${String(v)}</span>
+          </div>
+        `).join('')}
+      </div>
+      <details class="raw-json-details">
+        <summary>Technical Details</summary>
+        <pre class="raw-json-code">${JSON.stringify(output, null, 2)}</pre>
+      </details>
+    </div>
+  `;
+}
+
 function renderWorkspace() {
   const titleEl = document.getElementById('task-title');
   const subEl = document.getElementById('task-sub');
@@ -485,16 +626,16 @@ function renderWorkspace() {
   const canvas = document.getElementById('dag-canvas');
 
   if (!ShellState.currentTask) {
-    if (titleEl) titleEl.textContent = 'No Active Task';
-    if (subEl) subEl.textContent = 'Submit an intent or select a scenario below to initialize DAG execution.';
+    if (titleEl) titleEl.textContent = "Your Day's Flow";
+    if (subEl) subEl.textContent = 'Ask Pravah or select a flow below to start.';
     if (progressFill) progressFill.style.width = '0%';
-    if (canvas) canvas.innerHTML = '<div style="color: var(--text-muted); font-size: 0.9rem;">Workspace ready. Awaiting intent...</div>';
+    if (canvas) canvas.innerHTML = '<div class="dag-empty-state"><span class="empty-sparkle">✧</span><p>Ready when you are. Tell Pravah what you want to achieve.</p></div>';
     return;
   }
 
   const task = ShellState.currentTask;
   titleEl.textContent = task.goal;
-  subEl.textContent = `Task ID: ${task.id} • State: ${task.state}`;
+  subEl.textContent = `Flow ID: ${task.id} • ${task.state === 'EXECUTING' ? 'Active' : task.state}`;
 
   const total = task.nodes.length;
   const completed = task.nodes.filter(n => n.status === 'COMPLETED').length;
@@ -508,33 +649,44 @@ function renderWorkspace() {
     const riskLabel = RiskLabels[node.riskLevel] || 'RISK';
     const statusClass = `status-${node.status}`;
     const pillClass = `pill-${node.status.toLowerCase().replace(/_/g, '-')}`;
+    const meta = CapabilityMetadata[node.capabilityId] || { name: node.capabilityId, icon: '✦' };
+    const friendlyStatusLabels = {
+      'PENDING': 'Queued',
+      'RUNNING': 'Processing ✦',
+      'COMPLETED': 'Done ✓',
+      'WAITING_FOR_APPROVAL': 'Approval Needed ⚠',
+      'BLOCKED_BY_POLICY': 'Safely Blocked',
+      'REJECTED_BY_USER': 'Declined',
+      'FAILED': 'Failed'
+    };
+    const friendlyStatus = friendlyStatusLabels[node.status] || node.status.replace(/_/g, ' ');
 
     html += `
       <div class="dag-stage">
         <span class="stage-label">Step ${idx + 1}</span>
         <div class="dag-node-card ${statusClass}">
           <div class="node-header">
-            <span class="node-cap-id">${node.capabilityId}</span>
-            <span class="node-status-pill ${pillClass}">${node.status.replace(/_/g, ' ')}</span>
+            <div class="node-title-wrap">
+              <span class="node-icon">${meta.icon}</span>
+              <span class="node-cap-id" title="${node.capabilityId}">${meta.name}</span>
+            </div>
+            <span class="node-status-pill ${pillClass}">${friendlyStatus}</span>
           </div>
           <div class="node-meta-row">
-            <span>Risk Profile</span>
+            <span class="node-sub-id">${node.capabilityId}</span>
             <span class="risk-tag risk-${node.riskLevel}">${riskLabel}</span>
           </div>
     `;
 
     if (node.output) {
-      html += `
-        <div class="node-output-box">
-          <pre>${JSON.stringify(node.output, null, 2)}</pre>
-        </div>
-      `;
+      html += formatConsumerOutput(node.capabilityId, node.output);
     }
 
     if (node.error) {
       html += `
-        <div style="color: var(--accent-danger); font-size: 0.72rem; font-weight: 600;">
-          ${node.error}
+        <div class="node-error-alert">
+          <span class="error-glyph">⚠</span>
+          <span>${node.error}</span>
         </div>
       `;
     }
@@ -568,7 +720,7 @@ async function renderAuditInspector() {
 
   badge.className = `audit-integrity-badge ${intact ? 'integrity-valid' : 'integrity-tampered'}`;
   badge.textContent = intact
-    ? `✔ CHAIN INTACT (${ShellState.auditLog.length} BLOCKS)`
+    ? `🛡 TRUST SHIELD ACTIVE (${ShellState.auditLog.length})`
     : `✖ TAMPER DETECTED`;
 
   let html = '';
@@ -576,14 +728,29 @@ async function renderAuditInspector() {
   for (let i = ShellState.auditLog.length - 1; i >= 0; i--) {
     const entry = ShellState.auditLog[i];
     const decClass = entry.decision === 'ALLOW' ? 'decision-allow' : (entry.decision === 'DENY' ? 'decision-deny' : 'decision-require');
+    const decLabel = entry.decision === 'ALLOW' ? 'Verified Safe' : (entry.decision === 'DENY' ? 'Safely Blocked' : 'User Confirmed');
+    const meta = CapabilityMetadata[entry.capabilityId] || { name: entry.capabilityId, icon: '🛡' };
+
     html += `
-      <div class="audit-entry">
+      <div class="audit-entry luxury-audit-entry">
         <div class="audit-top">
-          <span class="audit-seq">Block #${entry.seq}</span>
-          <span class="audit-decision ${decClass}">${entry.decision}</span>
+          <div class="audit-block-badge">
+            <span class="block-icon">${meta.icon}</span>
+            <span class="block-num">Block #${entry.seq}</span>
+          </div>
+          <span class="audit-decision ${decClass}">${decLabel}</span>
         </div>
-        <div><strong>${entry.capabilityId}</strong> <span style="color: var(--text-muted); font-size: 0.65rem;">(${entry.caller})</span></div>
-        <div class="audit-hash">SHA-256: ${entry.hash ? entry.hash.substring(0, 24) + '...' : 'INVALID'}</div>
+        <div class="audit-main-info">
+          <span class="audit-cap-name">${meta.name}</span>
+          <span class="audit-caller">${entry.caller}</span>
+        </div>
+        <details class="audit-hash-details">
+          <summary>Cryptographic Proof</summary>
+          <div class="audit-hash-meta">
+            <div><span>SHA-256:</span> <code>${entry.hash ? entry.hash.substring(0, 24) + '...' : 'INVALID'}</code></div>
+            <div><span>Token:</span> <code>${entry.auditToken || '0x00'}</code></div>
+          </div>
+        </details>
       </div>
     `;
   }
