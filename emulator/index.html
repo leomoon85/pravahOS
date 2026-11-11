@@ -420,6 +420,63 @@
           </div>
         </div>
 
+        <!-- Pillar 2: Dynamic Island Morphing Simulator -->
+        <div class="telemetry-card">
+          <div class="card-title">
+            <span>Dynamic Island Morphing</span>
+            <span class="status-chip nominal" id="island-status-pill">PILLAR 2</span>
+          </div>
+          <p style="font-size:0.72rem; color:var(--text-secondary); line-height:1.4;">
+            Fluid liquid-glass state morphing with Web Audio synthesized tactile haptic ticks. Click island directly on phone screen or test morph states:
+          </p>
+          <div class="scenario-grid">
+            <button id="btn-island-compact" class="btn-scenario">⚫ Compact Pill</button>
+            <button id="btn-island-music" class="btn-scenario">🎵 Music Equalizer</button>
+            <button id="btn-island-flight" class="btn-scenario">✈ Flight AI-202</button>
+            <button id="btn-island-auth" class="btn-scenario">🪪 Passkey Scanner</button>
+            <button id="btn-island-policy" class="btn-scenario">⚠️ Policy Gate Alert</button>
+            <button id="btn-island-cycle" class="btn-scenario">↻ Cycle Morph</button>
+          </div>
+        </div>
+
+        <!-- Android Application Compatibility Container (Starnix) -->
+        <div class="telemetry-card">
+          <div class="card-title">
+            <span>Android Compatibility (Starnix)</span>
+            <span id="val-android-active-app" class="status-chip">STANDBY</span>
+          </div>
+          <p style="font-size:0.72rem; color:var(--text-secondary); line-height:1.4;">
+            Fuchsia Starnix-style Linux ABI translation layer running Android apps in sandboxed CFv2 realm. Direct Binder IPC virtualization to Zircon channels.
+          </p>
+
+          <div class="scenario-grid">
+            <button class="btn-scenario btn-android-app" id="android-chip-com.whatsapp" data-android-app="com.whatsapp">
+              💬 WhatsApp
+            </button>
+            <button class="btn-scenario btn-android-app" id="android-chip-com.spotify.music" data-android-app="com.spotify.music">
+              🎵 Spotify
+            </button>
+            <button class="btn-scenario btn-android-app" id="android-chip-com.google.android.apps.maps" data-android-app="com.google.android.apps.maps">
+              🗺 Google Maps
+            </button>
+            <button class="btn-scenario btn-android-app" id="android-chip-com.ubercab" data-android-app="com.ubercab">
+              🚗 Uber (Gated)
+            </button>
+          </div>
+
+          <div style="margin-top:0.6rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
+              <span style="font-size:0.68rem; font-weight:700; color:var(--accent-cyan); text-transform:uppercase;">
+                Virtual Binder IPC & Syscall Stream
+              </span>
+              <button id="btn-clear-android-ipc" class="tb-btn" style="padding:1px 6px; font-size:0.6rem;">Clear</button>
+            </div>
+            <div class="android-ipc-stream-box" id="android-ipc-log-list">
+              <div class="ipc-entry placeholder">Container initialized. Launch an Android app above to stream Binder parcels.</div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- Tab Content 2: FIDL Event Stream Inspector -->
@@ -439,7 +496,11 @@
 
   </main>
 
+  <script src="../ui/motion/spring.js" type="module"></script>
+  <script src="../ui/motion/haptics.js" type="module"></script>
+  <script src="../ui/shell/island.js" type="module"></script>
   <script src="sensory_bridge.js"></script>
+  <script src="android_bridge.js"></script>
   <script src="emulator.js"></script>
   <script>
     // Initialize Phone Emulator Application
@@ -667,6 +728,82 @@
           app.pulseDynamicIsland('VOICE PIPELINE ACTIVE');
         }
       });
+
+      // Dynamic Island Morphing Controls
+      const islandStatusPill = document.getElementById('island-status-pill');
+
+      const updateIslandStatus = (state) => {
+        if (islandStatusPill) {
+          islandStatusPill.textContent = state;
+        }
+      };
+
+      // Connect listener once island controller is ready
+      const checkIslandReady = () => {
+        if (app.islandController) {
+          app.islandController.onStateChange((newState) => {
+            updateIslandStatus(newState);
+          });
+        } else if (app.dynamicIsland && window.PravahIsland?.DynamicIslandController) {
+          app.islandController = new window.PravahIsland.DynamicIslandController(app.dynamicIsland);
+          app.islandController.onStateChange((newState) => {
+            updateIslandStatus(newState);
+          });
+        }
+      };
+      setTimeout(checkIslandReady, 50);
+
+      document.getElementById('btn-island-compact')?.addEventListener('click', () => {
+        checkIslandReady();
+        app.islandController?.collapse();
+      });
+
+      document.getElementById('btn-island-music')?.addEventListener('click', () => {
+        checkIslandReady();
+        app.islandController?.setMusic();
+      });
+
+      document.getElementById('btn-island-flight')?.addEventListener('click', () => {
+        checkIslandReady();
+        app.islandController?.setFlight();
+      });
+
+      document.getElementById('btn-island-auth')?.addEventListener('click', () => {
+        checkIslandReady();
+        app.islandController?.startAuthScan();
+      });
+
+      document.getElementById('btn-island-policy')?.addEventListener('click', () => {
+        checkIslandReady();
+        app.islandController?.triggerPolicyAlert();
+      });
+
+      document.getElementById('btn-island-cycle')?.addEventListener('click', () => {
+        checkIslandReady();
+        app.islandController?.cycleNextState();
+      });
+
+      // Initialize Android Compatibility Container Bridge
+      if (typeof EmulatorAndroidBridge !== 'undefined') {
+        const androidBridge = new EmulatorAndroidBridge(app, app.sensory);
+        window.androidBridge = androidBridge;
+        app.androidBridge = androidBridge;
+
+        // Wire Android App Launcher chips in emulator sidebar
+        document.querySelectorAll('[data-android-app]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const appId = btn.getAttribute('data-android-app');
+            androidBridge.launchApp(appId);
+            const appMeta = EmulatorAndroidApps[appId];
+            app.pulseDynamicIsland(`STARNIX: ${appMeta ? appMeta.shortName.toUpperCase() : 'APP'}`);
+          });
+        });
+
+        document.getElementById('btn-clear-android-ipc')?.addEventListener('click', () => {
+          androidBridge.ipcLogs = [];
+          androidBridge.renderIpcStream();
+        });
+      }
     });
   </script>
 </body>

@@ -1,0 +1,87 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+
+/// Starnix Linux ABI Translation Runner Manifest.
+/// Moniker: /core/android_realm/starnix_runner
+///
+/// Implements the Fuchsia Component Framework ComponentRunner protocol
+/// (`fuchsia.component.runner.ComponentRunner`) for Linux-compatible binaries.
+///
+/// Architectural Guarantees:
+/// 1. Userspace Emulation: Traps and translates Linux system calls (AArch64 `svc #0`)
+///    entirely in userspace; zero Linux drivers or kernel code in microkernel space.
+/// 2. Binder IPC Virtualization: Emulates `/dev/binder`, `/dev/hwbinder`, and `/dev/vndbinder`
+///    by marshalling Android Binder transactions (`BC_TRANSACTION` / `BR_REPLY`) across
+///    native Zircon channels (`zx_channel`).
+/// 3. Ashmem Memory Virtualization: Maps Android Ashmem shared memory requests directly
+///    to Zircon Virtual Memory Objects (VMOs) with explicit capability rights reduction.
+/// 4. Sandbox Isolation: Translates POSIX UID/GID permissions into PravahOS object
+///    capabilities. POSIX root (UID 0) inside the container has zero elevated privileges
+///    on the host PravahOS microkernel.
+{
+    include: [
+        "//sdk/cml/pravah_base.shard.cml",
+    ],
+    program: {
+        runner: "elf",
+        binary: "bin/starnix_runner",
+        args: [
+            "--container-type=android-microg",
+            "--abi-level=34", // Android 14 (Upside Down Cake)
+            "--binder-transport=zircon-channel",
+            "--ashmem-allocator=zircon-vmo",
+        ],
+    },
+    capabilities: [
+        // Runner protocol exposed to Component Framework to launch Linux/Android ELF binaries
+        {
+            runner: "starnix",
+            path: "/svc/fuchsia.component.runner.ComponentRunner",
+        },
+        // Virtual binder node protocol offered to Android container children
+        {
+            protocol: [
+                "pravah.compat.LinuxAbiTranslator",
+                "pravah.compat.BinderVirtualizer",
+                "pravah.compat.AshmemAllocator",
+            ],
+        },
+    ],
+    use: [
+        // Mandatory deterministic policy verification before delegating system resources
+        {
+            protocol: "pravah.policy.PolicyGate",
+        },
+        // Core capability provider host for camera, audio, location, and storage
+        {
+            protocol: "pravah.capability.CapabilityProvider",
+        },
+        // Sysmem for zero-copy VMO buffer allocation (camera frames, display surfaces, audio PCM)
+        {
+            protocol: "fuchsia.hardware.sysmem.Sysmem",
+        },
+        // Isolated persistent storage for container rootfs, app data, and APK bundles
+        {
+            storage: "data",
+            path: "/data",
+        },
+        {
+            storage: "cache",
+            path: "/cache",
+        },
+    ],
+    expose: [
+        {
+            runner: "starnix",
+            from: "self",
+        },
+        {
+            protocol: [
+                "pravah.compat.LinuxAbiTranslator",
+                "pravah.compat.BinderVirtualizer",
+                "pravah.compat.AshmemAllocator",
+            ],
+            from: "self",
+        },
+    ],
+}

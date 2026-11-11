@@ -11,3 +11,4 @@ export * from './offline_runner.js';
 export * from './capabilities/index.js';
 export * from './memory.js';
 export * from './planner.js';
+export * from './compat/android_bridge.js';

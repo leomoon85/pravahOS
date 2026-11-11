@@ -22,6 +22,15 @@
       </div>
     </div>
 
+    <!-- Dynamic Island Ambient Surface -->
+    <div class="dynamic-island" id="shell-dynamic-island" title="Interactive Dynamic Island (Click to expand / morph)">
+      <div class="island-compact-view">
+        <div class="camera-lens"></div>
+        <div class="pill-badge">AIR-GAP ACTIVE</div>
+        <div class="ir-dot"></div>
+      </div>
+    </div>
+
     <div class="ambient-telemetry">
       <div id="offline-badge" class="telemetry-badge badge-offline" style="cursor: pointer;" title="Click to toggle offline/online simulation">
         <div class="badge-pulse-dot"></div>
@@ -79,6 +88,14 @@
         <button class="chip" data-scenario="crypto">🪙 250 USDC Remittance</button>
         <button class="chip" data-scenario="memory">⚡ Compact Secure Memory</button>
         <button class="chip" data-scenario="ocr">📄 Receipt OCR & Privacy Redact</button>
+      </div>
+
+      <div class="scenario-chips android-chips-row" style="margin-top: 6px;">
+        <span style="color: var(--accent-emerald); font-weight: 700;">🤖 Android Apps (Starnix):</span>
+        <button class="chip chip-android" data-scenario="android_whatsapp">💬 WhatsApp (Camera VMO)</button>
+        <button class="chip chip-android" data-scenario="android_spotify">🎵 Spotify (Audio HAL)</button>
+        <button class="chip chip-android" data-scenario="android_maps">🗺 Maps (GNSS Sensor)</button>
+        <button class="chip chip-android" data-scenario="android_uber">🚗 Uber (Policy Gate Gated)</button>
       </div>
     </section>
 
@@ -140,6 +157,7 @@
   <!-- 3. Policy Gate Approval Modal -->
   <div id="approval-modal-backdrop" class="modal-backdrop">
     <div class="modal-card">
+      <div class="modal-drag-handle" title="Drag down to dismiss or fling"></div>
       <div class="modal-header">
         <div class="modal-icon-shield">⚠</div>
         <div class="modal-title-group">
@@ -176,6 +194,9 @@
     </div>
   </div>
 
+  <script type="module" src="../motion/spring.js"></script>
+  <script type="module" src="../motion/haptics.js"></script>
+  <script type="module" src="island.js"></script>
   <script type="module" src="../keyboard/voice.js"></script>
   <script type="module" src="../keyboard/keyboard.js"></script>
   <script src="shell.js"></script>

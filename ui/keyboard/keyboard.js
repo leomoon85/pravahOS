@@ -464,6 +464,9 @@ export class SoftKeyboard {
   }
 
   triggerHaptic() {
+    if (typeof window !== 'undefined' && window.PravahHaptics?.haptics) {
+      window.PravahHaptics.haptics.lightTap();
+    }
     if (!this.isMuted && typeof navigator !== 'undefined' && navigator.vibrate) {
       try {
         navigator.vibrate(8);

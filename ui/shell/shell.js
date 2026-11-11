@@ -302,6 +302,141 @@ const Scenarios = {
         })
       }
     ]
+  },
+
+  android_whatsapp: {
+    intent: 'Launch WhatsApp video call and stream camera frames via Policy Gate',
+    goal: 'Starnix Android Container: WhatsApp Video Call with Mediated Camera VMO',
+    nodes: [
+      {
+        id: 'node_1',
+        capabilityId: 'starnix.binder.init',
+        riskLevel: RiskLevel.READ_ONLY,
+        dependencies: [],
+        inputs: { package: 'com.whatsapp', version: '2.24.12' },
+        execute: async () => ({
+          container: 'STARNIX_CFv2',
+          binderFd: 104,
+          ashmemFd: 105,
+          process: 'com.whatsapp (PID 1042)',
+          isolation: 'MINFS_SANDBOX_ACTIVE'
+        })
+      },
+      {
+        id: 'node_2',
+        capabilityId: 'starnix.camera.vmo_delegate',
+        riskLevel: RiskLevel.CONSEQUENTIAL,
+        dependencies: ['node_1'],
+        inputs: { sensor: 'IMX890 50MP', resolution: '1080p60', format: 'ARGB8888' },
+        execute: async () => ({
+          vmoHandle: 'zx_vmo_cam_frame_com.whatsapp_1080p',
+          policyStatus: 'CLEARED_BY_POLICY_GATE',
+          frameRate: 60,
+          zeroCopyBuffer: 'ATTACHED_TO_WAYDROID_SURFACE',
+          callActive: true
+        })
+      }
+    ]
+  },
+
+  android_spotify: {
+    intent: 'Stream lossless audio from Spotify into PravahOS 48kHz Audio HAL',
+    goal: 'Starnix Android Container: Spotify Audio Playback to HAL PCM Ring Buffer',
+    nodes: [
+      {
+        id: 'node_1',
+        capabilityId: 'starnix.binder.init',
+        riskLevel: RiskLevel.READ_ONLY,
+        dependencies: [],
+        inputs: { package: 'com.spotify.music', service: 'IAudioFlinger' },
+        execute: async () => ({
+          container: 'STARNIX_CFv2',
+          binderFd: 108,
+          track: 'Resonance - Synthwave OST',
+          streamType: 'STREAM_MUSIC'
+        })
+      },
+      {
+        id: 'node_2',
+        capabilityId: 'starnix.audio.pcm_stream',
+        riskLevel: RiskLevel.REVERSIBLE,
+        dependencies: ['node_1'],
+        inputs: { sampleRate: 48000, channels: 2, bitDepth: 16 },
+        execute: async () => ({
+          halRingBuffer: 'zx_vmo_audio_ring_track_spotify',
+          rmsDbfs: -16.4,
+          framesPushed: 8192,
+          oscilloscopeState: 'STREAMING'
+        })
+      }
+    ]
+  },
+
+  android_maps: {
+    intent: 'Query GNSS sensor in Google Maps under offline Air-Gap sandbox',
+    goal: 'Starnix Android Container: Google Maps Offline Navigation & GNSS Telemetry',
+    nodes: [
+      {
+        id: 'node_1',
+        capabilityId: 'starnix.location.gnss',
+        riskLevel: RiskLevel.READ_ONLY,
+        dependencies: [],
+        inputs: { provider: 'LOCAL_GNSS_SENSOR_ONLY', airGapProtected: true },
+        execute: async () => ({
+          latitude: 28.6139,
+          longitude: 77.2090,
+          altitudeMeters: 216,
+          accuracyMeters: 4.2,
+          airGapEnforced: true,
+          cloudSyncSevered: true
+        })
+      },
+      {
+        id: 'node_2',
+        capabilityId: 'starnix.storage.sandbox',
+        riskLevel: RiskLevel.REVERSIBLE,
+        dependencies: ['node_1'],
+        inputs: { path: '/data/data/com.google.android.apps.maps/files/vector_tiles.bin' },
+        execute: async () => ({
+          vectorTilesLoaded: 142,
+          offlineRender: 'SUCCESS',
+          cacheMounted: 'MINFS_CAPABILITY_ISOLATED'
+        })
+      }
+    ]
+  },
+
+  android_uber: {
+    intent: 'Book Uber ride with ₹420 fare requiring Policy Gate user approval',
+    goal: 'Starnix Android Container: Uber Ride Booking with Deterministic Policy Gate Gatekeeper',
+    nodes: [
+      {
+        id: 'node_1',
+        capabilityId: 'starnix.location.gnss',
+        riskLevel: RiskLevel.READ_ONLY,
+        dependencies: [],
+        inputs: { pickup: 'Connaught Place', dropoff: 'IGI Airport T3' },
+        execute: async () => ({
+          distanceKm: 14.8,
+          estimatedDurationMin: 32,
+          vehicleClass: 'Uber Premier'
+        })
+      },
+      {
+        id: 'node_2',
+        capabilityId: 'financial.payment.uber_fare',
+        riskLevel: RiskLevel.IRREVERSIBLE,
+        dependencies: ['node_1'],
+        inputs: { fare: '₹420.00', merchant: 'Uber India Technology Pvt Ltd', method: 'Pravah FastUPI' },
+        execute: async () => ({
+          transactionId: 'TX-UBER-88491',
+          fareDeducted: '₹420.00',
+          driverAssigned: 'Rajiv (Swift Dzire - DL 01 AB 9821)',
+          etaMinutes: 3,
+          biometricToken: '0x9f1a4e8c'
+        })
+      }
+    ]
   }
 };
 
@@ -411,6 +546,7 @@ function renderWorkspace() {
   });
 
   canvas.innerHTML = html;
+  attachCardSpringPhysics(canvas);
 }
 
 async function renderAuditInspector() {
@@ -481,6 +617,26 @@ async function recordAudit({ caller, capabilityId, riskLevel, decision, reason =
 async function executeTask(scenarioKey) {
   const scenario = Scenarios[scenarioKey];
   if (!scenario) return;
+
+  if (scenarioKey === 'flight') {
+    window.shellIsland?.setFlight({
+      flightNumber: 'AI-202',
+      departure: 'DEL',
+      arrival: 'BLR',
+      countdown: 'T-45m',
+      status: 'ON TIME',
+      gate: 'Gate 14B'
+    });
+  } else if (scenarioKey === 'crypto') {
+    window.shellIsland?.startAuthScan({
+      label: 'Biometric Passkey for 250 USDC'
+    });
+  } else if (scenarioKey === 'android_spotify') {
+    window.shellIsland?.setMusic({
+      title: 'Top Hits - Pravah Audio',
+      artist: 'Spotify Android Starnix'
+    });
+  }
 
   const taskId = `task_${Date.now().toString(36)}`;
   ShellState.currentTask = {
@@ -607,6 +763,17 @@ function showApprovalModal({ taskId, nodeId, capabilityId, riskLevel, reason, in
   reasonVal.textContent = reason;
   paramsVal.textContent = JSON.stringify(inputs);
 
+  if (window.shellIsland) {
+    window.shellIsland.triggerPolicyAlert({
+      title: `Policy Gate: ${capabilityId}`,
+      riskLevel: RiskLabels[riskLevel],
+      reason: reason,
+      description: `Target ${capabilityId}. Biometric sign-off mandated.`,
+      onApprove: () => handleModalDecision(true),
+      onDeny: () => handleModalDecision(false)
+    });
+  }
+
   backdrop.classList.add('active');
 
   return new Promise(resolve => {
@@ -615,6 +782,14 @@ function showApprovalModal({ taskId, nodeId, capabilityId, riskLevel, reason, in
 }
 
 function handleModalDecision(approved) {
+  if (approved) {
+    window.PravahHaptics?.haptics.successChime();
+  } else {
+    window.PravahHaptics?.haptics.heavyWarning();
+  }
+  if (window.shellIsland && window.shellIsland.getState() === 'POLICY_ALERT') {
+    window.shellIsland.collapse();
+  }
   const backdrop = document.getElementById('approval-modal-backdrop');
   backdrop.classList.remove('active');
   if (modalResolver) {
@@ -627,6 +802,325 @@ function delay(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
+// ============================================================================
+// Spring-Damping Gesture Physics Integration (Pillar 1)
+// ============================================================================
+
+/**
+ * Attaches interactive card dragging with rubber-band resistance and
+ * velocity-conserving 2D spring snap-back.
+ */
+function attachCardSpringPhysics(container) {
+  const Motion = window.PravahMotion;
+  if (!Motion || !container) return;
+
+  const cards = container.querySelectorAll('.dag-node-card');
+  cards.forEach(card => {
+    card.classList.add('is-draggable');
+    let startX = 0, startY = 0;
+    let isDragging = false;
+    let activeSpringX = null;
+    let activeSpringY = null;
+    let tracker = null;
+    let curX = 0, curY = 0;
+
+    const onPointerDown = (e) => {
+      // Ignore click on interactive children if any
+      if (e.target.closest('button, input, pre, code')) return;
+
+      isDragging = true;
+      try { card.setPointerCapture(e.pointerId); } catch (_) {}
+      card.classList.add('is-dragging');
+
+      if (activeSpringX) { activeSpringX.cancel(); activeSpringX = null; }
+      if (activeSpringY) { activeSpringY.cancel(); activeSpringY = null; }
+
+      startX = e.clientX;
+      startY = e.clientY;
+      curX = 0;
+      curY = 0;
+
+      tracker = new Motion.VelocityTracker();
+      tracker.addPoint(e.clientX, e.clientY);
+    };
+
+    const onPointerMove = (e) => {
+      if (!isDragging) return;
+      const rawDx = e.clientX - startX;
+      const rawDy = e.clientY - startY;
+
+      // Apple/Pixel rubber-band overscroll resistance
+      curX = Motion.rubberBandClamp(rawDx, 420);
+      curY = Motion.rubberBandClamp(rawDy, 320);
+
+      const rot = (curX * 0.03).toFixed(2);
+      card.style.transform = `translate3d(${curX.toFixed(1)}px, ${curY.toFixed(1)}px, 0) scale(1.03) rotate(${rot}deg)`;
+      tracker.addPoint(e.clientX, e.clientY);
+    };
+
+    const onPointerUp = (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+      card.classList.remove('is-dragging');
+      try { card.releasePointerCapture(e.pointerId); } catch (_) {}
+
+      const { vx, vy } = tracker ? tracker.getVelocity() : { vx: 0, vy: 0 };
+
+      // Launch 2D spring snap-back conserving release velocity
+      const springX = new Motion.Spring(Motion.SpringPresets.DEFAULT);
+      springX.setTarget(0, vx, curX);
+
+      const springY = new Motion.Spring(Motion.SpringPresets.DEFAULT);
+      springY.setTarget(0, vy, curY);
+
+      let animId = Motion.sharedTicker.add((dt) => {
+        const sX = springX.step(dt);
+        const sY = springY.step(dt);
+        const rot = (sX.value * 0.03).toFixed(2);
+        card.style.transform = `translate3d(${sX.value.toFixed(1)}px, ${sY.value.toFixed(1)}px, 0) rotate(${rot}deg)`;
+
+        if (sX.done && sY.done) {
+          card.style.transform = '';
+          return false; // unregister from ticker
+        }
+        return true;
+      });
+
+      activeSpringX = { cancel: () => Motion.sharedTicker.remove(animId) };
+    };
+
+    card.addEventListener('pointerdown', onPointerDown);
+    card.addEventListener('pointermove', onPointerMove);
+    card.addEventListener('pointerup', onPointerUp);
+    card.addEventListener('pointercancel', onPointerUp);
+  });
+}
+
+/**
+ * Initializes interactive swipe-to-dismiss and spring return on the Approval Modal sheet.
+ */
+function initModalSheetSpringPhysics() {
+  const Motion = window.PravahMotion;
+  const backdrop = document.getElementById('approval-modal-backdrop');
+  const modalCard = backdrop?.querySelector('.modal-card');
+  const handle = backdrop?.querySelector('.modal-drag-handle');
+  if (!backdrop || !modalCard || !Motion) return;
+
+  let startY = 0;
+  let isDragging = false;
+  let curY = 0;
+  let tracker = null;
+  let activeSpring = null;
+  const flingController = new Motion.FlingDismissController({
+    dismissThresholdPx: 120,
+    dismissVelocityPx: 600,
+    springConfig: Motion.SpringPresets.DEFAULT
+  });
+
+  const onPointerDown = (e) => {
+    if (e.target.closest('button')) return;
+    isDragging = true;
+    try { modalCard.setPointerCapture(e.pointerId); } catch (_) {}
+    modalCard.classList.add('is-dragging');
+
+    if (activeSpring) { activeSpring.cancel(); activeSpring = null; }
+    startY = e.clientY;
+    curY = 0;
+    tracker = new Motion.VelocityTracker();
+    tracker.addPoint(e.clientX, e.clientY);
+  };
+
+  const onPointerMove = (e) => {
+    if (!isDragging) return;
+    const rawDy = e.clientY - startY;
+
+    if (rawDy < 0) {
+      // Pulling upwards: apply rubber-band resistance
+      curY = Motion.rubberBandClamp(rawDy, 220);
+    } else {
+      // Pulling downwards: smooth linear translation
+      curY = rawDy;
+    }
+
+    const opacity = Math.max(0.25, 1 - (curY / 650)).toFixed(2);
+    modalCard.style.transform = `translate3d(0, ${curY.toFixed(1)}px, 0)`;
+    modalCard.style.opacity = opacity;
+    tracker.addPoint(e.clientX, e.clientY);
+  };
+
+  const onPointerUp = (e) => {
+    if (!isDragging) return;
+    isDragging = false;
+    modalCard.classList.remove('is-dragging');
+    try { modalCard.releasePointerCapture(e.pointerId); } catch (_) {}
+
+    const { vy } = tracker ? tracker.getVelocity() : { vy: 0 };
+    const evalRes = flingController.evaluate(curY, vy, 600, 0);
+
+    const spring = new Motion.Spring(Motion.SpringPresets.DEFAULT);
+    spring.setTarget(evalRes.target, evalRes.velocity, curY);
+
+    let animId = Motion.sharedTicker.add((dt) => {
+      const state = spring.step(dt);
+      modalCard.style.transform = `translate3d(0, ${state.value.toFixed(1)}px, 0)`;
+      if (evalRes.willDismiss) {
+        modalCard.style.opacity = Math.max(0, 1 - (state.value / 400)).toFixed(2);
+      }
+
+      if (state.done) {
+        modalCard.style.transform = '';
+        modalCard.style.opacity = '';
+        if (evalRes.willDismiss) {
+          handleModalDecision(false);
+        }
+        return false;
+      }
+      return true;
+    });
+
+    activeSpring = { cancel: () => Motion.sharedTicker.remove(animId) };
+  };
+
+  const dragTarget = handle || modalCard;
+  dragTarget.addEventListener('pointerdown', onPointerDown);
+  dragTarget.addEventListener('pointermove', onPointerMove);
+  dragTarget.addEventListener('pointerup', onPointerUp);
+  dragTarget.addEventListener('pointercancel', onPointerUp);
+}
+
+/**
+ * Attaches smooth list fling inertia scrolling and overscroll edge rebound.
+ * 
+ * @param {HTMLElement} element
+ * @param {'x'|'y'} axis
+ */
+function initListInertiaPhysics(element, axis = 'x') {
+  const Motion = window.PravahMotion;
+  if (!element || !Motion) return;
+
+  let isDragging = false;
+  let startCoord = 0;
+  let startScroll = 0;
+  let tracker = null;
+  let activeAnimation = null;
+  const momentum = new Motion.MomentumInertia({ decelerationRate: 3.2, minVelocity: 15 });
+
+  const getCoord = (e) => (axis === 'x' ? e.clientX : e.clientY);
+  const getScroll = () => (axis === 'x' ? element.scrollLeft : element.scrollTop);
+  const setScroll = (val) => {
+    if (axis === 'x') element.scrollLeft = val;
+    else element.scrollTop = val;
+  };
+  const getMaxScroll = () => (axis === 'x' ? element.scrollWidth - element.clientWidth : element.scrollHeight - element.clientHeight);
+
+  element.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('button, input, select, .dag-node-card')) return;
+
+    if (activeAnimation) {
+      activeAnimation.cancel();
+      activeAnimation = null;
+    }
+
+    isDragging = true;
+    element.classList.add('is-dragging');
+    startCoord = getCoord(e);
+    startScroll = getScroll();
+    tracker = new Motion.VelocityTracker();
+    tracker.addPoint(e.clientX, e.clientY);
+  });
+
+  window.addEventListener('pointermove', (e) => {
+    if (!isDragging) return;
+    const delta = getCoord(e) - startCoord;
+    const targetScroll = startScroll - delta;
+    const maxScroll = getMaxScroll();
+
+    if (targetScroll < 0) {
+      const over = -targetScroll;
+      const resisted = Motion.rubberBandClamp(over, 250);
+      setScroll(0);
+      element.style.transform = axis === 'x'
+        ? `translate3d(${resisted.toFixed(1)}px, 0, 0)`
+        : `translate3d(0, ${resisted.toFixed(1)}px, 0)`;
+    } else if (targetScroll > maxScroll && maxScroll > 0) {
+      const over = targetScroll - maxScroll;
+      const resisted = Motion.rubberBandClamp(over, 250);
+      setScroll(maxScroll);
+      element.style.transform = axis === 'x'
+        ? `translate3d(${-resisted.toFixed(1)}px, 0, 0)`
+        : `translate3d(0, ${-resisted.toFixed(1)}px, 0)`;
+    } else {
+      element.style.transform = '';
+      setScroll(targetScroll);
+    }
+
+    tracker.addPoint(e.clientX, e.clientY);
+  });
+
+  const onPointerUp = (e) => {
+    if (!isDragging) return;
+    isDragging = false;
+    element.classList.remove('is-dragging');
+
+    // Restore rubber-band overscroll if active
+    if (element.style.transform) {
+      const match = element.style.transform.match(/translate3d\(([^p]+)px/);
+      const currentOffset = match ? parseFloat(match[1]) : 0;
+      const spring = new Motion.Spring(Motion.SpringPresets.OVERSCROLL_RESTORE);
+      spring.setTarget(0, 0, currentOffset);
+
+      let animId = Motion.sharedTicker.add((dt) => {
+        const s = spring.step(dt);
+        element.style.transform = axis === 'x'
+          ? `translate3d(${s.value.toFixed(1)}px, 0, 0)`
+          : `translate3d(0, ${s.value.toFixed(1)}px, 0)`;
+
+        if (s.done) {
+          element.style.transform = '';
+          return false;
+        }
+        return true;
+      });
+      activeAnimation = { cancel: () => Motion.sharedTicker.remove(animId) };
+      return;
+    }
+
+    // Evaluate fling velocity
+    const vel = tracker ? tracker.getVelocity() : { vx: 0, vy: 0 };
+    const flingVelocity = -(axis === 'x' ? vel.vx : vel.vy);
+
+    if (Math.abs(flingVelocity) > 60) {
+      let currentPos = getScroll();
+      let currentVel = flingVelocity;
+      let animTime = 0;
+
+      let animId = Motion.sharedTicker.add((dt) => {
+        animTime += dt;
+        currentPos += (flingVelocity * Math.exp(-momentum.decelerationRate * animTime) * dt);
+        const maxScroll = getMaxScroll();
+
+        if (currentPos < 0 || currentPos > maxScroll) {
+          setScroll(Math.max(0, Math.min(maxScroll, currentPos)));
+          return false;
+        }
+
+        setScroll(currentPos);
+
+        const currentSpeed = Math.abs(currentVel * Math.exp(-momentum.decelerationRate * animTime));
+        if (currentSpeed <= momentum.minVelocity) {
+          return false;
+        }
+        return true;
+      });
+
+      activeAnimation = { cancel: () => Motion.sharedTicker.remove(animId) };
+    }
+  };
+
+  window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('pointercancel', onPointerUp);
+}
+
 // Event Listeners & Initialization
 document.addEventListener('DOMContentLoaded', async () => {
   await initAuditLedger();
@@ -634,9 +1128,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderWorkspace();
   await renderAuditInspector();
 
+  // Initialize Dynamic Island
+  const shellIslandEl = document.getElementById('shell-dynamic-island');
+  if (shellIslandEl && window.PravahIsland?.DynamicIslandController) {
+    window.shellIsland = new window.PravahIsland.DynamicIslandController(shellIslandEl);
+  }
+
+  // Initialize Spring-Damping Gesture Physics & 120Hz Momentum Inertia
+  initModalSheetSpringPhysics();
+  initListInertiaPhysics(document.getElementById('dag-canvas'), 'x');
+  initListInertiaPhysics(document.getElementById('audit-stream'), 'y');
+
   // Scenario Chips
   document.querySelectorAll('.chip').forEach(chip => {
     chip.addEventListener('click', () => {
+      window.PravahHaptics?.haptics.lightTap();
       const scenarioKey = chip.getAttribute('data-scenario');
       const input = document.getElementById('intent-input');
       if (input && Scenarios[scenarioKey]) {
@@ -650,6 +1156,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const submitBtn = document.getElementById('btn-submit-intent');
   const intentInput = document.getElementById('intent-input');
   submitBtn.addEventListener('click', () => {
+    window.PravahHaptics?.haptics.mediumSnap();
     const raw = (intentInput.value || '').toLowerCase();
     if (raw.includes('photo') || raw.includes('document') || raw.includes('camera') || raw.includes('private note')) {
       executeTask('camera_note');
@@ -663,6 +1170,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       executeTask('memory');
     } else if (raw.includes('ocr') || raw.includes('receipt') || raw.includes('expense')) {
       executeTask('ocr');
+    } else if (raw.includes('whatsapp') || raw.includes('video call')) {
+      executeTask('android_whatsapp');
+    } else if (raw.includes('spotify') || raw.includes('music') || raw.includes('song')) {
+      executeTask('android_spotify');
+    } else if (raw.includes('maps') || raw.includes('navigation') || raw.includes('gps') || raw.includes('gnss')) {
+      executeTask('android_maps');
+    } else if (raw.includes('uber') || raw.includes('cab') || raw.includes('ride')) {
+      executeTask('android_uber');
     } else {
       // Default to camera_note if document mentioned, else flight
       executeTask('flight');
@@ -850,6 +1365,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       case 'PRAVAH_DECISION':
         handleModalDecision(Boolean(data.approved));
+        break;
+
+      case 'PRAVAH_GESTURE_FLING':
+        if (data.gesture) {
+          const g = data.gesture;
+          const canvas = document.getElementById('dag-canvas');
+          if (canvas && (g.name === 'SWIPE_LEFT' || g.name === 'SWIPE_RIGHT')) {
+            const vel = g.name === 'SWIPE_LEFT' ? 700 : -700;
+            canvas.scrollBy({ left: vel * 0.45, behavior: 'smooth' });
+          } else if (g.name === 'SWIPE_DOWN') {
+            const modal = document.getElementById('approval-modal-backdrop');
+            if (modal && modal.classList.contains('active')) {
+              handleModalDecision(false);
+            }
+          }
+        }
         break;
 
       case 'PRAVAH_TOGGLE_KEYBOARD':

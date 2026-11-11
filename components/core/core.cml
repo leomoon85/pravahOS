@@ -35,6 +35,11 @@
             url: "fuchsia-boot:///uia#meta/uia.cm",
             startup: "eager",
         },
+        {
+            name: "android_realm",
+            url: "fuchsia-boot:///android_realm#meta/android_realm.cm",
+            startup: "eager",
+        },
     ],
     capabilities: [
         // Core realm declares storage capabilities backed by storage subsystem
@@ -90,6 +95,7 @@
             ],
             from: "parent",
             to: [
+                "#android_realm",
                 "#capability_host",
                 "#inference_fabric",
                 "#policy_gate",
@@ -104,6 +110,7 @@
             storage: "data",
             from: "self",
             to: [
+                "#android_realm",
                 "#capability_host",
                 "#policy_gate",
                 "#uia",
@@ -113,6 +120,7 @@
             storage: "cache",
             from: "self",
             to: [
+                "#android_realm",
                 "#capability_host",
                 "#inference_fabric",
                 "#uia",
@@ -121,12 +129,13 @@
 
         // =========================================================================
         // Deterministic Policy Gate Routing
-        // Exposed by policy_gate -> Consumed by UIA and Capability Host
+        // Exposed by policy_gate -> Consumed by UIA, Capability Host, and Android Realm
         // =========================================================================
         {
             protocol: "pravah.policy.PolicyGate",
             from: "#policy_gate",
             to: [
+                "#android_realm",
                 "#capability_host",
                 "#uia",
             ],
@@ -152,7 +161,10 @@
         {
             protocol: "pravah.capability.CapabilityProvider",
             from: "#capability_host",
-            to: "#uia",
+            to: [
+                "#android_realm",
+                "#uia",
+            ],
         },
 
         // =========================================================================
@@ -168,14 +180,22 @@
             from: "parent",
             to: "#inference_fabric",
         },
-        // Sysmem also offered to capability_host for zero-copy media streaming
+        // Sysmem also offered to capability_host and android_realm for zero-copy media/camera streaming
         {
             protocol: "fuchsia.hardware.sysmem.Sysmem",
             from: "parent",
-            to: "#capability_host",
+            to: [
+                "#android_realm",
+                "#capability_host",
+            ],
         },
     ],
     expose: [
+        // Expose Android Application Manager to client UI sessions and shell
+        {
+            protocol: "pravah.compat.AndroidAppManager",
+            from: "#android_realm",
+        },
         // Expose TaskManager to client UI sessions and shell
         {
             protocol: "pravah.task.TaskManager",

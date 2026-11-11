@@ -1,0 +1,129 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+
+/// Android Application Compatibility Realm Manifest.
+/// Moniker: /core/android_realm
+///
+/// Sandboxed CFv2 component realm providing execution environment for Android applications
+/// (e.g., WhatsApp, Spotify, Maps, Uber) using the Starnix Linux ABI translation runner
+/// and Waydroid / microG lightweight userspace architecture.
+///
+/// Security Invariants:
+/// 1. Zero Direct Kernel Drivers: Android applications execute in userspace with no
+///    access to host hardware nodes, GPU MMIO registers, or Linux kernel modules.
+/// 2. Mandatory Capability Gating: Android runtime permissions (CAMERA, RECORD_AUDIO,
+///    ACCESS_FINE_LOCATION, READ_EXTERNAL_STORAGE) are mediated by PravahOS Policy Gate.
+/// 3. Virtual Binder Isolation: Binder IPC parcels are mapped to isolated Zircon channels.
+///    Inter-app Binder calls cannot escape the container boundary or access host FIDL
+///    interfaces without explicit capability delegation.
+/// 4. Storage Partitioning: Each Android APK runs inside an isolated mount namespace
+///    (`/data/data/<package_name>`) backed by PravahOS MinFS storage capabilities.
+{
+    children: [
+        {
+            name: "starnix_runner",
+            url: "fuchsia-boot:///starnix_runner#meta/starnix_runner.cm",
+            startup: "eager",
+        },
+    ],
+    collections: [
+        // Dynamic collection for Android applications executed under Starnix runner
+        {
+            name: "android_apps",
+            durability: "transient",
+        },
+    ],
+    capabilities: [
+        {
+            protocol: [
+                "pravah.compat.AndroidAppManager",
+                "pravah.compat.ContainerBridge",
+            ],
+        },
+    ],
+    use: [
+        // Parent core routing protocols
+        {
+            protocol: [
+                "pravah.policy.PolicyGate",
+                "pravah.capability.CapabilityProvider",
+                "fuchsia.hardware.sysmem.Sysmem",
+            ],
+        },
+        {
+            storage: "data",
+            path: "/data",
+        },
+        {
+            storage: "cache",
+            path: "/cache",
+        },
+    ],
+    offer: [
+        // Diagnostic protocols to runner
+        {
+            protocol: [
+                "fuchsia.inspect.InspectSink",
+                "fuchsia.logger.LogSink",
+            ],
+            from: "parent",
+            to: [
+                "#starnix_runner",
+                "#android_apps",
+            ],
+        },
+        // Core Policy Gate & Capability Host routed to Starnix runner for mediation
+        {
+            protocol: [
+                "pravah.policy.PolicyGate",
+                "pravah.capability.CapabilityProvider",
+                "fuchsia.hardware.sysmem.Sysmem",
+            ],
+            from: "parent",
+            to: "#starnix_runner",
+        },
+        // Isolated storage for container and apps
+        {
+            storage: "data",
+            from: "parent",
+            to: [
+                "#starnix_runner",
+                "#android_apps",
+            ],
+        },
+        {
+            storage: "cache",
+            from: "parent",
+            to: [
+                "#starnix_runner",
+                "#android_apps",
+            ],
+        },
+        // Offer Starnix runner protocol to dynamic Android app collection
+        {
+            runner: "starnix",
+            from: "#starnix_runner",
+            to: "#android_apps",
+        },
+        // Offer virtual binder node to Android apps collection
+        {
+            protocol: [
+                "pravah.compat.LinuxAbiTranslator",
+                "pravah.compat.BinderVirtualizer",
+                "pravah.compat.AshmemAllocator",
+            ],
+            from: "#starnix_runner",
+            to: "#android_apps",
+        },
+    ],
+    expose: [
+        // Expose Android Application Manager to Core and Shell
+        {
+            protocol: [
+                "pravah.compat.AndroidAppManager",
+                "pravah.compat.ContainerBridge",
+            ],
+            from: "#starnix_runner",
+        },
+    ],
+}

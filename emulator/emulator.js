@@ -129,6 +129,12 @@ class GestureDecoder {
     // Callbacks
     this.onGesture = options.onGesture || (() => {});
     this.onRawTouch = options.onRawTouch || (() => {});
+
+    // Motion Physics Velocity Tracker
+    const Motion = (typeof require === 'function')
+      ? (() => { try { return require('../ui/motion/spring.js'); } catch (_) { return null; } })()
+      : (typeof window !== 'undefined' ? window.PravahMotion : null);
+    this.velocityTracker = Motion ? new Motion.VelocityTracker() : null;
   }
 
   reset() {
@@ -155,6 +161,11 @@ class GestureDecoder {
     };
     this.activeTouches.set(slot, contact);
     this.longPressFired = false;
+
+    if (this.velocityTracker && slot === 0) {
+      this.velocityTracker.reset();
+      this.velocityTracker.addPoint(x, y, timestamp);
+    }
 
     // Notify raw touch
     this.onRawTouch({ phase: TouchPhase.DOWN, slot, x, y, timestamp });
@@ -205,6 +216,10 @@ class GestureDecoder {
 
     contact.curX = x;
     contact.curY = y;
+
+    if (this.velocityTracker && slot === 0) {
+      this.velocityTracker.addPoint(x, y, timestamp);
+    }
 
     // Check long-press invalidation due to drift
     if (this.activeTouches.size === 1 && !this.longPressFired) {
@@ -311,7 +326,23 @@ class GestureDecoder {
       }
       // 2. Check Directional Swipes
       else if (dist >= this.tuning.swipeMinDistancePx && duration <= this.tuning.swipeMaxDurationMs) {
-        const velocity = Math.round((dist / (duration || 1)) * 1000);
+        if (this.velocityTracker && slot === 0) {
+          this.velocityTracker.addPoint(x, y, timestamp);
+        }
+
+        let velocity = Math.round((dist / (duration || 1)) * 1000);
+        let vx = Math.round((deltaX / (duration || 1)) * 1000);
+        let vy = Math.round((deltaY / (duration || 1)) * 1000);
+
+        if (this.velocityTracker) {
+          const v = this.velocityTracker.getVelocity();
+          if (v.speed > 0) {
+            velocity = Math.round(v.speed);
+            vx = Math.round(v.vx);
+            vy = Math.round(v.vy);
+          }
+        }
+
         let swipeType = GestureType.NONE;
         let swipeName = 'NONE';
 
@@ -340,6 +371,8 @@ class GestureDecoder {
           centerY: Math.round((contact.startY + y) / 2),
           deltaX,
           deltaY,
+          vx,
+          vy,
           velocityPxSec: velocity,
           durationMs: duration,
           scaleMilli: 1000,
@@ -819,6 +852,9 @@ class PhoneEmulatorApp {
     this.touchCanvas = this.container.querySelector('#touch-overlay');
     this.fbCanvas = this.container.querySelector('#framebuffer-canvas');
     this.dynamicIsland = this.container.querySelector('#dynamic-island');
+    if (this.dynamicIsland && window.PravahIsland?.DynamicIslandController) {
+      this.islandController = new window.PravahIsland.DynamicIslandController(this.dynamicIsland);
+    }
     this.screenOverlay = this.container.querySelector('#screen-overlay');
     this.volumePopup = this.container.querySelector('#volume-popup');
     this.powerModal = this.container.querySelector('#power-modal');
@@ -1003,6 +1039,7 @@ class PhoneEmulatorApp {
 
     if (btnVolUp) {
       btnVolUp.addEventListener('click', () => {
+        window.PravahHaptics?.haptics.lightTap();
         this.hud.setVolume(this.hud.state.volume + 10);
         this.showVolumeSlider();
       });
@@ -1010,6 +1047,7 @@ class PhoneEmulatorApp {
 
     if (btnVolDown) {
       btnVolDown.addEventListener('click', () => {
+        window.PravahHaptics?.haptics.lightTap();
         this.hud.setVolume(this.hud.state.volume - 10);
         this.showVolumeSlider();
       });
@@ -1017,17 +1055,22 @@ class PhoneEmulatorApp {
 
     if (btnAirGap) {
       btnAirGap.addEventListener('click', () => {
+        window.PravahHaptics?.haptics.heavyWarning();
         const isOffline = this.hud.toggleAirGap();
         this.syncAirGapToShell(isOffline);
         this.pulseDynamicIsland(isOffline ? 'AIR-GAP SECURED' : 'RADIO ONLINE');
       });
     }
 
-    // Dynamic Island click: toggle expansion
-    if (this.dynamicIsland) {
-      this.dynamicIsland.addEventListener('click', () => {
-        this.dynamicIsland.classList.toggle('expanded');
-      });
+    // Dynamic Island is managed by DynamicIslandController if loaded
+    if (this.dynamicIsland && !this.islandController) {
+      if (window.PravahIsland?.DynamicIslandController) {
+        this.islandController = new window.PravahIsland.DynamicIslandController(this.dynamicIsland);
+      } else {
+        this.dynamicIsland.addEventListener('click', () => {
+          this.dynamicIsland.classList.toggle('expanded');
+        });
+      }
     }
 
     // Sensory Feeds Bindings (Camera, Audio, Thermal, Air-Gap)
@@ -1240,6 +1283,11 @@ class PhoneEmulatorApp {
   }
 
   pulseDynamicIsland(text) {
+    if (this.islandController) {
+      this.islandController.transitionTo('COMPACT', { label: text });
+      window.PravahHaptics?.haptics.lightTap();
+      return;
+    }
     if (!this.dynamicIsland) return;
     const textEl = this.dynamicIsland.querySelector('.pill-badge');
     if (textEl) textEl.textContent = text;
@@ -1252,6 +1300,16 @@ class PhoneEmulatorApp {
   handleGestureRecognized(gesture) {
     this.bridge.packageGestureEvent(gesture);
     this.pulseDynamicIsland(`${gesture.name} recognized`);
+
+    // Forward velocity-conserving gesture fling to DEC shell iframe
+    if (this.iframe && this.iframe.contentWindow) {
+      try {
+        this.iframe.contentWindow.postMessage({
+          type: 'PRAVAH_GESTURE_FLING',
+          gesture
+        }, '*');
+      } catch (_) {}
+    }
 
     // Render gesture indicator on touch canvas
     if (this.touchCtx) {
