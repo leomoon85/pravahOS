@@ -1,0 +1,12 @@
+# Copyright 2026 The PravahOS Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license.
+
+service pravahd /system/bin/pravahd
+    class core
+    user root
+    group system power graphics
+    capabilities SYS_ADMIN
+    socket pravahd stream 0660 root system
+    file /data/pravah rw
+    writepid /dev/cpuset/system-background/tasks
+    onrestart restart pravah_ui

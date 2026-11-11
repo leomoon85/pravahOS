@@ -1545,6 +1545,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         initialToggles: {
           airgap: ShellState.offline
         },
+        onBrightnessChange: (val) => {
+          if (window.pravahClient) {
+            window.pravahClient.setDisplayBrightness(Math.round(val * 2.55)).catch(() => {});
+          }
+        },
         onStateChange: (state) => {
           const pullTab = document.getElementById('shade-pull-trigger');
           if (pullTab) {

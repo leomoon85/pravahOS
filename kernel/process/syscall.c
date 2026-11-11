@@ -6,6 +6,7 @@
 #include "kernel/syscall.h"
 #include "kernel/process.h"
 #include "kernel/thread.h"
+#include "kernel/vmm.h"
 #include "kernel/vmo.h"
 #include "kernel/channel.h"
 #include "kernel/handle.h"
@@ -17,17 +18,36 @@ volatile int     proc_should_exit = 0;
 volatile int64_t proc_exit_code = 0;
 
 /**
+ * @brief Validate that an EL0 userspace pointer range strictly resides within
+ * the canonical user address space and does not overflow or touch kernel memory.
+ */
+static inline bool validate_user_ptr(const void *ptr, size_t len) {
+    if (!ptr) {
+        return false;
+    }
+    uintptr_t addr = (uintptr_t)ptr;
+    /* Boundary check: must be in user virtual address space */
+    if (addr < USER_ASPACE_BASE) {
+        return false;
+    }
+    /* Integer overflow protection */
+    if (addr + len < addr) {
+        return false;
+    }
+    /* Must not exceed the top of userspace address range */
+    if (addr + len > (USER_ASPACE_BASE + USER_ASPACE_SIZE)) {
+        return false;
+    }
+    return true;
+}
+
+/**
  * @brief Syscall: zx_debug_write
  *
  * Direct microkernel debug console output from EL0 userland.
  */
 static zx_status_t sys_debug_write(const char *user_buffer, size_t size) {
-    if (!user_buffer || size == 0) {
-        return ZX_ERR_INVALID_ARGS;
-    }
-
-    /* Basic userspace pointer validation */
-    if ((uintptr_t)user_buffer >= KERNEL_ASPACE_BASE) {
+    if (!validate_user_ptr(user_buffer, size)) {
         return ZX_ERR_INVALID_ARGS;
     }
 
@@ -76,6 +96,9 @@ int64_t arm64_syscall_dispatcher(
             return 0;
 
         case SYS_zx_process_create:
+            if (arg1 != 0 && !validate_user_ptr((const void *)arg1, (size_t)arg2)) return ZX_ERR_INVALID_ARGS;
+            if (!validate_user_ptr((const void *)arg4, sizeof(zx_handle_t))) return ZX_ERR_INVALID_ARGS;
+            if (!validate_user_ptr((const void *)arg5, sizeof(zx_handle_t))) return ZX_ERR_INVALID_ARGS;
             return (int64_t)zx_process_create(
                 (zx_handle_t)arg0,
                 (const char *)arg1,
@@ -86,6 +109,8 @@ int64_t arm64_syscall_dispatcher(
             );
 
         case SYS_zx_process_start:
+            if (arg2 >= (USER_ASPACE_BASE + USER_ASPACE_SIZE)) return ZX_ERR_INVALID_ARGS;
+            if (arg3 >= (USER_ASPACE_BASE + USER_ASPACE_SIZE)) return ZX_ERR_INVALID_ARGS;
             return (int64_t)zx_process_start(
                 (zx_handle_t)arg0,
                 (zx_handle_t)arg1,
@@ -96,6 +121,8 @@ int64_t arm64_syscall_dispatcher(
             );
 
         case SYS_zx_thread_create:
+            if (arg1 != 0 && !validate_user_ptr((const void *)arg1, (size_t)arg2)) return ZX_ERR_INVALID_ARGS;
+            if (!validate_user_ptr((const void *)arg4, sizeof(zx_handle_t))) return ZX_ERR_INVALID_ARGS;
             return (int64_t)zx_thread_create(
                 (zx_handle_t)arg0,
                 (const char *)arg1,
@@ -105,6 +132,8 @@ int64_t arm64_syscall_dispatcher(
             );
 
         case SYS_zx_thread_start:
+            if (arg1 >= (USER_ASPACE_BASE + USER_ASPACE_SIZE)) return ZX_ERR_INVALID_ARGS;
+            if (arg2 >= (USER_ASPACE_BASE + USER_ASPACE_SIZE)) return ZX_ERR_INVALID_ARGS;
             return (int64_t)zx_thread_start(
                 (zx_handle_t)arg0,
                 (zx_vaddr_t)arg1,
@@ -117,9 +146,12 @@ int64_t arm64_syscall_dispatcher(
             return (int64_t)thread_exit();
 
         case SYS_zx_vmo_create:
+            if (!validate_user_ptr((const void *)arg2, sizeof(zx_handle_t))) return ZX_ERR_INVALID_ARGS;
             return (int64_t)zx_vmo_create((uint64_t)arg0, (uint32_t)arg1, (zx_handle_t *)arg2);
 
         case SYS_zx_vmo_read:
+            if (!validate_user_ptr((const void *)arg1, (size_t)arg3)) return ZX_ERR_INVALID_ARGS;
+            if (arg4 != 0 && !validate_user_ptr((const void *)arg4, sizeof(size_t))) return ZX_ERR_INVALID_ARGS;
             return (int64_t)zx_vmo_read(
                 (zx_handle_t)arg0,
                 (void *)arg1,
@@ -129,6 +161,8 @@ int64_t arm64_syscall_dispatcher(
             );
 
         case SYS_zx_vmo_write:
+            if (!validate_user_ptr((const void *)arg1, (size_t)arg3)) return ZX_ERR_INVALID_ARGS;
+            if (arg4 != 0 && !validate_user_ptr((const void *)arg4, sizeof(size_t))) return ZX_ERR_INVALID_ARGS;
             return (int64_t)zx_vmo_write(
                 (zx_handle_t)arg0,
                 (const void *)arg1,
@@ -138,9 +172,13 @@ int64_t arm64_syscall_dispatcher(
             );
 
         case SYS_zx_channel_create:
+            if (!validate_user_ptr((const void *)arg1, sizeof(zx_handle_t))) return ZX_ERR_INVALID_ARGS;
+            if (!validate_user_ptr((const void *)arg2, sizeof(zx_handle_t))) return ZX_ERR_INVALID_ARGS;
             return (int64_t)zx_channel_create((uint32_t)arg0, (zx_handle_t *)arg1, (zx_handle_t *)arg2);
 
         case SYS_zx_channel_write:
+            if (arg3 > 0 && !validate_user_ptr((const void *)arg2, (size_t)arg3)) return ZX_ERR_INVALID_ARGS;
+            if (arg5 > 0 && !validate_user_ptr((const void *)arg4, (size_t)arg5 * sizeof(zx_handle_t))) return ZX_ERR_INVALID_ARGS;
             return (int64_t)zx_channel_write(
                 (zx_handle_t)arg0,
                 (uint32_t)arg1,
@@ -151,6 +189,10 @@ int64_t arm64_syscall_dispatcher(
             );
 
         case SYS_zx_channel_read:
+            if (arg4 > 0 && !validate_user_ptr((const void *)arg2, (size_t)arg4)) return ZX_ERR_INVALID_ARGS;
+            if (arg5 > 0 && !validate_user_ptr((const void *)arg3, (size_t)arg5 * sizeof(zx_handle_t))) return ZX_ERR_INVALID_ARGS;
+            if (arg6 != 0 && !validate_user_ptr((const void *)arg6, sizeof(uint32_t))) return ZX_ERR_INVALID_ARGS;
+            if (arg7 != 0 && !validate_user_ptr((const void *)arg7, sizeof(uint32_t))) return ZX_ERR_INVALID_ARGS;
             return (int64_t)zx_channel_read(
                 (zx_handle_t)arg0,
                 (uint32_t)arg1,

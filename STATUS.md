@@ -1,30 +1,41 @@
-# PravahOS Implementation Status & Subsystem Tracker
+# PravahOS Implementation Status & Subsystem Evidence Matrix
 
-| Subsystem | Layer / Technology | Status | Key Deliverables & Test Coverage |
-| :--- | :--- | :--- | :--- |
-| **Microkernel & Memory** | Zircon Bare-Metal / ARM64 | **COMPLETED & VERIFIED** | PMM bitmap allocation, VMM demand paging, Handle rights masks, ARM64 EL1 bootloader & PL011 UART ([`KERNEL.md`](KERNEL.md)). |
-| **Process Isolation & CFv2** | Fuchsia Component Framework | **COMPLETED & VERIFIED** | Production CFv2 manifests (`.cml`), sandboxing shards, capability routing topology ([`COMPONENTS.md`](COMPONENTS.md)). |
-| **System IPC & FIDL** | Fuchsia FIDL Protocols | **COMPLETED & VERIFIED** | `pravah.capability`, `pravah.task`, `pravah.policy`, `pravah.display`, `pravah.input`, `pravah.compositor`, `pravah.hardware`. |
-| **Unified Intelligence Authority** | Deterministic Policy Gate Runtime | **COMPLETED & VERIFIED** | Risk level arbitration (`READ_ONLY` $\dots$ `IRREVERSIBLE`), context source tracking, SHA-256 tamper-evident forward hash chain. |
-| **Autonomous Task Engine** | Directed Acyclic Graph (DAG) | **COMPLETED & VERIFIED** | Topological stage scheduling, rollback checkpoints, dynamic progress computing (27/27 runtime tests passing). |
-| **Sensory & Mobile HAL** | Userspace Driver Framework (DFv2) | **COMPLETED & VERIFIED** | Sony IMX890 50MP Camera VMO, Direct 48kHz Audio DMA HAL, Battery/Thermal Governor, 0.0V Physical RF Killswitch ([`HAL.md`](HAL.md)). |
-| **Hinge HAL & Foldable Pipeline** | Multi-Display & Hinge Sensor Driver | **COMPLETED & VERIFIED** | Continuous angle sensing ($0^\circ \dots 180^\circ$), 0.0V panel power gating, 4:3 Passport Booklet & 90° Flex tabletop modes ([`FOLDABLE.md`](FOLDABLE.md)). |
-| **Zero-Tax Android Compat** | AOT APK Synthesizer & Dormancy | **COMPLETED & VERIFIED** | 4-stage install-time transpiler, native capability synthesis, 0.00% CPU / 0 MB active RAM dormant container ([`TRANSPILER.md`](TRANSPILER.md), [`CONTAINER.md`](CONTAINER.md)). |
-| **Dynamic Experience Composer** | Scenic/Flatland Web Shell | **COMPLETED & VERIFIED** | Liquid glassmorphism, ambient glow orbs, organic squircles, Dynamic Island state morphing, human outcome cards ([`EXPERIENCE.md`](EXPERIENCE.md)). |
-| **Living App Drawer** | Neo-Metro Bento Grid | **COMPLETED & VERIFIED** | 20-26px squircles, rotating Spotify vinyl, flight radar scope, fuel gauge, 4x7 glass prism A-Z fast jump ([`DRAWER.md`](DRAWER.md)). |
-| **Control Center & Hardware Shade** | Top Pull-Down Control Center | **COMPLETED & VERIFIED** | Optical PWM Torch beam, 0.0V Air-Gap, NPU power governor, sensor privacy kill, fluid sliders ([`SHADE.md`](SHADE.md)). |
-| **Predictive Back Navigation** | Dual-Edge Inward Gesture Engine | **COMPLETED & VERIFIED** | Android 14/15-style predictive back indicator pill, rubberband stretch, deterministic hierarchical stack unwinder. |
-| **Always-On Display & Security** | 1Hz OLED AOD & Lockscreen | **COMPLETED & VERIFIED** | 0.00W true black 1Hz scanline, flight/battery pill, in-display ultrasonic biometric fingerprint sensor with sonic ripple. |
-| **Telecom & AI Call Screening** | Tactile T9 & Local Whisper INT4 | **COMPLETED & VERIFIED** | On-device speech-to-text call screening, 0-cloud-leak robocall interception, one-tap carrier trunk sever. |
-| **Flagship Stock Apps Suite** | Offline-First Core Apps Suite | **COMPLETED & VERIFIED** | Phone (Fossify T9), Messages (ML-KEM-768), Gallery (Neural OCR), Files (Capacity breakdown), Calculator (Soulver preview), Clock (Dynamic Island ring) ([`APPS.md`](APPS.md)). |
-| **3GPP Rel-17 Satellite SOS** | NTN Orbital Mechanics & HAL | **COMPLETED & VERIFIED** | Slant range physics, Doppler compensation, 128-byte binary packet serializer, RF air-gap safety interlock. |
-| **Multi-SoC Bringup & Flashing** | Snapdragon SM8550 & Tensor GS201 | **COMPLETED & VERIFIED** | Fastboot dry-run simulator script ([`tools/flash_device.ps1`](tools/flash_device.ps1)), Titan M2 Custom RoT enrollment guide ([`SILICON_BRINGUP.md`](SILICON_BRINGUP.md)). |
-| **Interactive Phone Emulator** | WebGL / Framebuffer Device Window | **COMPLETED & VERIFIED** | Multi-touch digitizer, velocity-conserving fling, live camera viewfinder, live sensory feeds, form factor chassis switcher ([`EMULATOR.md`](EMULATOR.md)). |
+This document provides the authoritative, evidence-backed status for all PravahOS subsystems. Every subsystem is classified strictly under one of the five verified states:
+1. **Specified**: Architecture, FIDL, or CML manifests exist, but executable code or generated bindings are not integrated into a running binary.
+2. **Simulated**: Behavior is mocked in software, test harness, or userland scripts without real hardware or kernel driver execution.
+3. **Implemented but unverified**: Native code exists and compiles or passes static validation, but has not been executed on physical silicon.
+4. **Verified on emulator / host**: Tested and verified under host runtimes, Node.js harnesses, QEMU `virt`, or browser shell emulators.
+5. **Verified on named physical hardware**: Tested on an attached, flashed physical phone with confirmed hardware logs.
 
 ---
 
-### Overall Test Suite Metrics
-- **Automated Tests**: **423 / 423 Passing (100%)**
-- **Test Suites**: **30 suites** across `runtime`, `ui`, `emulator`, `kernel`, and `hal`
-- **Execution Speed**: $\approx 2.7$ seconds
+## 1. Subsystem Evidence Matrix
+
+| Subsystem | Layer / Technology | Status | Evidence & Real Implementation Boundaries |
+| :--- | :--- | :--- | :--- |
+| **Microkernel & Core Memory** | ARM64 C Microkernel (`kernel/`) | **Implemented but unverified** *(Verified on QEMU virt only)* | Custom ARM64 C kernel (`kernel/main.c`, `kernel/process/syscall.c`) implements PMM bitmap allocator, VMM demand paging, handles, channels, and VMOs. EL0 user-pointer validation now enforced. Boots to idle loop in QEMU `virt`; device tree drivers for physical SoCs (UFS, DSI, PMIC, touch) are unverified on physical hardware. |
+| **Process Isolation & CFv2** | Fuchsia Component Framework (`components/*.cml`) | **Specified** | CFv2 manifests (`.cml`) specify sandboxing shards and capability routing, but Fuchsia component manager runtime is not compiled into native binaries. |
+| **System IPC & FIDL Protocols** | FIDL Definitions (`system/fidl/`) | **Specified** | FIDL schemas specify `pravah.capability`, `pravah.task`, `pravah.policy`, `pravah.hardware`. Stub bindings exist in JavaScript; C/C++ native code generators are not linked to a native FIDL IPC bus. |
+| **Deterministic Policy Gate** | Intent & Capability Arbiter (`runtime/src/policy/`) | **Verified on emulator / host** | Pure algorithmic policy arbiter evaluating risk levels (`READ_ONLY`, `REVERSIBLE`, `CONSEQUENTIAL`, `IRREVERSIBLE`), context sources, and SHA-256 tamper-evident forward hash chain. Verified across 27+ automated unit tests. |
+| **Autonomous Task Engine** | Directed Acyclic Graph (`runtime/src/task/`) | **Verified on emulator / host** | DAG topological scheduler, rollback checkpoints, and dynamic progress computation. Fully verified in Node.js test environment. |
+| **Hardware Platform Daemon** | Native C Daemon (`services/pravahd/`) | **Implemented but unverified** *(Verified on host)* | Native C daemon (`pravahd.c`, `Android.bp`, `pravahd.rc`) and Node.js bridge (`pravahd_service.js`). Reads battery state from `/sys/class/power_supply/battery/*`, controls backlight at `/sys/class/backlight/*`, enforces policy gating, and guarantees atomic persistence (`.tmp` + `fsync` + `rename`). 8/8 tests passing in `runtime/tests/pravahd_slice.test.js`. Physical device testing pending target device flashing. |
+| **Sensory & Mobile HAL** | HAL Mock Drivers (`hal/`) | **Simulated** | Audio DMA, Camera VMO, and Battery/Thermal governor are software mocks tested in Node.js (`hal/tests/`). Physical camera/audio drivers require AOSP HAL or native Linux v4l2/ALSA drivers. |
+| **Hinge & Foldable Pipeline** | Multi-Display Driver (`hal/foldable/`) | **Simulated** | Hinge angle sensing ($0^\circ \dots 180^\circ$) and dual-panel power gating logic simulated in emulator window and automated unit tests. |
+| **Android Compatibility** | AOT Transpiler & Container (`runtime/src/container/`) | **Simulated** | APK manifest parser and dormancy telemetry simulated in JavaScript. Real APK execution requires Android ART/AOSP runtime container. |
+| **Experience Composer Shell** | Dynamic Web Shell (`ui/shell/`) | **Verified on emulator / host** | Liquid glassmorphism, dynamic bento drawer, Control Center shade, and predictive back navigation running in browser/PWA shell. Connected to `pravahd` IPC for brightness control. |
+| **Living App Drawer & UI** | Bento Grid & Gestures (`ui/`) | **Verified on emulator / host** | Neo-Metro bento grid, 20-26px squircle styling, spring physics, dynamic search filtering. Verified on browser host. |
+| **Stock Apps Suite** | Core Apps (`ui/apps/`) | **Verified on emulator / host** | Phone (T9), Messages, Gallery, Files, Calculator, Clock. Fully functional with offline-first local state within browser/PWA shell. |
+| **3GPP Rel-17 Satellite SOS** | NTN Protocol (`hal/satellite/`) | **Simulated** | Slant range mathematics, orbital Doppler calculations, and 128-byte binary packet serialization simulated in software. No physical RF satellite transceiver attached. |
+| **Multi-SoC Flashing & Tooling** | Flashing Suite (`tools/flashing/`) | **Implemented but unverified** *(Simulated in dry-run)* | `flash_device.ps1` and `flash_device.sh` implement partition flashing workflows for Qualcomm and Google Tensor targets. Dummy ELF placeholder payload generation has been **removed**; scripts fail closed if real kernel binaries are missing. Verified in dry-run; no physical device flashed. |
+| **Titan M2 Cryptographic Driver** | Enclave Driver (`kernel/arch/arm64/google/titan_m2.c`) | **Simulated** | Driver models 16 hardware key slots and AVB custom key enrollment. Sealing derivation currently uses simulated keystream rather than physical Titan M2 secure SPI bus commands. |
+| **Interactive Phone Emulator** | Device Shell (`emulator/`) | **Verified on emulator / host** | Touch digitizer coordinate normalization, multi-touch pinch/fling, HUD telemetry, and responsive chassis switcher verified on host. |
+
+---
+
+## 2. Test Suite Summary
+
+- **Total Automated Tests**: **431 / 431 Passing (100%)**
+- **Test Suites**: **44 suites** across `runtime`, `ui`, `emulator`, `kernel`, `hal`, and `services`
 - **Regressions**: **0**
+- **Physical Device Attached**: **None detected** (`fastboot devices` and `adb devices` report no connected hardware).
+- **Provisional Target Selected**: **Google Pixel 7 (`panther` - Tensor G2 / GS201)**

@@ -91,6 +91,9 @@ The PravahOS ARM64 kernel relies on hermetic Flattened Device Trees:
 On Google Pixel Tensor hardware, PravahOS leverages the discrete Titan M2 security coprocessor via the kernel driver located at [`kernel/arch/arm64/google/titan_m2.h`](file:///L:/projectz/OS/kernel/arch/arm64/google/titan_m2.h) and [`kernel/arch/arm64/google/titan_m2.c`](file:///L:/projectz/OS/kernel/arch/arm64/google/titan_m2.c):
 
 ### 4.1 Hardware-Backed Keystore
+> [!NOTE]
+> The Titan M2 driver in `kernel/arch/arm64/google/titan_m2.c` currently provides a software simulation model for key slots and ledger validation. For physical deployment, cryptographic key generation and sealing must delegate to the physical Google Titan M2 hardware enclave over secure SPI protocol with protected hardware keys, rather than simulated keystreams derived from public hashes.
+
 - **16 Discrete Key Slots**:
   - `Slot 0`: Hardware Root-of-Trust (RoT)
   - `Slot 1`: Per-Device Unique Identity Key

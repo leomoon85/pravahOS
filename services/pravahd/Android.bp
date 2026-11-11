@@ -1,0 +1,23 @@
+// Copyright 2026 The PravahOS Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license.
+
+cc_binary {
+    name: "pravahd",
+    srcs: [
+        "pravahd.c",
+    ],
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wextra",
+        "-O2",
+        "-DPRAVAH_PLATFORM_AOSP=1",
+    ],
+    shared_libs: [
+        "libcutils",
+        "liblog",
+    ],
+    init_rc: ["pravahd.rc"],
+    vendor_available: false,
+    recovery_available: true,
+}

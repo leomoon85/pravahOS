@@ -57,10 +57,12 @@ Write-Host "============================================================" -Foreg
 # Step 1: Resolve Artifacts & Compile Device Trees
 $KernelElf = "$ProjectRoot\kernel\pravah_kernel.elf"
 if (-not (Test-Path $KernelElf)) {
-    # Generate mock/stub kernel binary if not yet compiled
-    Write-Host "[INFO] Kernel ELF not found. Creating placeholder image for bundle..." -ForegroundColor Gray
-    $StubKernel = [byte[]](0x7F, 0x45, 0x4C, 0x46, 0x02, 0x01, 0x01, 0x00) + [byte[]](0..1023 | ForEach-Object { 0x90 })
-    [System.IO.File]::WriteAllBytes($KernelElf, $StubKernel)
+    if (-not $DryRun.IsPresent) {
+        Write-Error "FATAL: Genuine kernel binary '$KernelElf' not found. Flashing tools must never synthesize placeholder payloads."
+        throw "Kernel artifact missing: $KernelElf"
+    } else {
+        Write-Host "[DRY-RUN] Kernel binary '$KernelElf' not present; proceeding with device tree & command validation only." -ForegroundColor Yellow
+    }
 }
 
 $DtsPath = if ($Target -eq 'qcom') {

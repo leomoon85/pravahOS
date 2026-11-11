@@ -72,9 +72,12 @@ echo "============================================================"
 # Step 1: Resolve Artifacts & Compile Device Trees
 KERNEL_ELF="$PROJECT_ROOT/kernel/pravah_kernel.elf"
 if [[ ! -f "$KERNEL_ELF" ]]; then
-    echo "[INFO] Kernel ELF not found. Creating placeholder image..."
-    printf '\x7F\x45\x4C\x46\x02\x01\x01\x00' > "$KERNEL_ELF"
-    head -c 1024 /dev/zero >> "$KERNEL_ELF" 2>/dev/null || true
+    if [[ "$DRY_RUN" == "false" ]]; then
+        echo "FATAL: Genuine kernel binary '$KERNEL_ELF' not found. Flashing tools must never synthesize placeholder payloads." >&2
+        exit 1
+    else
+        echo "[DRY-RUN] Kernel binary '$KERNEL_ELF' not present; proceeding with device tree & command validation only."
+    fi
 fi
 
 if [[ "$TARGET" == "qcom" ]]; then
