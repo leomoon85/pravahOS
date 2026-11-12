@@ -11,9 +11,9 @@ if (-not (Test-Path $AdbExe)) {
     exit 1
 }
 
-$Devices = & $AdbExe devices
-if ($Devices -notmatch "emulator-\d+\s+device") {
-    Write-Warning "No active emulator found. Run ./tools/emulator/run_pixel7_avd.ps1 first."
+$DeviceLines = & $AdbExe devices | Where-Object { $_ -match "^emulator-\d+\s+device" }
+if (-not $DeviceLines) {
+    Write-Warning "No active emulator found. Ensure the emulator is running and connected via ADB."
     exit 1
 }
 
