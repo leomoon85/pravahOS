@@ -244,11 +244,14 @@ export class AppRunner {
           const rendered = appInstance.render(contentEl);
           if (typeof rendered === 'string') {
             contentEl.innerHTML = rendered;
+            if (typeof appInstance.bindEvents === 'function') {
+              appInstance.bindEvents(contentEl);
+            }
           } else if (rendered instanceof HTMLElement && rendered !== contentEl && !contentEl.contains(rendered)) {
             contentEl.appendChild(rendered);
-          }
-          if (typeof appInstance.bindEvents === 'function') {
-            appInstance.bindEvents(contentEl);
+            if (typeof appInstance.bindEvents === 'function') {
+              appInstance.bindEvents(contentEl);
+            }
           }
         }
 
