@@ -414,8 +414,9 @@ export function applyZeroRuntimeTaxPolicy(manifest) {
     'android.permission.SYSTEM_ALERT_WINDOW'
   ];
 
-  const strippedPermissions = manifest.permissions.filter(p => dangerousPermissions.includes(p));
-  const sanitizedPermissions = manifest.permissions.filter(p => !dangerousPermissions.includes(p));
+  const perms = manifest.permissions || [];
+  const strippedPermissions = perms.filter(p => dangerousPermissions.includes(p));
+  const sanitizedPermissions = perms.filter(p => !dangerousPermissions.includes(p));
 
   // Detect and neutralize background daemons and sticky services
   const strippedServices = [];

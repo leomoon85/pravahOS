@@ -27,7 +27,9 @@ export const StockAppId = {
   CALC: 'calc',
   CLOCK: 'clock',
   TIMER: 'timer',
-  SETTINGS: 'settings'
+  SETTINGS: 'settings',
+  STORE: 'store',
+  BAZAAR: 'bazaar'
 };
 
 export class AppRunner {
@@ -158,6 +160,14 @@ export class AppRunner {
           const mod = await import('./settings.js');
           const SettingsClass = mod.SettingsApp || mod.default;
           appInstance = new SettingsClass();
+        }
+      } else if (appId === StockAppId.STORE || appId === StockAppId.BAZAAR) {
+        title = 'App Bazaar';
+        icon = '🏪';
+        if (!appInstance) {
+          const mod = await import('./store.js');
+          const StoreClass = mod.AppBazaarApp || mod.default;
+          appInstance = new StoreClass();
         }
       } else {
         throw new Error(`Unknown stock app id: "${rawAppId}"`);
