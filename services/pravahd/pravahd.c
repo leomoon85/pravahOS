@@ -376,3 +376,125 @@ pravah_status_t pravahd_verify_state_integrity(void) {
 
     return PRAVAH_STATUS_OK;
 }
+
+/* -------------------------------------------------------------------------- */
+/* A/B Dual-Slot OTA Update & Bootloader Control Implementation               */
+/* -------------------------------------------------------------------------- */
+
+pravah_status_t pravahd_ota_get_status(pravah_ota_status_t *out_status) {
+    if (!out_status) return PRAVAH_STATUS_ERR_INVALID_PARAM;
+    memset(out_status, 0, sizeof(pravah_ota_status_t));
+
+    /* Default hardware baseline */
+    safe_strcpy(out_status->target_device, "panther", sizeof(out_status->target_device));
+    safe_strcpy(out_status->os_version, "1.0.0-panther-prod", sizeof(out_status->os_version));
+    out_status->current_slot = PRAVAH_BOOT_SLOT_A;
+    out_status->next_slot = PRAVAH_BOOT_SLOT_A;
+    out_status->is_slot_successful = true;
+    out_status->is_unbootable = false;
+    out_status->rollback_index = 1;
+
+    /* 1. Inspect Linux kernel command line for androidboot.slot_suffix if available */
+    FILE *cmdline = fopen("/proc/cmdline", "r");
+    if (cmdline) {
+        char buf[1024];
+        if (fgets(buf, sizeof(buf), cmdline)) {
+            if (strstr(buf, "androidboot.slot_suffix=_b") || strstr(buf, "androidboot.slot=b")) {
+                out_status->current_slot = PRAVAH_BOOT_SLOT_B;
+            } else if (strstr(buf, "androidboot.slot_suffix=_a") || strstr(buf, "androidboot.slot=a")) {
+                out_status->current_slot = PRAVAH_BOOT_SLOT_A;
+            }
+        }
+        fclose(cmdline);
+    }
+
+    /* 2. Check persistent state overrides */
+    char slot_val[32] = {0};
+    if (pravahd_get_persistent_state("ota_current_slot", slot_val, sizeof(slot_val)) == PRAVAH_STATUS_OK) {
+        if (strcmp(slot_val, "B") == 0 || strcmp(slot_val, "_b") == 0) {
+            out_status->current_slot = PRAVAH_BOOT_SLOT_B;
+        } else if (strcmp(slot_val, "A") == 0 || strcmp(slot_val, "_a") == 0) {
+            out_status->current_slot = PRAVAH_BOOT_SLOT_A;
+        }
+    }
+
+    char next_slot_val[32] = {0};
+    if (pravahd_get_persistent_state("ota_next_slot", next_slot_val, sizeof(next_slot_val)) == PRAVAH_STATUS_OK) {
+        if (strcmp(next_slot_val, "B") == 0 || strcmp(next_slot_val, "_b") == 0) {
+            out_status->next_slot = PRAVAH_BOOT_SLOT_B;
+        } else if (strcmp(next_slot_val, "A") == 0 || strcmp(next_slot_val, "_a") == 0) {
+            out_status->next_slot = PRAVAH_BOOT_SLOT_A;
+        }
+    } else {
+        out_status->next_slot = out_status->current_slot;
+    }
+
+    char success_val[16] = {0};
+    if (pravahd_get_persistent_state("ota_slot_successful", success_val, sizeof(success_val)) == PRAVAH_STATUS_OK) {
+        out_status->is_slot_successful = (strcmp(success_val, "1") == 0 || strcmp(success_val, "true") == 0);
+    }
+
+    char rb_val[16] = {0};
+    if (pravahd_get_persistent_state("ota_rollback_index", rb_val, sizeof(rb_val)) == PRAVAH_STATUS_OK) {
+        out_status->rollback_index = (uint32_t)atoi(rb_val);
+    }
+
+    return PRAVAH_STATUS_OK;
+}
+
+pravah_status_t pravahd_ota_set_active_slot(pravah_boot_slot_t target_slot, const char *auth_token) {
+    /* Switching active boot slots modifies hardware state - requires PRAVAH_RISK_CONSEQUENTIAL */
+    pravah_status_t auth_status = pravahd_verify_capability("system.ota.switch_slot", PRAVAH_RISK_CONSEQUENTIAL, auth_token);
+    if (auth_status != PRAVAH_STATUS_OK) {
+        return auth_status;
+    }
+
+    if (target_slot != PRAVAH_BOOT_SLOT_A && target_slot != PRAVAH_BOOT_SLOT_B) {
+        return PRAVAH_STATUS_ERR_INVALID_PARAM;
+    }
+
+    const char *slot_str = (target_slot == PRAVAH_BOOT_SLOT_B) ? "B" : "A";
+    pravah_status_t st = pravahd_set_persistent_state("ota_next_slot", slot_str, auth_token);
+    if (st != PRAVAH_STATUS_OK) return st;
+
+    /* Reset success flag for newly staged slot pending post-boot validation */
+    return pravahd_set_persistent_state("ota_slot_successful", "0", auth_token);
+}
+
+pravah_status_t pravahd_ota_mark_boot_successful(const char *auth_token) {
+    pravah_status_t auth_status = pravahd_verify_capability("system.ota.confirm_boot", PRAVAH_RISK_REVERSIBLE, auth_token);
+    if (auth_status != PRAVAH_STATUS_OK) {
+        return auth_status;
+    }
+
+    pravah_ota_status_t status;
+    pravahd_ota_get_status(&status);
+
+    const char *curr_str = (status.next_slot == PRAVAH_BOOT_SLOT_B) ? "B" : "A";
+    pravahd_set_persistent_state("ota_current_slot", curr_str, auth_token);
+    return pravahd_set_persistent_state("ota_slot_successful", "1", auth_token);
+}
+
+pravah_status_t pravahd_ota_trigger_rollback(const char *reason, const char *auth_token) {
+    pravah_status_t auth_status = pravahd_verify_capability("system.ota.rollback", PRAVAH_RISK_CONSEQUENTIAL, auth_token);
+    if (auth_status != PRAVAH_STATUS_OK) {
+        return auth_status;
+    }
+
+    pravah_ota_status_t status;
+    pravahd_ota_get_status(&status);
+
+    /* Flip back to the opposite slot */
+    pravah_boot_slot_t rollback_slot = (status.current_slot == PRAVAH_BOOT_SLOT_A) ? PRAVAH_BOOT_SLOT_B : PRAVAH_BOOT_SLOT_A;
+    const char *rollback_str = (rollback_slot == PRAVAH_BOOT_SLOT_B) ? "B" : "A";
+
+    pravahd_set_persistent_state("ota_next_slot", rollback_str, auth_token);
+    pravahd_set_persistent_state("ota_current_slot", rollback_str, auth_token);
+    pravahd_set_persistent_state("ota_slot_successful", "1", auth_token);
+
+    if (reason) {
+        pravahd_set_persistent_state("ota_last_rollback_reason", reason, auth_token);
+    }
+
+    return PRAVAH_STATUS_OK;
+}

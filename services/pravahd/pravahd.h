@@ -113,6 +113,28 @@ pravah_status_t pravahd_set_persistent_state(const char *key, const char *value,
 pravah_status_t pravahd_get_persistent_state(const char *key, char *out_value, size_t max_len);
 pravah_status_t pravahd_verify_state_integrity(void);
 
+/* A/B Dual-Slot OTA Update & Bootloader Control Interface */
+typedef enum {
+    PRAVAH_BOOT_SLOT_A = 0,
+    PRAVAH_BOOT_SLOT_B = 1,
+    PRAVAH_BOOT_SLOT_UNKNOWN = -1,
+} pravah_boot_slot_t;
+
+typedef struct {
+    pravah_boot_slot_t current_slot;
+    pravah_boot_slot_t next_slot;
+    bool is_slot_successful;
+    bool is_unbootable;
+    uint32_t rollback_index;
+    char target_device[32];
+    char os_version[32];
+} pravah_ota_status_t;
+
+pravah_status_t pravahd_ota_get_status(pravah_ota_status_t *out_status);
+pravah_status_t pravahd_ota_set_active_slot(pravah_boot_slot_t target_slot, const char *auth_token);
+pravah_status_t pravahd_ota_mark_boot_successful(const char *auth_token);
+pravah_status_t pravahd_ota_trigger_rollback(const char *reason, const char *auth_token);
+
 #ifdef __cplusplus
 }
 #endif
