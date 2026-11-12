@@ -66,7 +66,7 @@ echo "[4/5] Packaging Android Boot Image v4..."
 BOOT_IMG_OUT="${OUTPUT_DIR}/pravah_boot.img"
 VENDOR_BOOT_OUT="${OUTPUT_DIR}/pravah_vendor_boot.img"
 
-node "${PROJECT_ROOT}/tools/flashing/package_panther.js" "${OUTPUT_DIR}" "${DTB_OUT}"
+node "${PROJECT_ROOT}/tools/flashing/package_panther.js" --out "${OUTPUT_DIR}" --dtb "${DTB_OUT}" "$@"
 
 # 5. Authoritative Image Validation & Checksum Generation
 echo "[5/5] Validating output image structures & generating provenance..."

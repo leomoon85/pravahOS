@@ -3,7 +3,9 @@
 # PowerShell Native Build Runner for Windows
 
 param(
-  [string]$OutputDir = "out/panther"
+  [string]$OutputDir = "out/panther",
+  [string]$KernelPath = "",
+  [switch]$AllowTestStub
 )
 
 $ErrorActionPreference = "Stop"
@@ -72,7 +74,18 @@ $BootImgOut = Join-Path $OutPath "pravah_boot.img"
 $VendorBootOut = Join-Path $OutPath "pravah_vendor_boot.img"
 $PackageScript = Join-Path $ProjectRoot "tools/flashing/package_panther.js"
 
-node $PackageScript $OutPath $DtbOut
+$PackageArgs = @($PackageScript, "--out", $OutPath, "--dtb", $DtbOut)
+if ($KernelPath) {
+  $PackageArgs += @("--kernel", $KernelPath)
+}
+if ($AllowTestStub) {
+  $PackageArgs += @("--allow-test-stub")
+}
+
+& node $PackageArgs
+if ($LASTEXITCODE -ne 0) {
+  throw "Packaging failed: no valid kernel payload or error during image assembly."
+}
 
 # 5. Authoritative Validation and Checksum Generation
 Write-Host "[5/5] Validating output image structures & generating provenance..." -ForegroundColor Yellow

@@ -31,7 +31,7 @@ import {
 function createTestHarness() {
   const tmpBase = fs.mkdtempSync(path.join(os.tmpdir(), 'pravah_slice_test_'));
   const dataDir = path.join(tmpBase, 'data');
-  const sysfsRoot = path.join(tmpBase, 'sys');
+  const sysfsRoot = tmpBase;
 
   // Create mock Linux sysfs hierarchy for Pixel phone hardware
   const batteryDir = path.join(sysfsRoot, 'sys', 'class', 'power_supply', 'battery');

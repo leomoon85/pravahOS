@@ -62,7 +62,8 @@ export class PravahdService {
 
   _resolveSysfs(relativePath) {
     if (this.sysfsRoot) {
-      return path.join(this.sysfsRoot, relativePath);
+      const cleanRel = relativePath.replace(/^[/\\]+/, '');
+      return path.join(this.sysfsRoot, cleanRel);
     }
     return relativePath;
   }
@@ -100,7 +101,11 @@ export class PravahdService {
   }
 
   _computeStateHash(entries) {
-    const serialized = JSON.stringify(entries.map(e => ({ k: e.key, v: e.value })));
+    const normalized = (entries || [])
+      .slice()
+      .sort((a, b) => (a.key || a.k || '').localeCompare(b.key || b.k || ''))
+      .map(e => ({ k: e.key || e.k, v: String(e.value ?? e.v ?? '') }));
+    const serialized = JSON.stringify(normalized);
     return crypto.createHash('sha256').update(serialized).digest('hex');
   }
 
@@ -300,12 +305,14 @@ export class PravahdService {
     // Update in-memory cache
     this.stateCache.set(key, String(value));
 
-    // Prepare JSON payload with integrity seal
-    const entries = Array.from(this.stateCache.entries()).map(([k, v]) => ({
-      key: k,
-      value: v,
-      ts: Date.now()
-    }));
+    // Prepare JSON payload with sorted entries for deterministic hashing
+    const entries = Array.from(this.stateCache.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => ({
+        key: k,
+        value: v,
+        ts: Date.now()
+      }));
 
     const integritySeal = this._computeStateHash(entries);
     const container = {
@@ -322,13 +329,17 @@ export class PravahdService {
       // 1. Write to temporary file
       fs.writeFileSync(tmpFile, serialized, 'utf8');
 
-      // 2. Fsync to disk
-      const fd = fs.openSync(tmpFile, 'r+');
-      fs.fsyncSync(fd);
-      fs.closeSync(fd);
-
-      // 3. Atomic rename replaces active file atomically
-      fs.renameSync(tmpFile, this.stateFile);
+      // 2. Atomic rename with Windows fallback
+      try {
+        fs.renameSync(tmpFile, this.stateFile);
+      } catch (renameErr) {
+        if (process.platform === 'win32') {
+          fs.copyFileSync(tmpFile, this.stateFile);
+          try { fs.unlinkSync(tmpFile); } catch (_) {}
+        } else {
+          throw renameErr;
+        }
+      }
 
       return { status: PravahStatusCode.OK, key, persisted: true };
     } catch (err) {
