@@ -29,7 +29,13 @@ export const StockAppId = {
   TIMER: 'timer',
   SETTINGS: 'settings',
   STORE: 'store',
-  BAZAAR: 'bazaar'
+  BAZAAR: 'bazaar',
+  CAMERA: 'camera',
+  RECORDER: 'recorder',
+  BROWSER: 'browser',
+  CALENDAR: 'calendar',
+  WEATHER: 'weather',
+  WALLET: 'wallet'
 };
 
 export class AppRunner {
@@ -168,6 +174,54 @@ export class AppRunner {
           const mod = await import('./store.js');
           const StoreClass = mod.AppBazaarApp || mod.default;
           appInstance = new StoreClass();
+        }
+      } else if (appId === StockAppId.CAMERA) {
+        title = 'Pixel Camera';
+        icon = '📷';
+        if (!appInstance) {
+          const mod = await import('./camera.js');
+          const CameraClass = mod.CameraApp || mod.default;
+          appInstance = new CameraClass();
+        }
+      } else if (appId === StockAppId.RECORDER) {
+        title = 'Pixel AI Recorder';
+        icon = '🎙️';
+        if (!appInstance) {
+          const mod = await import('./recorder.js');
+          const RecorderClass = mod.RecorderApp || mod.default;
+          appInstance = new RecorderClass();
+        }
+      } else if (appId === StockAppId.BROWSER) {
+        title = 'Web Browser';
+        icon = '🌐';
+        if (!appInstance) {
+          const mod = await import('./browser.js');
+          const BrowserClass = mod.BrowserApp || mod.default;
+          appInstance = new BrowserClass();
+        }
+      } else if (appId === StockAppId.CALENDAR) {
+        title = 'Calendar & Notes';
+        icon = '📅';
+        if (!appInstance) {
+          const mod = await import('./calendar.js');
+          const CalendarClass = mod.CalendarApp || mod.default;
+          appInstance = new CalendarClass();
+        }
+      } else if (appId === StockAppId.WEATHER) {
+        title = 'Pixel Weather';
+        icon = '⛅';
+        if (!appInstance) {
+          const mod = await import('./weather.js');
+          const WeatherClass = mod.WeatherApp || mod.default;
+          appInstance = new WeatherClass();
+        }
+      } else if (appId === StockAppId.WALLET) {
+        title = 'Wallet & Safety';
+        icon = '💳';
+        if (!appInstance) {
+          const mod = await import('./wallet.js');
+          const WalletClass = mod.WalletApp || mod.default;
+          appInstance = new WalletClass();
         }
       } else {
         throw new Error(`Unknown stock app id: "${rawAppId}"`);
