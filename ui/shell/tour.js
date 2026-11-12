@@ -801,8 +801,8 @@ if (typeof window !== 'undefined') {
         });
       }
 
-      // Auto-start on first consumer visit if not seen
-      if (window.pravahTour.shouldAutoStart()) {
+      // Auto-start on first consumer visit if not seen (disabled inside native APK launcher to avoid modal blocking)
+      if (window.pravahTour.shouldAutoStart() && !window.PravahNative) {
         setTimeout(() => {
           if (!window.pravahTour.isActive()) {
             window.pravahTour.start();

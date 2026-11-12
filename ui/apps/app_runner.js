@@ -241,10 +241,10 @@ export class AppRunner {
         if (iconEl) iconEl.textContent = icon;
         if (contentEl && typeof appInstance.render === 'function') {
           contentEl.innerHTML = '';
-          const rendered = appInstance.render();
+          const rendered = appInstance.render(contentEl);
           if (typeof rendered === 'string') {
             contentEl.innerHTML = rendered;
-          } else if (rendered instanceof HTMLElement) {
+          } else if (rendered instanceof HTMLElement && rendered !== contentEl && !contentEl.contains(rendered)) {
             contentEl.appendChild(rendered);
           }
           if (typeof appInstance.bindEvents === 'function') {
