@@ -50,18 +50,25 @@ public class MainActivity extends Activity {
                 view.loadUrl(url);
                 return true;
             }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                // Immediately open the Windows Metro Living Drawer
+                view.evaluateJavascript(
+                    "setTimeout(function() { if (window.PravahLivingDrawer) window.PravahLivingDrawer.expand(); }, 200);",
+                    null
+                );
+            }
         });
 
-        // Load local bundled assets or internal server
+        // Load local bundled assets
         webView.loadUrl("file:///android_asset/shell/index.html");
     }
 
     @Override
     public void onBackPressed() {
-        // As a Home Launcher, back does not close the launcher
-        if (webView.canGoBack()) {
-            webView.goBack();
-        }
+        finish();
     }
 
     public class PravahBridge {
