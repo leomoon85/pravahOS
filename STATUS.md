@@ -24,7 +24,9 @@ This document provides the authoritative, evidence-backed status for all PravahO
 | **Android Compatibility** | AOT Transpiler & Container (`runtime/src/container/`) | **Simulated** | APK manifest parser and dormancy telemetry simulated in JavaScript. Real APK execution requires Android ART/AOSP runtime container. |
 | **Experience Composer Shell** | Dynamic Web Shell (`ui/shell/`) | **Verified on emulator / host** | Liquid glassmorphism, dynamic bento drawer, Control Center shade, and predictive back navigation running in browser/PWA shell. Connected to `pravahd` IPC for brightness control. |
 | **Living App Drawer & UI** | Bento Grid & Gestures (`ui/`) | **Verified on emulator / host** | Neo-Metro bento grid, 20-26px squircle styling, spring physics, dynamic search filtering. Verified on browser host. |
-| **Stock Apps Suite** | Core Apps (`ui/apps/`) | **Verified on emulator / host** | Phone (T9), Messages, Gallery, Files, Calculator, Clock. Fully functional with offline-first local state within browser/PWA shell. |
+| **Stock Apps Suite** | Core Apps (`ui/apps/`) | **Verified on emulator / host** | 14 Factory Pixel Apps: Phone (T9), Messages, Gallery, Files, Calculator, Clock, Camera (HAL frame buffer), AI Recorder, Browser, Calendar & Notes, Weather, Wallet & Safety, Settings, and App Bazaar. Fully functional with offline-first local state within browser/PWA shell. 7/7 tests passing in `ui/tests/factory_apps.test.js`. |
+| **A/B Dual-Slot OTA Update & Bootloader Control** | Native Daemon & Service (`services/pravahd/`, `runtime/src/services/ota_service.js`, `updater_client.js`) | **Implemented but unverified** *(Verified on host)* | Cryptographic packaging tool (`tools/flashing/generate_ota_payload.js`), A/B streaming service with Titan M2 rollback guard, Settings UI updates screen, and native C daemon controller (`pravahd_ota_get_status`, `pravahd_ota_set_active_slot`, `pravahd_ota_mark_boot_successful`, `pravahd_ota_trigger_rollback`). 10/10 tests passing across `ota_update.test.js` and `updater_e2e.test.js`. Hardware bootloader block device (`/dev/block/by-name/boot_b`) partition flashing requires physical device execution. |
+| **App Bazaar & AOT Transpiler** | App Store & Zero-Tax Engine (`runtime/src/services/app_bazaar_service.js`, `ui/apps/store.js`) | **Verified on emulator / host** | Aggregated Google Play / F-Droid catalog proxy, zero-tax AOT transpilation pipeline, `WAKE_LOCK` stripping, atomic package updates with user-data preservation and 48-hour rollback archive. 7/7 tests passing in `app_bazaar.test.js`. Real bytecode execution of non-transpiled Android ART runtime requires physical device bringup. |
 | **3GPP Rel-17 Satellite SOS** | NTN Protocol (`hal/satellite/`) | **Simulated** | Slant range mathematics, orbital Doppler calculations, and 128-byte binary packet serialization simulated in software. No physical RF satellite transceiver attached. |
 | **Multi-SoC Flashing & Tooling** | Flashing Suite (`tools/flashing/`) | **Implemented but unverified** *(Simulated in dry-run)* | `flash_device.ps1` and `flash_device.sh` implement partition flashing workflows for Qualcomm and Google Tensor targets. Dummy ELF placeholder payload generation has been **removed**; scripts fail closed if real kernel binaries are missing. Verified in dry-run; no physical device flashed. |
 | **Titan M2 Cryptographic Driver** | Enclave Driver (`kernel/arch/arm64/google/titan_m2.c`) | **Simulated** | Driver models 16 hardware key slots and AVB custom key enrollment. Sealing derivation currently uses simulated keystream rather than physical Titan M2 secure SPI bus commands. |
@@ -34,8 +36,8 @@ This document provides the authoritative, evidence-backed status for all PravahO
 
 ## 2. Test Suite Summary
 
-- **Total Automated Tests**: **431 / 431 Passing (100%)**
-- **Test Suites**: **44 suites** across `runtime`, `ui`, `emulator`, `kernel`, `hal`, and `services`
+- **Total Automated Tests**: **466 / 466 Passing (100%)**
+- **Test Suites**: **54 suites** across `runtime`, `ui`, `emulator`, `kernel`, `hal`, and `services`
 - **Regressions**: **0**
 - **Physical Device Attached**: **None detected** (`fastboot devices` and `adb devices` report no connected hardware).
 - **Provisional Target Selected**: **Google Pixel 7 (`panther` - Tensor G2 / GS201)**
