@@ -26,7 +26,8 @@ export const StockAppId = {
   CALCULATOR: 'calculator',
   CALC: 'calc',
   CLOCK: 'clock',
-  TIMER: 'timer'
+  TIMER: 'timer',
+  SETTINGS: 'settings'
 };
 
 export class AppRunner {
@@ -149,6 +150,14 @@ export class AppRunner {
           const mod = await import('./clock.js');
           const ClockClass = mod.ClockApp || mod.default;
           appInstance = new ClockClass();
+        }
+      } else if (appId === StockAppId.SETTINGS) {
+        title = 'System Settings & Updates';
+        icon = '⚙️';
+        if (!appInstance) {
+          const mod = await import('./settings.js');
+          const SettingsClass = mod.SettingsApp || mod.default;
+          appInstance = new SettingsClass();
         }
       } else {
         throw new Error(`Unknown stock app id: "${rawAppId}"`);
