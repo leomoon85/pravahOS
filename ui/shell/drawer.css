@@ -1904,6 +1904,8 @@ body.native-metro-mode #shade-pull-trigger,
 body.native-metro-mode #control-shade-backdrop,
 body.native-metro-mode #control-shade,
 body.native-metro-mode #ambient-header,
+body.native-metro-mode .shell-container,
+body.native-metro-mode #floating-consumer-dock,
 body.native-metro-mode .workspace-canvas,
 body.native-metro-mode .aether-dock-container,
 body.native-metro-mode #lockscreen-overlay,
@@ -2177,4 +2179,307 @@ body.native-metro-mode .live-tile.flipped .tile-front {
   padding: 5px 10px;
   cursor: pointer;
   flex-shrink: 0;
+}
+
+/* ========================================================================== */
+/* Customizable Vista Aero Glass Background Themes                            */
+/* ========================================================================== */
+.vista-theme-bar {
+  position: relative;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: linear-gradient(
+    176deg,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(125, 211, 252, 0.12) 45%,
+    rgba(7, 25, 48, 0.78) 46%,
+    rgba(4, 14, 30, 0.90) 100%
+  );
+  border: 1px solid rgba(165, 232, 255, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.62),
+    0 8px 20px rgba(0, 0, 0, 0.45);
+}
+
+.vista-theme-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.vista-theme-badge {
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #7dd3fc;
+  background: rgba(14, 165, 233, 0.2);
+  border: 1px solid rgba(125, 211, 252, 0.45);
+}
+
+.vista-mode-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.vista-mode-btn {
+  background: rgba(12, 34, 64, 0.78);
+  border: 1px solid rgba(148, 216, 255, 0.36);
+  color: #e0f2fe;
+  font-size: 0.66rem;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 6px 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vista-mode-btn.active {
+  background: linear-gradient(180deg, rgba(125, 211, 252, 0.42) 0%, rgba(14, 165, 233, 0.36) 100%);
+  border-color: #bae6fd;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+}
+
+.vista-color-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 9px;
+  flex-wrap: wrap;
+}
+
+.vista-color-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: rgba(224, 242, 254, 0.85);
+}
+
+.vista-color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.4), 0 3px 8px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+
+.vista-color-swatch.active {
+  border-color: #ffffff;
+  transform: scale(1.14);
+  box-shadow: 0 0 0 2px #38bdf8, 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.vista-custom-picker-pill {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #e0f2fe;
+  background: rgba(15, 42, 74, 0.78);
+  border: 1px solid rgba(125, 211, 252, 0.42);
+  cursor: pointer;
+}
+
+.vista-custom-color-input {
+  width: 20px;
+  height: 20px;
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* 1. Black Obsidian Mode (System Dark Default / Explicit Black) */
+body.native-metro-mode.vista-bg-black,
+body.native-metro-mode.vista-bg-black .living-drawer,
+.living-drawer.vista-bg-black {
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(56, 189, 248, 0.16) 0%, transparent 55%),
+    linear-gradient(165deg, #05070d 0%, #090e1a 48%, #020307 100%) !important;
+}
+
+/* 2. Pearl White Mode (System Light Default / Explicit White) */
+body.native-metro-mode.vista-bg-white,
+body.native-metro-mode.vista-bg-white .living-drawer,
+.living-drawer.vista-bg-white {
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(56, 189, 248, 0.25) 0%, transparent 55%),
+    linear-gradient(165deg, #ffffff 0%, #f1f5f9 52%, #e2e8f0 100%) !important;
+}
+
+.living-drawer.vista-bg-white .drawer-drag-header {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.94) 0%,
+    rgba(241, 245, 249, 0.86) 100%
+  ) !important;
+  border-bottom: 1px solid rgba(14, 165, 233, 0.35) !important;
+}
+
+.living-drawer.vista-bg-white .drawer-title,
+.living-drawer.vista-bg-white .section-title,
+.living-drawer.vista-bg-white .vista-tile-title,
+.living-drawer.vista-bg-white .metro-app-name,
+.living-drawer.vista-bg-white .tile-title,
+.living-drawer.vista-bg-white .vista-color-label {
+  color: #0f172a !important;
+  text-shadow: none !important;
+}
+
+.living-drawer.vista-bg-white .vista-tile-sub,
+.living-drawer.vista-bg-white .metro-app-desc,
+.living-drawer.vista-bg-white .tile-subtitle,
+.living-drawer.vista-bg-white .vista-intent-outcome-desc,
+.living-drawer.vista-bg-white .vista-intent-pills {
+  color: #334155 !important;
+}
+
+.living-drawer.vista-bg-white .tile-face,
+.living-drawer.vista-bg-white .tile-route,
+.living-drawer.vista-bg-white .tile-route-city,
+.living-drawer.vista-bg-white .tile-arrow,
+.living-drawer.vista-bg-white .tile-hero-footer,
+.living-drawer.vista-bg-white .tile-bottom-meta,
+.living-drawer.vista-bg-white .battery-stats-row,
+.living-drawer.vista-bg-white .battery-mode-hint,
+.living-drawer.vista-bg-white .airgap-cipher-footer {
+  color: #1e293b !important;
+}
+
+.living-drawer.vista-bg-white .btn-flip-all,
+.living-drawer.vista-bg-white .apps-count-badge,
+.living-drawer.vista-bg-white .drawer-search-wrap {
+  background: rgba(255, 255, 255, 0.85) !important;
+  color: #0f172a !important;
+  border-color: rgba(14, 165, 233, 0.45) !important;
+}
+
+.living-drawer.vista-bg-white .drawer-search-input {
+  color: #0f172a !important;
+}
+
+.living-drawer.vista-bg-white .vista-intent-widget,
+.living-drawer.vista-bg-white .vista-theme-bar,
+.living-drawer.vista-bg-white .vista-glass-tile,
+.living-drawer.vista-bg-white .tile-face,
+.living-drawer.vista-bg-white .metro-app-item {
+  background: linear-gradient(
+    176deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(240, 249, 255, 0.78) 46%,
+    rgba(224, 242, 254, 0.88) 100%
+  ) !important;
+  border: 1px solid rgba(14, 165, 233, 0.45) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 8px 20px rgba(15, 23, 42, 0.12) !important;
+}
+
+.living-drawer.vista-bg-white .vista-intent-input-row,
+.living-drawer.vista-bg-white .vista-intent-outcome {
+  background: rgba(255, 255, 255, 0.88) !important;
+  border-color: rgba(14, 165, 233, 0.4) !important;
+}
+
+.living-drawer.vista-bg-white .vista-intent-input {
+  color: #0f172a !important;
+}
+
+.living-drawer.vista-bg-white .vista-mode-btn,
+.living-drawer.vista-bg-white .vista-intent-chip,
+.living-drawer.vista-bg-white .vista-custom-picker-pill,
+.living-drawer.vista-bg-white .vista-dag-step {
+  background: rgba(255, 255, 255, 0.86) !important;
+  border-color: rgba(14, 165, 233, 0.42) !important;
+  color: #0c4a6e !important;
+}
+
+.living-drawer.vista-bg-white .vista-mode-btn.active,
+.living-drawer.vista-bg-white .vista-intent-chip.active {
+  background: linear-gradient(180deg, #7dd3fc 0%, #0284c7 100%) !important;
+  color: #ffffff !important;
+}
+
+.living-drawer.vista-bg-white .vista-tile-badge,
+.living-drawer.vista-bg-white .vista-theme-badge {
+  color: #0369a1 !important;
+  background: rgba(14, 165, 233, 0.14) !important;
+  border-color: rgba(14, 165, 233, 0.42) !important;
+}
+
+.living-drawer.vista-bg-white .vista-intent-outcome-title {
+  color: #15803d !important;
+}
+
+.living-drawer.vista-bg-white .drawer-btn-dismiss {
+  color: #0f172a !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  border-color: rgba(15, 23, 42, 0.2) !important;
+}
+
+/* 3. Wallpaper Sync Mode (Live Android Wallpaper behind Translucent Vista Glass) */
+html:has(body.native-metro-mode.vista-bg-wallpaper),
+body.native-metro-mode.vista-bg-wallpaper {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+body.native-metro-mode.vista-bg-wallpaper .living-drawer,
+.living-drawer.vista-bg-wallpaper {
+  background: linear-gradient(
+    180deg,
+    rgba(6, 16, 32, 0.22) 0%,
+    rgba(4, 12, 24, 0.36) 100%
+  ) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(165%) !important;
+  backdrop-filter: blur(8px) saturate(165%) !important;
+}
+
+.living-drawer.vista-bg-wallpaper .vista-glass-tile,
+.living-drawer.vista-bg-wallpaper .tile-face,
+.living-drawer.vista-bg-wallpaper .vista-intent-widget,
+.living-drawer.vista-bg-wallpaper .vista-theme-bar {
+  background: linear-gradient(
+    176deg,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(255, 255, 255, 0.10) 46%,
+    rgba(8, 22, 42, 0.44) 47%,
+    rgba(4, 12, 26, 0.58) 100%
+  ) !important;
+}
+
+/* 4. Custom User Background Color Mode */
+body.native-metro-mode.vista-bg-custom,
+body.native-metro-mode.vista-bg-custom .living-drawer,
+.living-drawer.vista-bg-custom {
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(255, 255, 255, 0.24) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 20%, rgba(56, 189, 248, 0.20) 0%, transparent 50%),
+    linear-gradient(165deg, var(--vista-custom-bg, #0b2847) 0%, #040b16 100%) !important;
+}
+
+.living-drawer.vista-bg-custom .vista-glass-tile,
+.living-drawer.vista-bg-custom .tile-face,
+.living-drawer.vista-bg-custom .vista-intent-widget,
+.living-drawer.vista-bg-custom .vista-theme-bar {
+  background: linear-gradient(
+    176deg,
+    rgba(255, 255, 255, 0.26) 0%,
+    rgba(255, 255, 255, 0.08) 45%,
+    var(--vista-custom-bg, #0b2847) 46%,
+    rgba(4, 11, 22, 0.88) 100%
+  ) !important;
 }

@@ -15,7 +15,8 @@ import {
   generateEqualizerBars,
   EphemeralWindowManager,
   LivingDrawer,
-  synthesizeIntentionOutcome
+  synthesizeIntentionOutcome,
+  resolveVistaBackgroundState
 } from '../shell/drawer.js';
 
 // Minimal DOM Mock Container for Headless Testing
@@ -455,6 +456,47 @@ test('IntentionWidget: runIntentWidget updates outcome state and renders widget 
     assert.equal(outcome.scenario, 'crypto');
     assert.equal(drawer.activeIntentResult.targetPkg, 'org.pravah.vault');
     assert.ok(drawer.activeIntentResult.pills.includes('250 USDC'));
+  } finally {
+    drawer.stopLiveTickers();
+  }
+});
+
+// ============================================================================
+// 7. Vista Glass Background Theme Tests
+// ============================================================================
+
+test('VistaTheme: resolveVistaBackgroundState defaults to white on light system and black on dark system', () => {
+  const lightSys = resolveVistaBackgroundState({}, 'light');
+  assert.equal(lightSys.mode, 'system');
+  assert.equal(lightSys.effectiveTone, 'white');
+  assert.equal(lightSys.badge, 'SYSTEM • WHITE');
+
+  const darkSys = resolveVistaBackgroundState({}, 'dark');
+  assert.equal(darkSys.mode, 'system');
+  assert.equal(darkSys.effectiveTone, 'black');
+  assert.equal(darkSys.badge, 'SYSTEM • BLACK');
+
+  const wall = resolveVistaBackgroundState({ mode: 'wallpaper' }, 'light');
+  assert.equal(wall.effectiveTone, 'wallpaper');
+});
+
+test('VistaTheme: LivingDrawer setVistaTheme switches white, black, wallpaper, and custom color classes', () => {
+  const container = new MockElement('living-drawer');
+  const drawer = new LivingDrawer({ container });
+  try {
+    drawer.setVistaTheme('white');
+    assert.equal(container.classList.contains('vista-bg-white'), true);
+    assert.equal(container.classList.contains('vista-bg-black'), false);
+
+    drawer.setVistaTheme('black');
+    assert.equal(container.classList.contains('vista-bg-black'), true);
+
+    drawer.setVistaTheme('wallpaper');
+    assert.equal(container.classList.contains('vista-bg-wallpaper'), true);
+
+    drawer.setVistaTheme('custom', '#2b124c');
+    assert.equal(container.classList.contains('vista-bg-custom'), true);
+    assert.equal(container.style.getPropertyValue('--vista-custom-bg'), '#2b124c');
   } finally {
     drawer.stopLiveTickers();
   }

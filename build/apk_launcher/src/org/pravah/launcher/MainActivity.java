@@ -4,10 +4,14 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.os.BatteryManager;
@@ -35,15 +39,17 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Immersive Fullscreen OS Mode
+        // Immersive Fullscreen OS Mode with Live Wallpaper Compositing
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(
             WindowManager.LayoutParams.FLAG_FULLSCREEN,
             WindowManager.LayoutParams.FLAG_FULLSCREEN
         );
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER);
+        getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
         webView = new WebView(this);
-        webView.setBackgroundColor(0xFF080E1A);
+        webView.setBackgroundColor(Color.TRANSPARENT);
         setContentView(webView);
 
         WebSettings settings = webView.getSettings();
@@ -98,12 +104,39 @@ public class MainActivity extends Activity {
         }
     }
 
+    private boolean isSystemNightMode() {
+        try {
+            android.app.UiModeManager uiManager = (android.app.UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
+            if (uiManager != null && uiManager.getNightMode() == android.app.UiModeManager.MODE_NIGHT_YES) {
+                return true;
+            }
+            if (uiManager != null && uiManager.getNightMode() == android.app.UiModeManager.MODE_NIGHT_NO) {
+                return false;
+            }
+        } catch (Exception ignored) {}
+        int nightMask = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        return nightMask == Configuration.UI_MODE_NIGHT_YES;
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        if (pageLoaded && webView != null && newConfig != null) {
+            boolean isNight = (newConfig.uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+            final String sysTheme = isNight ? "dark" : "light";
+            webView.evaluateJavascript(
+                "if (window.livingDrawer && window.livingDrawer.onSystemThemeChanged) { window.livingDrawer.onSystemThemeChanged('" + sysTheme + "'); }",
+                null
+            );
+        }
+    }
+
     private void expandDrawer() {
         if (webView == null) return;
         webView.evaluateJavascript(
             "setTimeout(function() { " +
             "if (typeof document !== 'undefined' && document.body) { document.body.classList.add('native-metro-mode'); } " +
-            "if (window.livingDrawer) { window.livingDrawer.expand(); window.livingDrawer.syncNativeTelemetry && window.livingDrawer.syncNativeTelemetry(); } " +
+            "if (window.livingDrawer) { window.livingDrawer.expand(); window.livingDrawer.syncSystemTheme && window.livingDrawer.syncSystemTheme(); window.livingDrawer.syncNativeTelemetry && window.livingDrawer.syncNativeTelemetry(); } " +
             "else if (window.toggleLivingDrawer) { window.toggleLivingDrawer(true); } " +
             "}, 150);",
             null
@@ -193,6 +226,26 @@ public class MainActivity extends Activity {
                 intent.putExtra("extra_scenario", scenario);
             }
             startActivity(intent);
+        }
+
+        @JavascriptInterface
+        public String getVistaThemeConfig() {
+            SharedPreferences prefs = getSharedPreferences("pravah_vista_theme", MODE_PRIVATE);
+            String mode = prefs.getString("mode", "system");
+            String customColor = prefs.getString("custom_color", "#0b2847");
+            String sysTheme = isSystemNightMode() ? "dark" : "light";
+            return "{\"mode\":\"" + escapeJson(mode) + "\","
+                 + "\"customColor\":\"" + escapeJson(customColor) + "\","
+                 + "\"systemTheme\":\"" + sysTheme + "\"}";
+        }
+
+        @JavascriptInterface
+        public void saveVistaThemeConfig(String mode, String customColor) {
+            SharedPreferences prefs = getSharedPreferences("pravah_vista_theme", MODE_PRIVATE);
+            prefs.edit()
+                .putString("mode", mode != null ? mode : "system")
+                .putString("custom_color", customColor != null ? customColor : "#0b2847")
+                .apply();
         }
 
         @JavascriptInterface

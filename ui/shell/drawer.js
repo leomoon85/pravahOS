@@ -578,6 +578,50 @@ export function synthesizeIntentionOutcome(query = '', scenario = '') {
   }
 }
 
+export const VISTA_COLOR_PRESETS = [
+  { id: 'aero', label: 'Aero Blue', color: '#0b2847' },
+  { id: 'emerald', label: 'Vista Emerald', color: '#073b32' },
+  { id: 'amethyst', label: 'Royal Amethyst', color: '#2b124c' },
+  { id: 'ruby', label: 'Crimson Glass', color: '#450d20' },
+  { id: 'amber', label: 'Amber Gold', color: '#422806' }
+];
+
+export function resolveVistaBackgroundState(config = {}, fallbackSystemTheme = 'dark') {
+  const validModes = new Set(['system', 'wallpaper', 'white', 'black', 'custom']);
+  const mode = validModes.has(config.mode) ? config.mode : 'system';
+  const sys = (config.systemTheme || fallbackSystemTheme) === 'light' ? 'light' : 'dark';
+  const customColor = /^#[0-9a-fA-F]{6}$/.test(config.customColor || '') ? config.customColor : '#0b2847';
+
+  let effectiveTone = 'black';
+  if (mode === 'system') {
+    effectiveTone = sys === 'light' ? 'white' : 'black';
+  } else if (mode === 'white') {
+    effectiveTone = 'white';
+  } else if (mode === 'black') {
+    effectiveTone = 'black';
+  } else if (mode === 'wallpaper') {
+    effectiveTone = 'wallpaper';
+  } else if (mode === 'custom') {
+    effectiveTone = 'custom';
+  }
+
+  const badgeMap = {
+    system: `SYSTEM • ${effectiveTone.toUpperCase()}`,
+    wallpaper: 'WALLPAPER SYNC',
+    white: 'WHITE FROST',
+    black: 'BLACK OBSIDIAN',
+    custom: `CUSTOM • ${customColor.toUpperCase()}`
+  };
+
+  return {
+    mode,
+    systemTheme: sys,
+    effectiveTone,
+    customColor,
+    badge: badgeMap[mode] || 'SYSTEM'
+  };
+}
+
 // ============================================================================
 // Ephemeral Zero-Tax Window Manager
 // ============================================================================
@@ -855,6 +899,7 @@ export class LivingDrawer {
     this.liveTiles = JSON.parse(JSON.stringify(options.liveTiles || DEFAULT_LIVE_TILES));
     this.searchQuery = '';
     this.activeFastJump = false;
+    this.vistaTheme = this._loadInitialVistaTheme(options.vistaTheme);
 
     // Callbacks
     this.onLaunchApp = options.onLaunchApp || null;
@@ -900,16 +945,23 @@ export class LivingDrawer {
       this.render();
     } else {
       const scrollBody = this.container.querySelector('.drawer-scroll-body');
-      if (scrollBody && !this.container.querySelector('#vista-intent-widget') && typeof scrollBody.insertAdjacentHTML === 'function') {
-        scrollBody.insertAdjacentHTML('afterbegin', this._renderIntentWidgetSectionHtml());
+      if (scrollBody && typeof scrollBody.insertAdjacentHTML === 'function') {
+        if (!this.container.querySelector('#vista-intent-widget')) {
+          scrollBody.insertAdjacentHTML('afterbegin', this._renderIntentWidgetSectionHtml());
+        }
+        if (!this.container.querySelector('#vista-theme-bar')) {
+          scrollBody.insertAdjacentHTML('afterbegin', this._renderVistaThemeBarHtml());
+        }
       }
       this._bindDomEvents();
     }
+    this.applyVistaTheme();
     if (typeof window !== 'undefined' && window.PravahNative) {
       if (typeof document !== 'undefined' && document.body) {
         document.body.classList.add('native-metro-mode');
       }
       this.expand();
+      this.syncSystemTheme();
       this.syncNativeAndroidApps();
       this.syncNativeTelemetry();
     }
@@ -1039,6 +1091,9 @@ export class LivingDrawer {
 
       <!-- Scrollable Drawer Content Surface -->
       <div class="drawer-scroll-body" id="drawer-scroll-body">
+
+        <!-- Windows Vista Aero Glass Theme Selector -->
+        ${this._renderVistaThemeBarHtml()}
 
         <!-- Windows Vista Aero Glass Intention Capsule Widget -->
         ${this._renderIntentWidgetSectionHtml()}
@@ -1546,6 +1601,186 @@ export class LivingDrawer {
       });
     });
     this._bindIntentOutcomeLaunch();
+
+    // 12. Vista Aero Glass Background Theme Selector
+    const modeBtns = this.container.querySelectorAll?.('.vista-mode-btn') || [];
+    modeBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const mode = btn.getAttribute('data-vista-mode') || 'system';
+        this.setVistaTheme(mode);
+      });
+    });
+    const swatches = this.container.querySelectorAll?.('.vista-color-swatch') || [];
+    swatches.forEach((swatch) => {
+      swatch.addEventListener('click', () => {
+        const color = swatch.getAttribute('data-vista-color') || '#0b2847';
+        this.setVistaTheme('custom', color);
+      });
+    });
+    const colorInput = this.container.querySelector?.('#vista-custom-color-input');
+    colorInput?.addEventListener('input', (e) => {
+      const color = e?.target?.value || colorInput.value;
+      if (color) this.setVistaTheme('custom', color);
+    });
+    colorInput?.addEventListener('change', (e) => {
+      const color = e?.target?.value || colorInput.value;
+      if (color) this.setVistaTheme('custom', color);
+    });
+  }
+
+  _detectSystemTheme() {
+    try {
+      if (typeof window !== 'undefined' && window.PravahNative?.getVistaThemeConfig) {
+        const cfg = JSON.parse(window.PravahNative.getVistaThemeConfig() || '{}');
+        if (cfg.systemTheme === 'light' || cfg.systemTheme === 'dark') return cfg.systemTheme;
+      }
+      if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+        if (window.matchMedia('(prefers-color-scheme: light)').matches) return 'light';
+      }
+    } catch (_) {}
+    return 'dark';
+  }
+
+  _loadInitialVistaTheme(override) {
+    const base = {
+      mode: 'system',
+      customColor: '#0b2847',
+      systemTheme: this._detectSystemTheme()
+    };
+    if (override && typeof override === 'object') {
+      return { ...base, ...override };
+    }
+    try {
+      if (typeof window !== 'undefined' && window.PravahNative?.getVistaThemeConfig) {
+        const cfg = JSON.parse(window.PravahNative.getVistaThemeConfig() || '{}');
+        return {
+          mode: cfg.mode || base.mode,
+          customColor: cfg.customColor || base.customColor,
+          systemTheme: cfg.systemTheme || base.systemTheme
+        };
+      }
+      if (typeof localStorage !== 'undefined') {
+        const saved = localStorage.getItem('pravah_vista_theme');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return { ...base, ...parsed };
+        }
+      }
+    } catch (_) {}
+    return base;
+  }
+
+  syncSystemTheme() {
+    const sysTheme = this._detectSystemTheme();
+    return this.onSystemThemeChanged(sysTheme);
+  }
+
+  onSystemThemeChanged(sysTheme) {
+    if (!this.vistaTheme) {
+      this.vistaTheme = this._loadInitialVistaTheme();
+    }
+    this.vistaTheme.systemTheme = sysTheme === 'light' ? 'light' : 'dark';
+    return this.applyVistaTheme();
+  }
+
+  setVistaTheme(mode, customColor) {
+    if (!this.vistaTheme) {
+      this.vistaTheme = this._loadInitialVistaTheme();
+    }
+    if (mode) this.vistaTheme.mode = mode;
+    if (customColor) this.vistaTheme.customColor = customColor;
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('pravah_vista_theme', JSON.stringify({
+          mode: this.vistaTheme.mode,
+          customColor: this.vistaTheme.customColor
+        }));
+      }
+    } catch (_) {}
+    if (typeof window !== 'undefined' && window.PravahNative?.saveVistaThemeConfig) {
+      window.PravahNative.saveVistaThemeConfig(this.vistaTheme.mode, this.vistaTheme.customColor);
+    }
+    return this.applyVistaTheme();
+  }
+
+  applyVistaTheme() {
+    const resolved = resolveVistaBackgroundState(this.vistaTheme, this._detectSystemTheme());
+    this.resolvedVistaTheme = resolved;
+    const toneClasses = ['vista-bg-white', 'vista-bg-black', 'vista-bg-wallpaper', 'vista-bg-custom'];
+    const targetClass = `vista-bg-${resolved.effectiveTone}`;
+
+    if (this.container) {
+      toneClasses.forEach((cls) => this.container.classList?.remove(cls));
+      this.container.classList?.add(targetClass);
+      this.container.style?.setProperty('--vista-custom-bg', resolved.customColor);
+
+      const badge = this.container.querySelector?.('#vista-theme-badge');
+      if (badge) badge.textContent = resolved.badge;
+
+      const sysBtn = this.container.querySelector?.('#vista-mode-system-label');
+      if (sysBtn) {
+        sysBtn.textContent = `◐ Auto (${resolved.systemTheme === 'light' ? 'White' : 'Black'})`;
+      }
+
+      const modeBtns = this.container.querySelectorAll?.('.vista-mode-btn') || [];
+      modeBtns.forEach((btn) => {
+        btn.classList?.toggle('active', btn.getAttribute?.('data-vista-mode') === resolved.mode);
+      });
+
+      const swatches = this.container.querySelectorAll?.('.vista-color-swatch') || [];
+      swatches.forEach((sw) => {
+        const isMatch = resolved.mode === 'custom'
+          && String(sw.getAttribute?.('data-vista-color') || '').toLowerCase() === resolved.customColor.toLowerCase();
+        sw.classList?.toggle('active', isMatch);
+      });
+
+      const colorInput = this.container.querySelector?.('#vista-custom-color-input');
+      if (colorInput) colorInput.value = resolved.customColor;
+    }
+
+    if (typeof document !== 'undefined' && document.body) {
+      toneClasses.forEach((cls) => document.body.classList?.remove(cls));
+      document.body.classList?.add(targetClass);
+      document.body.style?.setProperty('--vista-custom-bg', resolved.customColor);
+    }
+
+    return resolved;
+  }
+
+  _renderVistaThemeBarHtml() {
+    const resolved = resolveVistaBackgroundState(this.vistaTheme, this._detectSystemTheme());
+    const sysLabel = resolved.systemTheme === 'light' ? 'White' : 'Black';
+    return `
+      <section class="vista-theme-bar" id="vista-theme-bar">
+        <div class="vista-aero-reflection" aria-hidden="true"></div>
+        <div class="vista-theme-header">
+          <span class="section-title">🎨 VISTA GLASS BACKGROUND</span>
+          <span class="vista-theme-badge" id="vista-theme-badge">${resolved.badge}</span>
+        </div>
+        <div class="vista-mode-row">
+          <button class="vista-mode-btn ${resolved.mode === 'system' ? 'active' : ''}" data-vista-mode="system" id="vista-mode-system-label">◐ Auto (${sysLabel})</button>
+          <button class="vista-mode-btn ${resolved.mode === 'wallpaper' ? 'active' : ''}" data-vista-mode="wallpaper">🖼 Wallpaper</button>
+          <button class="vista-mode-btn ${resolved.mode === 'white' ? 'active' : ''}" data-vista-mode="white">☀ White</button>
+          <button class="vista-mode-btn ${resolved.mode === 'black' ? 'active' : ''}" data-vista-mode="black">🌙 Black</button>
+        </div>
+        <div class="vista-color-row">
+          <span class="vista-color-label">Tint:</span>
+          ${VISTA_COLOR_PRESETS.map((p) => `
+            <button
+              class="vista-color-swatch ${resolved.mode === 'custom' && resolved.customColor.toLowerCase() === p.color.toLowerCase() ? 'active' : ''}"
+              data-vista-color="${p.color}"
+              style="background:${p.color};"
+              title="${p.label}"
+              aria-label="${p.label}"
+            ></button>
+          `).join('')}
+          <label class="vista-custom-picker-pill" title="Pick any custom background color">
+            <span>Custom</span>
+            <input type="color" id="vista-custom-color-input" class="vista-custom-color-input" value="${resolved.customColor}" />
+          </label>
+        </div>
+      </section>
+    `;
   }
 
   _bindIntentOutcomeLaunch() {
