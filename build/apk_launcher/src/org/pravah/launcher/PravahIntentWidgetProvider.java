@@ -117,21 +117,33 @@ public class PravahIntentWidgetProvider extends AppWidgetProvider {
         views.setInt(R.id.widget_chip_note, "setBackgroundResource", chipBg);
         views.setInt(R.id.widget_chip_usdc, "setBackgroundResource", chipBg);
         views.setInt(R.id.widget_chip_ram, "setBackgroundResource", chipBg);
+        views.setInt(R.id.widget_btn_open_metro, "setBackgroundResource", chipBg);
+        views.setInt(R.id.widget_outcome_box, "setBackgroundResource",
+                light ? R.drawable.bg_intent_outcome_glass_light : R.drawable.bg_intent_outcome_glass);
 
         views.setTextColor(R.id.widget_status_badge, Color.parseColor(light ? "#15803D" : "#4ADE80"));
-        views.setTextColor(R.id.widget_prompt_text, Color.parseColor(light ? "#0F172A" : "#E2E8F0"));
-        views.setTextColor(R.id.widget_btn_ask, Color.parseColor(light ? "#0369A1" : "#38BDF8"));
-        int chipTextColor = Color.parseColor(light ? "#1E293B" : "#E2E8F0");
+        views.setTextColor(R.id.widget_prompt_text, Color.parseColor(light ? "#0F172A" : "#F8FAFC"));
+        views.setTextColor(R.id.widget_btn_ask, Color.parseColor(light ? "#0369A1" : "#7DD3FC"));
+        int chipTextColor = Color.parseColor(light ? "#0F172A" : "#F1F5F9");
         views.setTextColor(R.id.widget_chip_flight, chipTextColor);
         views.setTextColor(R.id.widget_chip_note, chipTextColor);
         views.setTextColor(R.id.widget_chip_usdc, chipTextColor);
         views.setTextColor(R.id.widget_chip_ram, chipTextColor);
-        views.setTextColor(R.id.widget_outcome_text, Color.parseColor(light ? "#334155" : "#94A3B8"));
+        views.setTextColor(R.id.widget_outcome_title, Color.parseColor(light ? "#15803D" : "#4ADE80"));
+        views.setTextColor(R.id.widget_outcome_text, Color.parseColor(light ? "#1E293B" : "#E2E8F0"));
+        views.setTextColor(R.id.widget_telemetry_pill, Color.parseColor(light ? "#0369A1" : "#7DD3FC"));
+        views.setTextColor(R.id.widget_btn_open_metro, Color.parseColor(light ? "#0369A1" : "#E0F2FE"));
 
         PendingIntent openComposer = createScenarioIntent(context, 100, "");
         views.setOnClickPendingIntent(R.id.widget_prompt_bar, openComposer);
         views.setOnClickPendingIntent(R.id.widget_btn_ask, openComposer);
-        views.setOnClickPendingIntent(R.id.widget_outcome_text, openComposer);
+        views.setOnClickPendingIntent(R.id.widget_outcome_box, openComposer);
+
+        Intent metroIntent = new Intent(context, MainActivity.class);
+        metroIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+        PendingIntent openMetro = PendingIntent.getActivity(
+                context, 105, metroIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        views.setOnClickPendingIntent(R.id.widget_btn_open_metro, openMetro);
 
         views.setOnClickPendingIntent(R.id.widget_chip_flight, createScenarioIntent(context, 101, "flight"));
         views.setOnClickPendingIntent(R.id.widget_chip_note, createScenarioIntent(context, 102, "camera_note"));

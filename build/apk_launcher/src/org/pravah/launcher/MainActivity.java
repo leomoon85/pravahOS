@@ -30,10 +30,15 @@ import java.util.Comparator;
 import java.util.List;
 
 public class MainActivity extends Activity {
+    private static volatile boolean activityVisible = false;
     private WebView webView;
     private boolean pageLoaded = false;
     private String cachedInstalledAppsJson = null;
     private int cachedAppsCount = -1;
+
+    public static boolean isActivityVisible() {
+        return activityVisible;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,6 +88,14 @@ public class MainActivity extends Activity {
 
         // Load local bundled assets
         webView.loadUrl("file:///android_asset/shell/index.html");
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    new PravahBridge().getInstalledApps();
+                } catch (Exception ignored) {}
+            }
+        }).start();
     }
 
     @Override
@@ -98,11 +111,20 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        activityVisible = true;
         overridePendingTransition(0, 0);
+        PravahMetroService.onMetroDrawerOpened();
         PravahIntentWidgetProvider.refreshAllWidgets(this);
         if (pageLoaded && webView != null) {
             expandDrawer();
         }
+    }
+
+    @Override
+    protected void onPause() {
+        activityVisible = false;
+        super.onPause();
+        PravahMetroService.onMetroDrawerClosed();
     }
 
     private boolean isSystemNightMode() {
@@ -140,6 +162,7 @@ public class MainActivity extends Activity {
             "if (typeof document !== 'undefined' && document.body) { document.body.classList.add('native-metro-mode'); } " +
             "if (window.livingDrawer) { window.livingDrawer.expand(); window.livingDrawer.syncSystemTheme && window.livingDrawer.syncSystemTheme(); window.livingDrawer.syncRecentAndRelatedApps && window.livingDrawer.syncRecentAndRelatedApps(); window.livingDrawer.syncNativeTelemetry && window.livingDrawer.syncNativeTelemetry(); } " +
             "else if (window.toggleLivingDrawer) { window.toggleLivingDrawer(true); } " +
+            "var sb = document.querySelector('.drawer-scroll-body'); if (sb) sb.scrollTop = 0; " +
             "}, 150);",
             null
         );
@@ -249,6 +272,7 @@ public class MainActivity extends Activity {
                 .putString("custom_color", customColor != null ? customColor : "#0b2847")
                 .apply();
             PravahIntentWidgetProvider.refreshAllWidgets(MainActivity.this);
+            PravahMetroService.refreshOverlayTheme();
         }
 
         @JavascriptInterface
