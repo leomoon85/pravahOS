@@ -7,10 +7,6 @@
     <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
 
     <queries>
-        <package android:name="org.pravah.launcher" />
-        <package android:name="org.pravah.aurora" />
-        <package android:name="org.pravah.vault" />
-        <package android:name="org.pravah.shield" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />

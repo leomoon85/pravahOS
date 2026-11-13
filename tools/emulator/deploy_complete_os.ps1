@@ -37,9 +37,8 @@ $TelemetryCheck = & curl.exe -s http://127.0.0.1:9880/telemetry
 Write-Host "pravahd Live Telemetry Response:" -ForegroundColor Green
 Write-Host $TelemetryCheck
 
-Write-Host "`n>>> [3/5] Installing Pravah Metro + 4 Standalone Native Factory APKs..." -ForegroundColor Cyan
+Write-Host "`n>>> [3/5] Installing Pravah Native Factory Apps..." -ForegroundColor Cyan
 $Apks = @(
-    "$OutDir\PravahLauncher.apk",
     "$OutDir\AuroraNotes-pravah.apk",
     "$OutDir\PravahBazaar.apk",
     "$OutDir\PravahVault.apk",
@@ -55,31 +54,14 @@ foreach ($Apk in $Apks) {
     & $AdbExe install -r -g $Apk
 }
 
-Write-Host "`n>>> [4/5] Enabling native PravahMetroService Accessibility Swipe Bridge & AOSP Usage Prediction..." -ForegroundColor Cyan
-& $AdbExe shell "settings put secure enabled_accessibility_services org.pravah.launcher/org.pravah.launcher.PravahMetroService"
-& $AdbExe shell "settings put secure accessibility_enabled 1"
-& $AdbExe shell "appops set org.pravah.launcher GET_USAGE_STATS allow"
+Write-Host "`n>>> [4/5] Enforcing Clean Pixel Launcher and Zero-Tax Native pravahd..." -ForegroundColor Cyan
+& $AdbExe shell "pm uninstall org.pravah.launcher 2>/dev/null || true"
+& $AdbExe shell "settings put secure enabled_accessibility_services ''"
+& $AdbExe shell "settings put secure accessibility_enabled 0"
 
-Write-Host ">>> [5/5] Locking authentic Google Pixel Launcher as primary home desktop..." -ForegroundColor Cyan
+Write-Host ">>> [5/5] Locking authentic Google Pixel Launcher as sole home desktop..." -ForegroundColor Cyan
 & $AdbExe shell "cmd package set-home-activity 'com.google.android.apps.nexuslauncher/.NexusLauncherActivity'"
 & $AdbExe shell "input keyevent 3"
 Start-Sleep -Seconds 1
-
-$SqlQuery = "SELECT count(*) FROM favorites WHERE appWidgetProvider LIKE '%PravahIntentWidgetProvider%';"
-$HasIntentWidget = ($SqlQuery | & $AdbExe shell "sqlite3 /data/data/com.google.android.apps.nexuslauncher/databases/launcher_4_by_5.db") 2>$null
-if (-not (($HasIntentWidget | Out-String) -match '^\s*[1-9]\d*\s*$')) {
-    Write-Host ">>> Pinning Ask Pravah Intention Widget onto Pixel Home Screen..." -ForegroundColor Cyan
-    & $AdbExe shell "am start -n org.pravah.launcher/.IntentWidgetActivity --ez request_pin_widget true" | Out-Null
-    Start-Sleep -Seconds 2
-    & $AdbExe shell "uiautomator dump /sdcard/pin_ui.xml" | Out-Null
-    $PinXml = (& $AdbExe shell "cat /sdcard/pin_ui.xml") -join "`n"
-    if ($PinXml -match 'text="Add to home screen"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"') {
-        $TapX = [int](([int]$Matches[1] + [int]$Matches[3]) / 2)
-        $TapY = [int](([int]$Matches[2] + [int]$Matches[4]) / 2)
-        & $AdbExe shell "input tap $TapX $TapY"
-        Start-Sleep -Seconds 1
-    }
-    & $AdbExe shell "rm -f /sdcard/pin_ui.xml" | Out-Null
-}
 
 Write-Host "`n>>> [SUCCESS] Complete PravahOS Daily-Driver Stack Live on Pixel 7!" -ForegroundColor Green
