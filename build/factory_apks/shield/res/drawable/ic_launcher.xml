@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#059669"
+        android:pathData="M54,4 C81.61,4 104,26.39 104,54 C104,81.61 81.61,104 54,104 C26.39,104 4,81.61 4,54 C4,26.39 26.39,4 54,4 Z" />
+    <path
+        android:fillColor="#0F172A"
+        android:pathData="M54,10 C78.30,10 98,29.70 98,54 C98,78.30 78.30,98 54,98 C29.70,98 10,78.30 10,54 C10,29.70 29.70,10 54,10 Z" />
+    <!-- Security Shield Emblem -->
+    <path
+        android:fillColor="#34D399"
+        android:pathData="M54,24 L78,34 V53 C78,68 67,80 54,85 C41,80 30,68 30,53 V34 Z" />
+    <path
+        android:fillColor="#0F172A"
+        android:pathData="M45,54 L51,60 L65,46 L68,49 L51,66 L42,57 Z" />
+</vector>

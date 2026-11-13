@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="accessibility_service_desc">Bridges Pixel Home swipe-up directly into the PravahOS Windows Metro Living Drawer.</string>
+</resources>

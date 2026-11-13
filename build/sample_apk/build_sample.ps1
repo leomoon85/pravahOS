@@ -16,12 +16,12 @@ $AlignedApk = "L:\projectz\OS\out\panther\AuroraNotes-aligned.apk"
 New-Item -ItemType Directory -Force -Path "L:\projectz\OS\out\panther", "$BuildDir\compiled_res", "$BuildDir\gen", "$BuildDir\obj" | Out-Null
 
 Write-Host ">>> [1/5] Compiling Resources..." -ForegroundColor Cyan
-& $Aapt2 compile --dir "$BuildDir\res" -o "$BuildDir\compiled_res.zip" 2>$null
-& $Aapt2 link -I $PlatformAndroidJar --manifest "$BuildDir\AndroidManifest.xml" -o "$BuildDir\base.apk" --java "$BuildDir\gen" --auto-add-overlay
+& $Aapt2 compile --dir "$BuildDir\res" -o "$BuildDir\compiled_res.zip"
+& $Aapt2 link -I $PlatformAndroidJar -R "$BuildDir\compiled_res.zip" --manifest "$BuildDir\AndroidManifest.xml" -o "$BuildDir\base.apk" --java "$BuildDir\gen" --auto-add-overlay
 
 Write-Host ">>> [2/5] Compiling Java Sources..." -ForegroundColor Cyan
 $JavaFiles = Get-ChildItem -Path "$BuildDir\src", "$BuildDir\gen" -Filter *.java -Recurse | ForEach-Object { $_.FullName }
-& javac -source 1.8 -target 1.8 -bootclasspath $PlatformAndroidJar -d "$BuildDir\obj" $JavaFiles
+& javac -encoding UTF-8 -source 1.8 -target 1.8 -bootclasspath $PlatformAndroidJar -d "$BuildDir\obj" $JavaFiles
 
 Write-Host ">>> [3/5] Converting Bytecode to DEX..." -ForegroundColor Cyan
 $ClassFiles = Get-ChildItem -Path "$BuildDir\obj" -Filter *.class -Recurse | ForEach-Object { $_.FullName }

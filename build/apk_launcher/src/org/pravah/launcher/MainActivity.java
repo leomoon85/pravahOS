@@ -1,20 +1,28 @@
 package org.pravah.launcher;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.media.AudioManager;
+import android.os.BatteryManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
-import android.webkit.JavascriptInterface;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class MainActivity extends Activity {
     private WebView webView;
+    private boolean pageLoaded = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +36,7 @@ public class MainActivity extends Activity {
         );
 
         webView = new WebView(this);
+        webView.setBackgroundColor(0xFF080E1A);
         setContentView(webView);
 
         WebSettings settings = webView.getSettings();
@@ -54,11 +63,8 @@ public class MainActivity extends Activity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
-                // Immediately open the Windows Metro Living Drawer
-                view.evaluateJavascript(
-                    "setTimeout(function() { if (window.PravahLivingDrawer) window.PravahLivingDrawer.expand(); }, 200);",
-                    null
-                );
+                pageLoaded = true;
+                expandDrawer();
             }
         });
 
@@ -67,32 +73,178 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (pageLoaded && webView != null) {
+            expandDrawer();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (pageLoaded && webView != null) {
+            expandDrawer();
+        }
+    }
+
+    private void expandDrawer() {
+        if (webView == null) return;
+        webView.evaluateJavascript(
+            "setTimeout(function() { " +
+            "if (typeof document !== 'undefined' && document.body) { document.body.classList.add('native-metro-mode'); } " +
+            "if (window.livingDrawer) { window.livingDrawer.expand(); window.livingDrawer.syncNativeTelemetry && window.livingDrawer.syncNativeTelemetry(); } " +
+            "else if (window.toggleLivingDrawer) { window.toggleLivingDrawer(true); } " +
+            "}, 150);",
+            null
+        );
+    }
+
+    @Override
     public void onBackPressed() {
-        finish();
+        moveTaskToBack(true);
+    }
+
+    private static String escapeJson(String input) {
+        if (input == null) return "";
+        StringBuilder sb = new StringBuilder(input.length() + 8);
+        for (int i = 0; i < input.length(); i++) {
+            char c = input.charAt(i);
+            switch (c) {
+                case '\\': sb.append("\\\\"); break;
+                case '"': sb.append("\\\""); break;
+                case '\n': sb.append("\\n"); break;
+                case '\r': sb.append("\\r"); break;
+                case '\t': sb.append("\\t"); break;
+                default:
+                    if (c < 0x20) {
+                        sb.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        sb.append(c);
+                    }
+                    break;
+            }
+        }
+        return sb.toString();
     }
 
     public class PravahBridge {
         @JavascriptInterface
+        public void closeMetroDrawer() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    moveTaskToBack(true);
+                }
+            });
+        }
+
+        @JavascriptInterface
         public void launchApp(String packageName) {
+            if (packageName == null || packageName.isEmpty()) return;
             PackageManager pm = getPackageManager();
             Intent intent = pm.getLaunchIntentForPackage(packageName);
             if (intent != null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
             }
         }
 
         @JavascriptInterface
+        public String getLiveSystemTelemetry() {
+            int levelPct = 100;
+            int voltageMv = 4200;
+            double tempC = 30.0;
+            boolean charging = false;
+            int batteryStatus = BatteryManager.BATTERY_STATUS_UNKNOWN;
+
+            try {
+                IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+                Intent batteryIntent = registerReceiver(null, ifilter);
+                if (batteryIntent != null) {
+                    int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+                    int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, 100);
+                    if (level >= 0 && scale > 0) {
+                        levelPct = Math.round((level * 100.0f) / scale);
+                    }
+                    voltageMv = batteryIntent.getIntExtra(BatteryManager.EXTRA_VOLTAGE, 4200);
+                    int tempTenths = batteryIntent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 300);
+                    tempC = tempTenths / 10.0;
+                    batteryStatus = batteryIntent.getIntExtra(BatteryManager.EXTRA_STATUS, BatteryManager.BATTERY_STATUS_UNKNOWN);
+                    int plugged = batteryIntent.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0);
+                    charging = (batteryStatus == BatteryManager.BATTERY_STATUS_CHARGING) || (plugged != 0);
+                }
+            } catch (Exception ignored) {}
+
+            boolean musicActive = false;
+            int musicVol = 0;
+            int musicMaxVol = 15;
+            try {
+                AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                if (am != null) {
+                    musicActive = am.isMusicActive();
+                    musicVol = am.getStreamVolume(AudioManager.STREAM_MUSIC);
+                    musicMaxVol = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+                }
+            } catch (Exception ignored) {}
+
+            boolean airgap = false;
+            try {
+                airgap = Settings.Global.getInt(getContentResolver(), Settings.Global.AIRPLANE_MODE_ON, 0) != 0;
+            } catch (Exception ignored) {}
+
+            StringBuilder json = new StringBuilder();
+            json.append("{");
+            json.append("\"battery\":{")
+                .append("\"level\":").append(levelPct).append(",")
+                .append("\"charging\":").append(charging).append(",")
+                .append("\"voltageMv\":").append(voltageMv).append(",")
+                .append("\"tempC\":").append(String.format(java.util.Locale.US, "%.1f", tempC)).append(",")
+                .append("\"statusCode\":").append(batteryStatus)
+                .append("},");
+            json.append("\"audio\":{")
+                .append("\"musicActive\":").append(musicActive).append(",")
+                .append("\"volume\":").append(musicVol).append(",")
+                .append("\"maxVolume\":").append(musicMaxVol)
+                .append("},");
+            json.append("\"airgap\":").append(airgap);
+            json.append("}");
+            return json.toString();
+        }
+
+        @JavascriptInterface
         public String getInstalledApps() {
-            PackageManager pm = getPackageManager();
+            final PackageManager pm = getPackageManager();
             Intent intent = new Intent(Intent.ACTION_MAIN, null);
             intent.addCategory(Intent.CATEGORY_LAUNCHER);
             List<ResolveInfo> apps = pm.queryIntentActivities(intent, 0);
+            Collections.sort(apps, new Comparator<ResolveInfo>() {
+                @Override
+                public int compare(ResolveInfo a, ResolveInfo b) {
+                    String la = String.valueOf(a.loadLabel(pm));
+                    String lb = String.valueOf(b.loadLabel(pm));
+                    return la.compareToIgnoreCase(lb);
+                }
+            });
+
             StringBuilder sb = new StringBuilder("[");
+            boolean first = true;
             for (int i = 0; i < apps.size(); i++) {
                 ResolveInfo ri = apps.get(i);
-                sb.append("{\"label\":\"").append(ri.loadLabel(pm))
-                  .append("\",\"pkg\":\"").append(ri.activityInfo.packageName).append("\"}");
-                if (i < apps.size() - 1) sb.append(",");
+                String pkg = ri.activityInfo != null ? ri.activityInfo.packageName : "";
+                if (pkg.isEmpty() || "org.pravah.launcher".equals(pkg)) {
+                    continue;
+                }
+                String label = String.valueOf(ri.loadLabel(pm));
+                boolean isPravah = pkg.startsWith("org.pravah.");
+                if (!first) sb.append(",");
+                first = false;
+                sb.append("{")
+                  .append("\"label\":\"").append(escapeJson(label)).append("\",")
+                  .append("\"pkg\":\"").append(escapeJson(pkg)).append("\",")
+                  .append("\"isPravah\":").append(isPravah)
+                  .append("}");
             }
             sb.append("]");
             return sb.toString();

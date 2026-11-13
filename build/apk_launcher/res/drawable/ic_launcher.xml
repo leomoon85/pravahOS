@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Material You Tonal Circular Background -->
+    <path
+        android:fillColor="#1E293B"
+        android:pathData="M54,4 C81.61,4 104,26.39 104,54 C104,81.61 81.61,104 54,104 C26.39,104 4,81.61 4,54 C4,26.39 26.39,4 54,4 Z" />
+    <path
+        android:fillColor="#0F172A"
+        android:pathData="M54,10 C78.30,10 98,29.70 98,54 C98,78.30 78.30,98 54,98 C29.70,98 10,78.30 10,54 C10,29.70 29.70,10 54,10 Z" />
+    <!-- Windows Metro 4-Tile Bento Grid Center Glyph -->
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M31,31 H51 V51 H31 Z" />
+    <path
+        android:fillColor="#818CF8"
+        android:pathData="M57,31 H77 V51 H57 Z" />
+    <path
+        android:fillColor="#60A5FA"
+        android:pathData="M31,57 H51 V77 H31 Z" />
+    <path
+        android:fillColor="#34D399"
+        android:pathData="M57,57 H77 V77 H57 Z" />
+</vector>

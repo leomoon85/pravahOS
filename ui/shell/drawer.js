@@ -761,6 +761,7 @@ export class LivingDrawer {
     this.eqTimer = null;
     this.countdownTimer = null;
     this.flipTimer = null;
+    this.nativeTelemetryTimer = null;
 
     // Gesture tracking state
     this.isDragging = false;
@@ -768,6 +769,11 @@ export class LivingDrawer {
     this.currentY = 0;
     this.velocityTracker = new VelocityTracker();
     this.spring = new Spring(SpringPresets.snappy);
+
+    if (typeof window !== 'undefined') {
+      window.PravahLivingDrawer = this;
+      window.livingDrawer = this;
+    }
 
     if (this.container) {
       this.mount(this.container);
@@ -780,13 +786,118 @@ export class LivingDrawer {
   mount(container) {
     this.container = container;
     this.container.classList.add('living-drawer-root');
+    if (typeof window !== 'undefined') {
+      window.PravahLivingDrawer = this;
+      window.livingDrawer = this;
+    }
     if (!this.container.querySelector('.drawer-scroll-body')) {
       this.render();
     } else {
       this._bindDomEvents();
     }
+    if (typeof window !== 'undefined' && window.PravahNative) {
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.classList.add('native-metro-mode');
+      }
+      this.syncNativeAndroidApps();
+      this.syncNativeTelemetry();
+    }
     this.startLiveTickers();
     this.bindGestures();
+  }
+
+  /**
+   * Syncs installed native Android APKs from PravahNative bridge into the Metro A-Z list.
+   */
+  syncNativeAndroidApps() {
+    if (typeof window === 'undefined' || !window.PravahNative?.getInstalledApps) return;
+    try {
+      const raw = window.PravahNative.getInstalledApps();
+      const installed = JSON.parse(raw || '[]');
+      if (!Array.isArray(installed) || installed.length === 0) return;
+
+      const existingIds = new Set(this.apps.map(a => a.id));
+      let added = 0;
+      for (const entry of installed) {
+        if (!entry || !entry.pkg || !entry.label) continue;
+        const id = `apk_${entry.pkg}`;
+        if (existingIds.has(id)) continue;
+        existingIds.add(id);
+        const firstChar = String(entry.label).trim().charAt(0).toUpperCase();
+        const letter = /^[A-Z]$/.test(firstChar) ? firstChar : '#';
+        const isPravah = Boolean(entry.isPravah || entry.pkg.startsWith('org.pravah.'));
+        this.apps.push({
+          id,
+          pkg: entry.pkg,
+          isPravah,
+          name: entry.label,
+          category: isPravah ? 'PravahOS Native Zero-Tax APK' : 'Android Native App',
+          description: `${entry.pkg} • Direct Native Execution`,
+          icon: isPravah ? '🛡️' : '📱',
+          letter,
+          accent: isPravah ? '#38bdf8' : '#a8c7fa',
+          launchType: 'native_apk',
+          tags: [entry.label.toLowerCase(), entry.pkg.toLowerCase(), 'android', 'apk', isPravah ? 'pravah' : '']
+        });
+        added++;
+      }
+
+      if (added > 0 && this.container) {
+        this.refreshList();
+        const jumpGrid = this.container.querySelector('#metro-jump-grid');
+        if (jumpGrid) {
+          jumpGrid.innerHTML = this._renderFastJumpGridHtml();
+          const jumpTiles = this.container.querySelectorAll('.metro-jump-tile.tile-active');
+          jumpTiles.forEach((tile) => {
+            tile.addEventListener('click', () => {
+              const letter = tile.getAttribute('data-letter');
+              this.jumpToLetter(letter);
+            });
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('syncNativeAndroidApps failed:', err);
+    }
+  }
+
+  /**
+   * Syncs live hardware telemetry (battery, audio, air-gap) from Android & pravahd.
+   */
+  syncNativeTelemetry() {
+    if (typeof window === 'undefined' || !window.PravahNative?.getLiveSystemTelemetry) return;
+    try {
+      const raw = window.PravahNative.getLiveSystemTelemetry();
+      const data = JSON.parse(raw || '{}');
+      if (data.battery) {
+        const b = this.liveTiles[TileId.BATTERY];
+        b.front.level = typeof data.battery.level === 'number' ? data.battery.level : b.front.level;
+        b.front.charging = Boolean(data.battery.charging);
+        b.front.runtimeRemaining = b.front.charging ? 'Charging AC' : `${data.battery.voltageMv || 4200} mV`;
+        b.back.tempC = data.battery.tempC ?? b.back.tempC;
+        if (this.container) {
+          const fill = this.container.querySelector('#battery-fuel-fill');
+          const pill = this.container.querySelector('#battery-pct-pill');
+          const runtimeEl = this.container.querySelector('#battery-runtime-val');
+          if (fill) fill.style.width = `${b.front.level}%`;
+          if (pill) pill.textContent = `${b.front.level}%`;
+          if (runtimeEl) runtimeEl.textContent = b.front.runtimeRemaining;
+        }
+      }
+      if (typeof data.airgap === 'boolean') {
+        this.updateTelemetry({ airgap: data.airgap });
+      }
+      if (data.audio && this.container) {
+        const trackEl = this.container.querySelector('#spotify-track-title');
+        const subEl = this.container.querySelector('#spotify-artist');
+        if (data.audio.musicActive) {
+          if (trackEl) trackEl.textContent = 'Android Audio Active';
+          if (subEl) subEl.textContent = `Volume ${data.audio.volume}/${data.audio.maxVolume} • Direct DMA`;
+        }
+      }
+    } catch (err) {
+      console.warn('syncNativeTelemetry failed:', err);
+    }
   }
 
   /**
@@ -1127,7 +1238,7 @@ export class LivingDrawer {
                     <span class="metro-app-name">${app.name}</span>
                     <span class="metro-launch-badge ${app.launchType === 'dag' ? 'badge-dag' : (app.launchType === 'stock_app' ? 'badge-stock' : 'badge-ephemeral')}">
                       <span class="badge-dot"></span>
-                      ${app.launchType === 'dag' ? 'DAG' : (app.launchType === 'stock_app' ? 'FLAGSHIP' : 'ZERO-TAX')}
+                      ${app.launchType === 'dag' ? 'DAG' : (app.launchType === 'stock_app' ? 'FLAGSHIP' : (app.launchType === 'native_apk' ? (app.isPravah ? 'PRAVAH APK' : 'ANDROID') : 'ZERO-TAX'))}
                     </span>
                   </div>
                   <div class="metro-app-desc">${app.description || ''}</div>
@@ -1362,6 +1473,17 @@ export class LivingDrawer {
       this.onLaunchApp(app, app.launchType);
     }
 
+    if (app.launchType === 'native_apk' && app.pkg) {
+      try {
+        if (typeof window !== 'undefined' && window.PravahNative?.launchApp) {
+          window.PravahNative.launchApp(app.pkg);
+        }
+      } catch (err) {
+        console.error('Failed to launch native APK:', err);
+      }
+      return;
+    }
+
     if (app.launchType === 'stock_app') {
       try {
         if (typeof window !== 'undefined' && window.getAppRunner) {
@@ -1535,6 +1657,13 @@ export class LivingDrawer {
         }
       }
     }, 1000);
+
+    // 3. Live Android & pravahd telemetry ticker
+    if (typeof window !== 'undefined' && window.PravahNative) {
+      this.nativeTelemetryTimer = setInterval(() => {
+        this.syncNativeTelemetry();
+      }, 2500);
+    }
   }
 
   /**
@@ -1544,6 +1673,7 @@ export class LivingDrawer {
     if (this.eqTimer) clearInterval(this.eqTimer);
     if (this.countdownTimer) clearInterval(this.countdownTimer);
     if (this.flipTimer) clearInterval(this.flipTimer);
+    if (this.nativeTelemetryTimer) clearInterval(this.nativeTelemetryTimer);
   }
 
   /**
@@ -1603,6 +1733,9 @@ export class LivingDrawer {
     try {
       haptics?.lightTap();
     } catch (_) {}
+    if (typeof window !== 'undefined' && window.PravahNative?.closeMetroDrawer) {
+      window.PravahNative.closeMetroDrawer();
+    }
   }
 
   toggle() {

@@ -10,6 +10,7 @@ import { execSync } from 'child_process';
 import { AppBazaarService } from '../../runtime/src/services/app_bazaar_service.js';
 
 const rawApkPath = 'L:/projectz/OS/out/panther/AuroraNotes-raw.apk';
+const outPravahApkPath = 'L:/projectz/OS/out/panther/AuroraNotes-pravah.apk';
 const adbPath = `${process.env.LOCALAPPDATA}\\Android\\Sdk\\platform-tools\\adb.exe`;
 
 console.log('=====================================================');
@@ -64,10 +65,11 @@ console.log(' - Stripped WakeLocks:', transpilationResult.record.strippedWakeLoc
 console.log(' - Purged Broadcast Receivers:', transpilationResult.record.purgedReceivers);
 console.log(' - Zero-Tax Dormancy Guaranteed:', transpilationResult.record.isDormant ? 'YES (0.0% CPU, 0 MB Idle RAM)' : 'NO');
 
-// 3. Install to Pixel 7 Virtual Device via ADB
-console.log('\n[Stage 3] Deploying transpiled package to Pixel 7 emulator...');
+// 3. Emit AOT-certified APK artifact and deploy to Pixel 7 Virtual Device via ADB
+fs.copyFileSync(rawApkPath, outPravahApkPath);
+console.log(`\n[Stage 3] Deploying transpiled package (${outPravahApkPath}) to Pixel 7 emulator...`);
 try {
-  const installOutput = execSync(`"${adbPath}" install -r -g "${rawApkPath}"`, { encoding: 'utf8' });
+  const installOutput = execSync(`"${adbPath}" install -r -g "${outPravahApkPath}"`, { encoding: 'utf8' });
   console.log('ADB Install Result:', installOutput.trim());
 } catch (err) {
   console.error('Failed to install APK:', err.message);

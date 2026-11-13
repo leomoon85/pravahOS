@@ -1750,3 +1750,66 @@
     gap: 8px;
   }
 }
+
+/* ========================================================================== */
+/* Native Android APK Mode (Full-Screen Metro Drawer without Web Desktop Tax) */
+/* ========================================================================== */
+body.native-metro-mode {
+  background: #080e1a !important;
+  overflow: hidden !important;
+}
+
+body.native-metro-mode .ambient-glow-layer,
+body.native-metro-mode #shade-brightness-filter,
+body.native-metro-mode #screen-torch-beam,
+body.native-metro-mode #shade-pull-trigger,
+body.native-metro-mode #control-shade-backdrop,
+body.native-metro-mode #control-shade,
+body.native-metro-mode #ambient-header,
+body.native-metro-mode .workspace-canvas,
+body.native-metro-mode .aether-dock-container,
+body.native-metro-mode #lockscreen-overlay,
+body.native-metro-mode .shell-drawer-nav {
+  display: none !important;
+}
+
+body.native-metro-mode .living-drawer {
+  top: 0 !important;
+  bottom: 0 !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  border-radius: 0 !important;
+  border-top: none !important;
+  background: #080e1a !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+  transform: translateY(0%) !important;
+  transition: none !important;
+}
+
+body.native-metro-mode .live-tiles-grid,
+body.native-metro-mode .live-tile {
+  perspective: none !important;
+  transform-style: flat !important;
+  transform: none !important;
+}
+
+body.native-metro-mode .live-tile::after {
+  display: none !important;
+}
+
+body.native-metro-mode .tile-face {
+  backface-visibility: visible !important;
+  -webkit-backface-visibility: visible !important;
+  transform: none !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45) !important;
+}
+
+body.native-metro-mode .live-tile:not(.flipped) .tile-back {
+  display: none !important;
+}
+
+body.native-metro-mode .live-tile.flipped .tile-front {
+  display: none !important;
+}
