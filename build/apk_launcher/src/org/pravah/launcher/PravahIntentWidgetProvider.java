@@ -30,9 +30,9 @@ public class PravahIntentWidgetProvider extends AppWidgetProvider {
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        String prompt = prefs.getString(KEY_PROMPT, "Ask anything, or tap a goal below...");
-        String outcome = prefs.getString(KEY_OUTCOME, "Ready: Flight AI-202 • Gate 14B • 0-Cloud Enclave");
-        String badge = prefs.getString(KEY_BADGE, "✓ 0-CLOUD DAG");
+        String prompt = prefs.getString(KEY_PROMPT, "Ask Gemini anything, or tap an action...");
+        String outcome = prefs.getString(KEY_OUTCOME, "Gemini Ready: Smart summaries & instant actions");
+        String badge = prefs.getString(KEY_BADGE, "✦ GEMINI ON-DEVICE");
 
         for (int appWidgetId : appWidgetIds) {
             RemoteViews views = buildRemoteViews(context, prompt, outcome, badge);
@@ -43,9 +43,9 @@ public class PravahIntentWidgetProvider extends AppWidgetProvider {
     public static void refreshAllWidgets(Context context) {
         if (context == null) return;
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        String prompt = prefs.getString(KEY_PROMPT, "Ask anything, or tap a goal below...");
-        String outcome = prefs.getString(KEY_OUTCOME, "Ready: Flight AI-202 • Gate 14B • 0-Cloud Enclave");
-        String badge = prefs.getString(KEY_BADGE, "✓ 0-CLOUD DAG");
+        String prompt = prefs.getString(KEY_PROMPT, "Ask Gemini anything, or tap an action...");
+        String outcome = prefs.getString(KEY_OUTCOME, "Gemini Ready: Smart summaries & instant actions");
+        String badge = prefs.getString(KEY_BADGE, "✦ GEMINI ON-DEVICE");
         updateAllWidgets(context, prompt, outcome, badge);
     }
 
@@ -121,7 +121,7 @@ public class PravahIntentWidgetProvider extends AppWidgetProvider {
         views.setInt(R.id.widget_outcome_box, "setBackgroundResource",
                 light ? R.drawable.bg_intent_outcome_glass_light : R.drawable.bg_intent_outcome_glass);
 
-        views.setTextColor(R.id.widget_status_badge, Color.parseColor(light ? "#15803D" : "#4ADE80"));
+        views.setTextColor(R.id.widget_status_badge, Color.parseColor(light ? "#0284C7" : "#38BDF8"));
         views.setTextColor(R.id.widget_prompt_text, Color.parseColor(light ? "#0F172A" : "#F8FAFC"));
         views.setTextColor(R.id.widget_btn_ask, Color.parseColor(light ? "#0369A1" : "#7DD3FC"));
         int chipTextColor = Color.parseColor(light ? "#0F172A" : "#F1F5F9");
@@ -129,7 +129,7 @@ public class PravahIntentWidgetProvider extends AppWidgetProvider {
         views.setTextColor(R.id.widget_chip_note, chipTextColor);
         views.setTextColor(R.id.widget_chip_usdc, chipTextColor);
         views.setTextColor(R.id.widget_chip_ram, chipTextColor);
-        views.setTextColor(R.id.widget_outcome_title, Color.parseColor(light ? "#15803D" : "#4ADE80"));
+        views.setTextColor(R.id.widget_outcome_title, Color.parseColor(light ? "#0284C7" : "#38BDF8"));
         views.setTextColor(R.id.widget_outcome_text, Color.parseColor(light ? "#1E293B" : "#E2E8F0"));
         views.setTextColor(R.id.widget_telemetry_pill, Color.parseColor(light ? "#0369A1" : "#7DD3FC"));
         views.setTextColor(R.id.widget_btn_open_metro, Color.parseColor(light ? "#0369A1" : "#E0F2FE"));

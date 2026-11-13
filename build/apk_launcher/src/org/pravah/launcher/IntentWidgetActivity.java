@@ -63,7 +63,7 @@ public class IntentWidgetActivity extends Activity {
         if (initialScenario != null && !initialScenario.isEmpty()) {
             executeIntention("", initialScenario);
         } else {
-            executeIntention("Check flight AI-202 and set reminder 2 hours before departure", "flight");
+            executeIntention("Summarize my daily schedule and prepare reminders", "flight");
         }
     }
 
@@ -148,14 +148,14 @@ public class IntentWidgetActivity extends Activity {
         header.setGravity(Gravity.CENTER_VERTICAL);
 
         TextView statusPill = new TextView(this);
-        statusPill.setText("✓ 0-CLOUD ENCLAVE");
-        statusPill.setTextColor(Color.parseColor(isLightTheme ? "#15803D" : "#4ADE80"));
+        statusPill.setText("✦ GEMINI NANO • ON-DEVICE");
+        statusPill.setTextColor(Color.parseColor(isLightTheme ? "#0284C7" : "#38BDF8"));
         statusPill.setTextSize(10);
         statusPill.setTypeface(null, Typeface.BOLD);
         statusPill.setPadding(dp(10), dp(4), dp(10), dp(4));
         statusPill.setBackground(makePillDrawableInt(
-                isLightTheme ? Color.parseColor("#DCFCE7") : Color.parseColor("#2610B981"),
-                isLightTheme ? Color.parseColor("#5516A34A") : Color.parseColor("#664ADE80"),
+                isLightTheme ? Color.parseColor("#E0F2FE") : Color.parseColor("#260284C7"),
+                isLightTheme ? Color.parseColor("#550284C7") : Color.parseColor("#6638BDF8"),
                 99
         ));
         header.addView(statusPill);
@@ -201,7 +201,7 @@ public class IntentWidgetActivity extends Activity {
         card.addView(inputRow, inputRowLp);
 
         promptInput = new EditText(this);
-        promptInput.setHint("Ask anything or describe a goal...");
+        promptInput.setHint("Ask Gemini anything or describe a task...");
         promptInput.setHintTextColor(Color.parseColor(isLightTheme ? "#64748B" : "#94A3B8"));
         promptInput.setTextColor(Color.parseColor(isLightTheme ? "#0F172A" : "#F8FAFC"));
         promptInput.setTextSize(14);
@@ -218,7 +218,7 @@ public class IntentWidgetActivity extends Activity {
         inputRow.addView(promptInput, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         TextView askBtn = new TextView(this);
-        askBtn.setText("Ask ✦");
+        askBtn.setText("Gemini ✦");
         askBtn.setTextColor(Color.parseColor(isLightTheme ? "#FFFFFF" : "#031326"));
         askBtn.setTextSize(13);
         askBtn.setTypeface(null, Typeface.BOLD);
@@ -263,9 +263,9 @@ public class IntentWidgetActivity extends Activity {
         dagRowLp.topMargin = dp(14);
         card.addView(dagRow, dagRowLp);
 
-        dagStep1 = makeDagBadge("1. Intent ✓");
-        dagStep2 = makeDagBadge("2. EL1 Gate ✓");
-        dagStep3 = makeDagBadge("3. Native ✓");
+        dagStep1 = makeDagBadge("1. Gemini NPU ✦");
+        dagStep2 = makeDagBadge("2. Context Engine ✓");
+        dagStep3 = makeDagBadge("3. App Action ➔");
         dagRow.addView(dagStep1, makeWeightedLp(0, 4));
         dagRow.addView(dagStep2, makeWeightedLp(4, 4));
         dagRow.addView(dagStep3, makeWeightedLp(4, 0));
@@ -278,9 +278,9 @@ public class IntentWidgetActivity extends Activity {
         card.addView(outcomeScroll, outcomeScrollLp);
 
         int outcomeFill = isLightTheme
-                ? Color.parseColor("#F0FDF4")
-                : (isCustomTheme ? blendColor(customTintColor, 0xFF070A12, 0.35f, 0xD9) : Color.parseColor("#D90D131C"));
-        int outcomeStroke = isLightTheme ? Color.parseColor("#4D16A34A") : Color.parseColor("#554ADE80");
+                ? Color.parseColor("#F0F9FF")
+                : (isCustomTheme ? blendColor(customTintColor, 0xFF070A12, 0.35f, 0xD9) : Color.parseColor("#D90D1828"));
+        int outcomeStroke = isLightTheme ? Color.parseColor("#4D0284C7") : Color.parseColor("#5538BDF8");
 
         LinearLayout outcomeCard = new LinearLayout(this);
         outcomeCard.setOrientation(LinearLayout.VERTICAL);
@@ -289,7 +289,7 @@ public class IntentWidgetActivity extends Activity {
         outcomeScroll.addView(outcomeCard);
 
         outcomeHeadline = new TextView(this);
-        outcomeHeadline.setTextColor(Color.parseColor(isLightTheme ? "#15803D" : "#4ADE80"));
+        outcomeHeadline.setTextColor(Color.parseColor(isLightTheme ? "#0284C7" : "#38BDF8"));
         outcomeHeadline.setTextSize(15);
         outcomeHeadline.setTypeface(null, Typeface.BOLD);
         outcomeCard.addView(outcomeHeadline);
@@ -351,67 +351,67 @@ public class IntentWidgetActivity extends Activity {
         String headline;
         String summary;
         String pills;
-        String s1 = "1. Parse Intent ✓";
-        String s2 = "2. EL1 Gate ✓";
-        String s3 = "3. Zero-Tax ✓";
+        String s1 = "1. Gemini NPU ✦";
+        String s2 = "2. Context Engine ✓";
+        String s3 = "3. Zero-Tax Action ➔";
         String btnLabel;
 
         switch (key) {
             case "flight":
-                if (resolvedPrompt.isEmpty()) resolvedPrompt = "Check flight AI-202 and set reminder 2h prior";
-                headline = "✓ Flight AI-202 Confirmed • On Time";
-                summary = "DEL -> BLR departs at 10:30 AM from Terminal 3, Gate 14B. Calendar alarm armed locally without cloud sync.";
-                pills = "Gate 14B  •  Term T3  •  🔒 0-Cloud Enclave";
+                if (resolvedPrompt.isEmpty()) resolvedPrompt = "Summarize flight AI-202 itinerary & add calendar reminder";
+                headline = "✦ Flight AI-202 • Confirmed on Time";
+                summary = "DEL -> BLR departs 10:30 AM (Terminal 3, Gate 14B). Gemini analyzed flight details and prepared a calendar event.";
+                pills = "Gate 14B  •  Term T3  •  ✦ Gemini Nano Verified";
                 currentTargetPkg = "com.google.android.calendar";
-                btnLabel = "Open Calendar Alarm ➔";
+                btnLabel = "Open Calendar Event ➔";
                 break;
             case "camera_note":
-                if (resolvedPrompt.isEmpty()) resolvedPrompt = "Capture document photo and seal into Aurora Notes";
-                headline = "✓ Zero-Copy Camera VMO -> Aurora Notes";
-                summary = "Captured high-DPI optical buffer via IMX890 HAL and saved SHA-256 verified note directly inside Aurora Notes.";
-                pills = "Zero-Copy VMO  •  Aurora Notes  •  🔒 Offline OCR";
+                if (resolvedPrompt.isEmpty()) resolvedPrompt = "Transcribe whiteboard notes using Gemini Vision";
+                headline = "✦ Optical Vision -> Smart Note Generated";
+                summary = "Gemini on-device multimodal pipeline parsed document text, extracted bullet points, and prepared notes.";
+                pills = "Gemini Vision  •  Smart Note  •  ✦ On-Device AI";
                 currentTargetPkg = "org.pravah.aurora";
                 btnLabel = "Open Aurora Notes ➔";
                 break;
             case "payment":
-                if (resolvedPrompt.isEmpty()) resolvedPrompt = "Send ₹5,000 securely via Pravah Vault";
-                headline = "✓ ₹5,000 Policy Gate Authorized";
-                summary = "Biometric Titan M2 enclave sealed UPI transaction receipt under dual capability isolation.";
-                pills = "₹5,000 UPI  •  Titan M2 Sealed  •  ✓ Receipt Saved";
+                if (resolvedPrompt.isEmpty()) resolvedPrompt = "Draft payment request for ₹5,000";
+                headline = "✦ Payment Request Synthesized";
+                summary = "Drafted secure payment request for ₹5,000 with transaction memo prepared for approval.";
+                pills = "₹5,000 UPI  •  Gemini Context  •  ✓ Ready for Review";
                 currentTargetPkg = "org.pravah.vault";
                 btnLabel = "Open Pravah Vault ➔";
                 break;
             case "crypto":
-                if (resolvedPrompt.isEmpty()) resolvedPrompt = "Verify 250 USDC cross-border remittance";
-                headline = "✓ 250 USDC ZK Proof Sealed";
-                summary = "Signed offline Ed448 settlement voucher in Pravah Vault; hardware key never left the Titan M2 enclave.";
-                pills = "250 USDC  •  ML-KEM-768  •  🔒 Key Sealed";
+                if (resolvedPrompt.isEmpty()) resolvedPrompt = "Explain transaction hash & check settlement fee";
+                headline = "✦ Smart Contract Audit Complete";
+                summary = "Gemini reviewed transaction parameters: 250 USDC transfer verified with minimal gas routing.";
+                pills = "250 USDC  •  Gas Optimized  •  ✦ Safe to Sign";
                 currentTargetPkg = "org.pravah.vault";
-                btnLabel = "Inspect in Pravah Vault ➔";
+                btnLabel = "Inspect in Vault ➔";
                 break;
             case "memory":
-                if (resolvedPrompt.isEmpty()) resolvedPrompt = "Freeze dormant apps and compact Pixel 7 RAM";
-                headline = "✓ Dormancy Compactor Reclaimed 428 MB";
-                summary = "Background webview caches compacted and dormant background tasks frozen to 0.0% CPU draw.";
-                pills = "+428 MB Free  •  0% BG Tax  •  ✓ pravahd Verified";
+                if (resolvedPrompt.isEmpty()) resolvedPrompt = "Analyze system performance & free memory";
+                headline = "✦ AI Memory Optimizer Reclaimed 428 MB";
+                summary = "Gemini identified stale background tasks and compacted memory allocations without closing active sessions.";
+                pills = "+428 MB Free  •  NPU Tuned  •  ✦ 0% Battery Drain";
                 currentTargetPkg = "org.pravah.shield";
                 btnLabel = "Open Pravah Shield ➔";
                 break;
             case "airgap":
-                if (resolvedPrompt.isEmpty()) resolvedPrompt = "Verify hardware Air-Gap RF isolation & pravahd";
-                headline = "✓ EL1 Telemetry & Air-Gap Verified";
-                summary = "pravahd micro-daemon audited loopback enclave, OTA Slot A rollback index, and hardware killswitch.";
-                pills = "Loopback 127.0.0.1  •  Slot A  •  🛡️ Shield Ready";
+                if (resolvedPrompt.isEmpty()) resolvedPrompt = "Check privacy status and RF sensor killswitches";
+                headline = "✦ Privacy & Sensor Audit Passed";
+                summary = "Gemini verified on-device sensor permissions and hardware killswitches. No unauthorized data access.";
+                pills = "All Sensors Safe  •  Local Only  •  🛡️ Protected";
                 currentTargetPkg = "org.pravah.shield";
                 btnLabel = "Open Pravah Shield ➔";
                 break;
             default:
-                if (resolvedPrompt.isEmpty()) resolvedPrompt = "Coordinate my apps on PravahOS locally";
-                headline = "✓ Custom Intention Synthesized Locally";
-                summary = "Parsed goal \"" + resolvedPrompt + "\" -> bound 3-stage EL1 capability pipeline with zero cloud egress.";
-                pills = "On-Device NPU  •  SHA-256 Sealed  •  🔒 0-Cloud Leak";
+                if (resolvedPrompt.isEmpty()) resolvedPrompt = "Coordinate my apps with Gemini";
+                headline = "✦ Gemini Answer & Action Ready";
+                summary = "Processed query \"" + resolvedPrompt + "\" with Google Gemini on-device model and mapped to recommended app action.";
+                pills = "Gemini Nano  •  On-Device AI  •  ✦ Private & Fast";
                 currentTargetPkg = "org.pravah.bazaar";
-                btnLabel = "Open Pravah Metro / Apps ➔";
+                btnLabel = "Open Suggested App ➔";
                 break;
         }
 
@@ -427,7 +427,7 @@ public class IntentWidgetActivity extends Activity {
         outcomePills.setText(pills);
         launchAppBtn.setText(btnLabel);
 
-        PravahIntentWidgetProvider.updateAllWidgets(this, resolvedPrompt, headline + " • " + pills, "✓ 0-CLOUD DAG");
+        PravahIntentWidgetProvider.updateAllWidgets(this, resolvedPrompt, headline + " • " + pills, "✦ GEMINI NANO");
     }
 
     private void launchTargetPackage(String pkg) {

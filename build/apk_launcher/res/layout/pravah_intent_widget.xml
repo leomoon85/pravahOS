@@ -22,8 +22,8 @@
             android:paddingTop="2dp"
             android:paddingRight="8dp"
             android:paddingBottom="2dp"
-            android:text="✓ 0-CLOUD DAG"
-            android:textColor="#4ADE80"
+            android:text="✦ GEMINI ON-DEVICE"
+            android:textColor="#38BDF8"
             android:textSize="10sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -48,7 +48,7 @@
             android:layout_weight="1"
             android:ellipsize="end"
             android:singleLine="true"
-            android:text="Ask anything, or tap a goal below..."
+            android:text="Ask Gemini anything, or tap an action..."
             android:textColor="#E2E8F0"
             android:textSize="13sp" />
 
@@ -62,7 +62,7 @@
             android:paddingTop="4dp"
             android:paddingRight="10dp"
             android:paddingBottom="4dp"
-            android:text="Ask ✦"
+            android:text="Gemini ✦"
             android:textColor="#7DD3FC"
             android:textSize="12sp"
             android:textStyle="bold" />
