@@ -3,6 +3,9 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   DrawerState,
@@ -505,5 +508,18 @@ test('VistaTheme: LivingDrawer setVistaTheme switches white, black, wallpaper, a
     assert.equal(drawer.toggleVistaThemePopover(), false);
   } finally {
     drawer.stopLiveTickers();
+  }
+});
+
+test('VistaTheme: drawer.css synchronizes Intention Widget and children across black, white, wallpaper, and custom themes', () => {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const css = fs.readFileSync(path.join(__dirname, '../shell/drawer.css'), 'utf8');
+
+  for (const modeClass of ['vista-bg-black', 'vista-bg-white', 'vista-bg-wallpaper', 'vista-bg-custom']) {
+    assert.ok(css.includes(`.living-drawer.${modeClass} .vista-intent-widget`), `Missing .vista-intent-widget rule for ${modeClass}`);
+    assert.ok(css.includes(`.living-drawer.${modeClass} .vista-intent-input-row`), `Missing .vista-intent-input-row rule for ${modeClass}`);
+    assert.ok(css.includes(`.living-drawer.${modeClass} .vista-intent-chip`), `Missing .vista-intent-chip rule for ${modeClass}`);
+    assert.ok(css.includes(`.living-drawer.${modeClass} .vista-dag-step`), `Missing .vista-dag-step rule for ${modeClass}`);
+    assert.ok(css.includes(`.living-drawer.${modeClass} .vista-intent-outcome`), `Missing .vista-intent-outcome rule for ${modeClass}`);
   }
 });

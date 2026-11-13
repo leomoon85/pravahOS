@@ -99,6 +99,7 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         overridePendingTransition(0, 0);
+        PravahIntentWidgetProvider.refreshAllWidgets(this);
         if (pageLoaded && webView != null) {
             expandDrawer();
         }
@@ -121,8 +122,9 @@ public class MainActivity extends Activity {
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        PravahIntentWidgetProvider.refreshAllWidgets(this);
         if (pageLoaded && webView != null && newConfig != null) {
-            boolean isNight = (newConfig.uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+            boolean isNight = isSystemNightMode();
             final String sysTheme = isNight ? "dark" : "light";
             webView.evaluateJavascript(
                 "if (window.livingDrawer && window.livingDrawer.onSystemThemeChanged) { window.livingDrawer.onSystemThemeChanged('" + sysTheme + "'); }",
@@ -246,6 +248,7 @@ public class MainActivity extends Activity {
                 .putString("mode", mode != null ? mode : "system")
                 .putString("custom_color", customColor != null ? customColor : "#0b2847")
                 .apply();
+            PravahIntentWidgetProvider.refreshAllWidgets(MainActivity.this);
         }
 
         @JavascriptInterface

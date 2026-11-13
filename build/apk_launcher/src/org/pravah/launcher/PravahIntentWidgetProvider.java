@@ -1,19 +1,31 @@
 package org.pravah.launcher;
 
 import android.app.PendingIntent;
+import android.app.UiModeManager;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
+import android.graphics.Color;
 import android.widget.RemoteViews;
 
 public class PravahIntentWidgetProvider extends AppWidgetProvider {
     private static final String PREFS_NAME = "pravah_intent_widget_prefs";
+    private static final String VISTA_PREFS_NAME = "pravah_vista_theme";
     private static final String KEY_PROMPT = "last_prompt";
     private static final String KEY_OUTCOME = "last_outcome";
     private static final String KEY_BADGE = "last_badge";
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        super.onReceive(context, intent);
+        if (intent != null && Intent.ACTION_CONFIGURATION_CHANGED.equals(intent.getAction())) {
+            refreshAllWidgets(context);
+        }
+    }
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
@@ -26,6 +38,36 @@ public class PravahIntentWidgetProvider extends AppWidgetProvider {
             RemoteViews views = buildRemoteViews(context, prompt, outcome, badge);
             appWidgetManager.updateAppWidget(appWidgetId, views);
         }
+    }
+
+    public static void refreshAllWidgets(Context context) {
+        if (context == null) return;
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        String prompt = prefs.getString(KEY_PROMPT, "Ask anything, or tap a goal below...");
+        String outcome = prefs.getString(KEY_OUTCOME, "Ready: Flight AI-202 • Gate 14B • 0-Cloud Enclave");
+        String badge = prefs.getString(KEY_BADGE, "✓ 0-CLOUD DAG");
+        updateAllWidgets(context, prompt, outcome, badge);
+    }
+
+    public static boolean isLightTheme(Context context) {
+        if (context == null) return false;
+        SharedPreferences vistaPrefs = context.getSharedPreferences(VISTA_PREFS_NAME, Context.MODE_PRIVATE);
+        String mode = vistaPrefs.getString("mode", "system");
+        if ("white".equalsIgnoreCase(mode)) return true;
+        if ("black".equalsIgnoreCase(mode) || "custom".equalsIgnoreCase(mode) || "wallpaper".equalsIgnoreCase(mode)) {
+            return false;
+        }
+        try {
+            UiModeManager uiManager = (UiModeManager) context.getSystemService(Context.UI_MODE_SERVICE);
+            if (uiManager != null && uiManager.getNightMode() == UiModeManager.MODE_NIGHT_YES) {
+                return false;
+            }
+            if (uiManager != null && uiManager.getNightMode() == UiModeManager.MODE_NIGHT_NO) {
+                return true;
+            }
+        } catch (Exception ignored) {}
+        int nightMask = context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        return nightMask != Configuration.UI_MODE_NIGHT_YES;
     }
 
     public static void updateAllWidgets(Context context, String promptText, String outcomeText, String badgeText) {
@@ -57,9 +99,34 @@ public class PravahIntentWidgetProvider extends AppWidgetProvider {
 
     private static RemoteViews buildRemoteViews(Context context, String prompt, String outcome, String badge) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.pravah_intent_widget);
+        boolean light = isLightTheme(context);
+
         views.setTextViewText(R.id.widget_prompt_text, prompt);
         views.setTextViewText(R.id.widget_outcome_text, outcome);
         views.setTextViewText(R.id.widget_status_badge, badge);
+
+        views.setInt(R.id.widget_root_card, "setBackgroundResource",
+                light ? R.drawable.bg_intent_widget_light : R.drawable.bg_intent_widget);
+        views.setInt(R.id.widget_prompt_bar, "setBackgroundResource",
+                light ? R.drawable.bg_intent_bar_light : R.drawable.bg_intent_bar);
+
+        int chipBg = light ? R.drawable.bg_intent_chip_light : R.drawable.bg_intent_chip;
+        views.setInt(R.id.widget_status_badge, "setBackgroundResource", chipBg);
+        views.setInt(R.id.widget_btn_ask, "setBackgroundResource", chipBg);
+        views.setInt(R.id.widget_chip_flight, "setBackgroundResource", chipBg);
+        views.setInt(R.id.widget_chip_note, "setBackgroundResource", chipBg);
+        views.setInt(R.id.widget_chip_usdc, "setBackgroundResource", chipBg);
+        views.setInt(R.id.widget_chip_ram, "setBackgroundResource", chipBg);
+
+        views.setTextColor(R.id.widget_status_badge, Color.parseColor(light ? "#15803D" : "#4ADE80"));
+        views.setTextColor(R.id.widget_prompt_text, Color.parseColor(light ? "#0F172A" : "#E2E8F0"));
+        views.setTextColor(R.id.widget_btn_ask, Color.parseColor(light ? "#0369A1" : "#38BDF8"));
+        int chipTextColor = Color.parseColor(light ? "#1E293B" : "#E2E8F0");
+        views.setTextColor(R.id.widget_chip_flight, chipTextColor);
+        views.setTextColor(R.id.widget_chip_note, chipTextColor);
+        views.setTextColor(R.id.widget_chip_usdc, chipTextColor);
+        views.setTextColor(R.id.widget_chip_ram, chipTextColor);
+        views.setTextColor(R.id.widget_outcome_text, Color.parseColor(light ? "#334155" : "#94A3B8"));
 
         PendingIntent openComposer = createScenarioIntent(context, 100, "");
         views.setOnClickPendingIntent(R.id.widget_prompt_bar, openComposer);
