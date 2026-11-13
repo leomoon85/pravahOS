@@ -1861,11 +1861,21 @@
   text-transform: uppercase;
 }
 
+.vista-tile-text-col {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .vista-tile-title {
   position: relative;
   z-index: 2;
   margin-top: 0;
-  font-size: 0.86rem;
+  font-size: 0.84rem;
   font-weight: 700;
   color: #f8fcff;
   white-space: nowrap;
@@ -1878,11 +1888,36 @@
 .vista-tile-sub {
   position: relative;
   z-index: 2;
-  font-size: 0.64rem;
-  color: rgba(198, 232, 252, 0.8);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: rgba(198, 232, 252, 0.85);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.vista-glass-tile.vista-tile-recent .vista-tile-sub {
+  color: #4ade80;
+}
+
+.vista-glass-tile.vista-tile-learned .vista-tile-sub {
+  color: #fbbf24;
+}
+
+.vista-glass-tile.vista-tile-related .vista-tile-sub {
+  color: #7dd3fc;
+}
+
+.living-drawer.vista-bg-white .vista-glass-tile.vista-tile-recent .vista-tile-sub {
+  color: #15803d !important;
+}
+
+.living-drawer.vista-bg-white .vista-glass-tile.vista-tile-learned .vista-tile-sub {
+  color: #b45309 !important;
+}
+
+.living-drawer.vista-bg-white .vista-glass-tile.vista-tile-related .vista-tile-sub {
+  color: #0369a1 !important;
 }
 
 .metro-app-icon-box.has-native-icon {

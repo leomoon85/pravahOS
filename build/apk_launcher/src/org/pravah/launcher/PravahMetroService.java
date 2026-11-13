@@ -15,7 +15,12 @@ public class PravahMetroService extends AccessibilityService {
         }
 
         CharSequence pkg = event.getPackageName();
-        if (pkg == null || !"com.google.android.apps.nexuslauncher".equals(pkg.toString())) {
+        if (pkg == null) {
+            return;
+        }
+        String pkgStr = pkg.toString();
+        if (!"com.google.android.apps.nexuslauncher".equals(pkgStr)) {
+            AppUsageTracker.recordAppLaunch(this, pkgStr);
             return;
         }
 

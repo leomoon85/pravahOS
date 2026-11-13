@@ -138,7 +138,7 @@ public class MainActivity extends Activity {
         webView.evaluateJavascript(
             "setTimeout(function() { " +
             "if (typeof document !== 'undefined' && document.body) { document.body.classList.add('native-metro-mode'); } " +
-            "if (window.livingDrawer) { window.livingDrawer.expand(); window.livingDrawer.syncSystemTheme && window.livingDrawer.syncSystemTheme(); window.livingDrawer.syncNativeTelemetry && window.livingDrawer.syncNativeTelemetry(); } " +
+            "if (window.livingDrawer) { window.livingDrawer.expand(); window.livingDrawer.syncSystemTheme && window.livingDrawer.syncSystemTheme(); window.livingDrawer.syncRecentAndRelatedApps && window.livingDrawer.syncRecentAndRelatedApps(); window.livingDrawer.syncNativeTelemetry && window.livingDrawer.syncNativeTelemetry(); } " +
             "else if (window.toggleLivingDrawer) { window.toggleLivingDrawer(true); } " +
             "}, 150);",
             null
@@ -252,8 +252,19 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public String getAppUsageState() {
+            return AppUsageTracker.getUsageStateJson(MainActivity.this);
+        }
+
+        @JavascriptInterface
+        public void recordAppAction(String packageName) {
+            AppUsageTracker.recordAppLaunch(MainActivity.this, packageName);
+        }
+
+        @JavascriptInterface
         public void launchApp(String packageName) {
             if (packageName == null || packageName.isEmpty()) return;
+            AppUsageTracker.recordAppLaunch(MainActivity.this, packageName);
             PackageManager pm = getPackageManager();
             Intent intent = pm.getLaunchIntentForPackage(packageName);
             if (intent != null) {

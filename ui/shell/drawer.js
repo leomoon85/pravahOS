@@ -623,6 +623,187 @@ export function resolveVistaBackgroundState(config = {}, fallbackSystemTheme = '
 }
 
 // ============================================================================
+// Pixel-Inspired Recent & Action-Learned Related Apps Prediction Engine
+// ============================================================================
+
+export const DEFAULT_APP_RELATIONS = {
+  // Camera <-> Media & Notes
+  'com.android.camera2': ['com.google.android.apps.photos', 'org.pravah.aurora', 'com.google.android.apps.messaging', 'com.google.android.gm', 'com.google.android.apps.nbu.files'],
+  'com.google.android.apps.photos': ['com.android.camera2', 'org.pravah.aurora', 'com.google.android.apps.messaging', 'com.google.android.gm', 'com.google.android.apps.nbu.files'],
+  // Privacy, Finance & Vault
+  'org.pravah.vault': ['org.pravah.shield', 'org.pravah.aurora', 'com.google.android.calculator', 'com.android.calculator2', 'org.pravah.store'],
+  'org.pravah.shield': ['org.pravah.vault', 'com.android.settings', 'org.pravah.store', 'com.android.chrome', 'org.pravah.aurora'],
+  'org.pravah.store': ['org.pravah.shield', 'org.pravah.vault', 'org.pravah.aurora', 'com.android.chrome', 'com.google.android.apps.nbu.files'],
+  'org.pravah.aurora': ['com.android.camera2', 'com.google.android.apps.photos', 'com.google.android.calendar', 'com.google.android.gm', 'org.pravah.vault'],
+  // Productivity, Comms & Travel
+  'com.google.android.gm': ['com.google.android.calendar', 'com.android.chrome', 'com.google.android.apps.nbu.files', 'org.pravah.aurora', 'com.google.android.apps.messaging'],
+  'com.google.android.calendar': ['com.google.android.gm', 'com.google.android.deskclock', 'com.google.android.apps.maps', 'org.pravah.aurora', 'com.google.android.apps.messaging'],
+  'com.google.android.apps.messaging': ['com.google.android.dialer', 'com.google.android.contacts', 'com.google.android.apps.photos', 'com.android.camera2', 'org.pravah.vault'],
+  'com.google.android.dialer': ['com.google.android.contacts', 'com.google.android.apps.messaging', 'com.google.android.calendar', 'com.google.android.apps.maps'],
+  'com.google.android.contacts': ['com.google.android.dialer', 'com.google.android.apps.messaging', 'com.google.android.gm'],
+  // Browser, Maps & Entertainment
+  'com.android.chrome': ['org.pravah.shield', 'com.google.android.gm', 'com.google.android.youtube', 'org.pravah.aurora', 'com.google.android.apps.maps'],
+  'com.google.android.apps.maps': ['com.google.android.calendar', 'com.android.chrome', 'com.android.camera2', 'com.google.android.dialer', 'com.google.android.apps.messaging'],
+  'com.google.android.youtube': ['com.google.android.ytmusic', 'com.android.chrome', 'com.google.android.apps.photos'],
+  'com.android.settings': ['org.pravah.shield', 'org.pravah.vault', 'com.google.android.apps.nbu.files'],
+  // Built-in / Headless fallback IDs
+  camera_pro: ['files', 'calculator', 'clock'],
+  vault: ['shield', 'whatsapp', 'calculator', 'notes', 'files'],
+  shield: ['vault', 'settings', 'bazaar', 'chrome'],
+  whatsapp: ['contacts', 'phone', 'photos', 'camera'],
+  spotify: ['youtube', 'maps', 'clock']
+};
+
+function getAppKey(app) {
+  return app?.pkg || app?.id || '';
+}
+
+function shortAppLabel(app) {
+  const name = String(app?.name || 'App').trim();
+  return name.length > 13 ? `${name.slice(0, 12)}…` : name;
+}
+
+/**
+ * Pure helper: records an app open action and learns prevApp -> appKey transitions.
+ */
+export function recordUserAppAction(state, appKey, timestamp = Date.now()) {
+  const base = state && typeof state === 'object' ? state : {};
+  const recent = Array.isArray(base.recent) ? [...base.recent] : [];
+  const transitions = base.transitions && typeof base.transitions === 'object'
+    ? JSON.parse(JSON.stringify(base.transitions))
+    : {};
+  const prevKey = base.lastKey || base.lastPkg || '';
+  const prevTs = Number(base.lastTs || 0);
+
+  if (!appKey) {
+    return { lastKey: prevKey, lastTs: prevTs, recent, transitions };
+  }
+
+  if (appKey === prevKey && Math.abs(timestamp - prevTs) < 1500) {
+    return { lastKey: prevKey, lastTs: prevTs, recent, transitions };
+  }
+
+  if (prevKey && prevKey !== appKey) {
+    if (!transitions[prevKey]) transitions[prevKey] = {};
+    transitions[prevKey][appKey] = (transitions[prevKey][appKey] || 0) + 1;
+  }
+
+  const prevEntry = recent.find((r) => (r.key || r.pkg) === appKey);
+  const filtered = recent.filter((r) => (r.key || r.pkg) !== appKey);
+  const updated = [
+    { key: appKey, pkg: appKey, ts: timestamp, count: (prevEntry?.count || 0) + 1 },
+    ...filtered
+  ].slice(0, 20);
+
+  return {
+    lastKey: appKey,
+    lastPkg: appKey,
+    lastTs: timestamp,
+    recent: updated,
+    transitions
+  };
+}
+
+/**
+ * Computes the 6 Vista Glass tiles combining Recently Used Apps and
+ * Action-Learned + Workflow-Related Apps for the most recently opened app.
+ */
+export function computeRecentAndRelatedApps(apps = [], usageState = {}, maxTiles = 6) {
+  if (!Array.isArray(apps) || apps.length === 0) return [];
+
+  const appByKey = new Map();
+  for (const app of apps) {
+    const k = getAppKey(app);
+    if (k && !appByKey.has(k)) appByKey.set(k, app);
+  }
+
+  const recentRecords = Array.isArray(usageState?.recent) ? usageState.recent : [];
+  const transitions = usageState?.transitions && typeof usageState.transitions === 'object'
+    ? usageState.transitions
+    : {};
+
+  const result = [];
+  const usedKeys = new Set();
+
+  // 1. Pick up to 3 most recently used apps
+  const maxRecentSlots = recentRecords.length > 0 ? Math.min(3, Math.max(1, Math.floor(maxTiles / 2))) : 0;
+  for (const rec of recentRecords) {
+    if (result.length >= maxRecentSlots) break;
+    const key = rec?.key || rec?.pkg || '';
+    const app = appByKey.get(key);
+    if (!app || usedKeys.has(key)) continue;
+    usedKeys.add(key);
+    const isLatest = result.length === 0;
+    result.push({
+      app,
+      role: 'recent',
+      reason: isLatest ? '↺ Just opened' : '↺ Recently used'
+    });
+  }
+
+  // 2. Determine focus app (most recently opened) for Related / Next-App Predictions
+  const focusEntry = result[0]?.app || appByKey.get(usageState?.lastKey || usageState?.lastPkg || '') || null;
+  const focusKey = focusEntry ? getAppKey(focusEntry) : '';
+  const focusLabel = focusEntry ? shortAppLabel(focusEntry) : '';
+  const semanticList = focusKey && Array.isArray(DEFAULT_APP_RELATIONS[focusKey])
+    ? DEFAULT_APP_RELATIONS[focusKey]
+    : [];
+  const focusTags = new Set(Array.isArray(focusEntry?.tags) ? focusEntry.tags.filter(t => t && t !== 'android' && t !== 'apk') : []);
+
+  // 3. Score remaining candidates by Learned Transition Counts + Semantic Workflow Affinity
+  const candidates = [];
+  for (let i = 0; i < apps.length; i++) {
+    const app = apps[i];
+    const key = getAppKey(app);
+    if (!key || usedKeys.has(key)) continue;
+
+    const forwardCount = focusKey ? Number(transitions[focusKey]?.[key] || 0) : 0;
+    const reverseCount = focusKey ? Number(transitions[key]?.[focusKey] || 0) : 0;
+    const semanticIdx = semanticList.indexOf(key);
+    const semanticScore = semanticIdx >= 0 ? (60 - semanticIdx * 10) : 0;
+
+    let tagOverlap = 0;
+    if (focusEntry && focusTags.size > 0 && Array.isArray(app.tags)) {
+      for (const t of app.tags) {
+        if (focusTags.has(t)) tagOverlap++;
+      }
+    }
+    const sameCategoryBonus = (focusEntry && app.category && app.category === focusEntry.category) ? 8 : 0;
+    const pravahBonus = app.isPravah ? 4 : 0;
+
+    const totalScore = (forwardCount * 100) + (reverseCount * 25) + semanticScore + (tagOverlap * 15) + sameCategoryBonus + pravahBonus;
+
+    let role = 'related';
+    let reason = '✨ Suggested';
+    if (focusEntry) {
+      if (forwardCount > 0) {
+        role = 'learned';
+        reason = `⚡ Opened after ${focusLabel}`;
+      } else if (semanticIdx >= 0 || tagOverlap > 0) {
+        role = 'related';
+        reason = `🔗 Related to ${focusLabel}`;
+      }
+    }
+
+    candidates.push({ app, key, score: totalScore, order: i, role, reason });
+  }
+
+  candidates.sort((a, b) => (b.score - a.score) || (a.order - b.order));
+
+  for (const cand of candidates) {
+    if (result.length >= maxTiles) break;
+    usedKeys.add(cand.key);
+    result.push({
+      app: cand.app,
+      role: cand.role,
+      reason: cand.reason
+    });
+  }
+
+  return result;
+}
+
+// ============================================================================
 // Ephemeral Zero-Tax Window Manager
 // ============================================================================
 
@@ -901,6 +1082,7 @@ export class LivingDrawer {
     this.activeFastJump = false;
     this.vistaTheme = this._loadInitialVistaTheme(options.vistaTheme);
     this.vistaThemeOpen = false;
+    this.usageState = this._loadInitialUsageState(options.usageState);
 
     // Callbacks
     this.onLaunchApp = options.onLaunchApp || null;
@@ -1011,6 +1193,7 @@ export class LivingDrawer {
 
       if (nativeApps.length > 0) {
         this.apps = nativeApps;
+        this.syncRecentAndRelatedApps();
         if (this.container) {
           this.refreshList();
           const tilesGrid = this.container.querySelector('.live-tiles-grid');
@@ -1370,59 +1553,101 @@ export class LivingDrawer {
           </div>
         </div>
       </div>
-      ${this._renderVistaGlassPinnedTilesHtml()}
+      ${this._renderVistaGlassRecentAndRelatedTilesHtml()}
     `;
   }
 
-  /**
-   * Generates Windows Vista Aero Glass Pinned App Tiles using real Android app icons.
-   */
-  _renderVistaGlassPinnedTilesHtml() {
-    const nativeApps = this.apps.filter(a => a.launchType === 'native_apk' && a.pkg);
-    const priorityOrder = [
-      'org.pravah.shield',
-      'org.pravah.vault',
-      'org.pravah.store',
-      'org.pravah.aurora',
-      'com.android.chrome',
-      'com.google.android.gm',
-      'com.google.android.youtube',
-      'com.google.android.apps.photos',
-      'com.google.android.apps.maps',
-      'com.android.camera2',
-      'com.google.android.dialer',
-      'com.google.android.apps.messaging',
-      'com.android.settings',
-      'com.google.android.deskclock',
-      'com.google.android.calendar',
-      'com.google.android.apps.nbu.files'
-    ];
-
-    let pinned = [];
-    if (nativeApps.length > 0) {
-      for (const pkg of priorityOrder) {
-        const match = nativeApps.find(a => a.pkg === pkg);
-        if (match) pinned.push(match);
-      }
-      for (const app of nativeApps) {
-        if (pinned.length >= 12) break;
-        if (!pinned.some(p => p.pkg === app.pkg)) {
-          pinned.push(app);
+  _loadInitialUsageState(override) {
+    const empty = { lastKey: '', lastPkg: '', lastTs: 0, recent: [], transitions: {} };
+    if (override && typeof override === 'object') {
+      return { ...empty, ...override };
+    }
+    try {
+      if (typeof window !== 'undefined' && window.PravahNative?.getAppUsageState) {
+        const raw = window.PravahNative.getAppUsageState();
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed.recent)) {
+            return { ...empty, ...parsed };
+          }
         }
       }
-    } else {
-      pinned = this.apps.slice(0, 8);
-    }
+      if (typeof localStorage !== 'undefined') {
+        const saved = localStorage.getItem('pravah_app_predictor');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && Array.isArray(parsed.recent)) {
+            return { ...empty, ...parsed };
+          }
+        }
+      }
+    } catch (_) {}
+    return empty;
+  }
 
-    return pinned.map(app => `
-      <div class="vista-glass-tile ${app.isPravah ? 'vista-tile-pravah' : ''}" data-app-id="${app.id}" data-pkg="${app.pkg || ''}">
+  syncRecentAndRelatedApps() {
+    try {
+      if (typeof window !== 'undefined' && window.PravahNative?.getAppUsageState) {
+        const raw = window.PravahNative.getAppUsageState();
+        if (raw) {
+          const nativeState = JSON.parse(raw);
+          if (nativeState && Array.isArray(nativeState.recent) && nativeState.recent.length > 0) {
+            this.usageState = {
+              lastKey: nativeState.lastKey || nativeState.lastPkg || '',
+              lastPkg: nativeState.lastPkg || nativeState.lastKey || '',
+              lastTs: Number(nativeState.lastTs || 0),
+              recent: nativeState.recent,
+              transitions: nativeState.transitions || {}
+            };
+          }
+        }
+      }
+    } catch (_) {}
+    this._refreshVistaGlassTiles();
+    return this.usageState;
+  }
+
+  recordAppOpen(appKey) {
+    if (!appKey) return this.usageState;
+    this.usageState = recordUserAppAction(this.usageState, appKey, Date.now());
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('pravah_app_predictor', JSON.stringify(this.usageState));
+      }
+    } catch (_) {}
+    if (typeof window !== 'undefined' && window.PravahNative?.recordAppAction) {
+      window.PravahNative.recordAppAction(appKey);
+    }
+    this._refreshVistaGlassTiles();
+    return this.usageState;
+  }
+
+  _refreshVistaGlassTiles() {
+    if (!this.container) return;
+    const tilesGrid = this.container.querySelector('.live-tiles-grid');
+    if (tilesGrid) {
+      tilesGrid.innerHTML = this._renderLiveTilesHtml();
+      this._bindLiveTileEvents();
+    }
+  }
+
+  /**
+   * Generates Pixel-inspired Recent & Action-Learned Related Apps as Vista Glass tiles.
+   */
+  _renderVistaGlassRecentAndRelatedTilesHtml() {
+    const suggestions = computeRecentAndRelatedApps(this.apps, this.usageState, 6);
+    return suggestions.map(({ app, role, reason }) => `
+      <div class="vista-glass-tile ${app.isPravah ? 'vista-tile-pravah' : ''} vista-tile-${role}" data-app-id="${app.id}" data-pkg="${app.pkg || ''}" data-role="${role}">
         <div class="vista-aero-reflection" aria-hidden="true"></div>
         <div class="vista-tile-icon-wrap">
           ${app.iconDataUri
             ? `<img class="vista-tile-icon-img" src="${app.iconDataUri}" alt="${app.name}" />`
             : `<span class="vista-tile-glyph">${app.icon || '✧'}</span>`}
         </div>
-        <div class="vista-tile-title">${app.name}</div>
+        <div class="vista-tile-text-col">
+          <div class="vista-tile-title">${app.name}</div>
+          <div class="vista-tile-sub">${reason}</div>
+        </div>
       </div>
     `).join('');
   }
@@ -1800,6 +2025,9 @@ export class LivingDrawer {
     const launchBtn = this.container.querySelector('#btn-intent-launch-target');
     launchBtn?.addEventListener('click', () => {
       const pkg = launchBtn.getAttribute('data-target-pkg');
+      if (pkg) {
+        this.recordAppOpen(pkg);
+      }
       if (pkg && typeof window !== 'undefined' && window.PravahNative?.launchApp) {
         window.PravahNative.launchApp(pkg);
       }
@@ -2029,6 +2257,8 @@ export class LivingDrawer {
     if (this.onLaunchApp) {
       this.onLaunchApp(app, app.launchType);
     }
+
+    this.recordAppOpen(app.pkg || app.id);
 
     if (app.launchType === 'native_apk' && app.pkg) {
       try {

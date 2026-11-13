@@ -55,9 +55,10 @@ foreach ($Apk in $Apks) {
     & $AdbExe install -r -g $Apk
 }
 
-Write-Host "`n>>> [4/5] Enabling native PravahMetroService Accessibility Swipe Bridge..." -ForegroundColor Cyan
+Write-Host "`n>>> [4/5] Enabling native PravahMetroService Accessibility Swipe Bridge & AOSP Usage Prediction..." -ForegroundColor Cyan
 & $AdbExe shell "settings put secure enabled_accessibility_services org.pravah.launcher/org.pravah.launcher.PravahMetroService"
 & $AdbExe shell "settings put secure accessibility_enabled 1"
+& $AdbExe shell "appops set org.pravah.launcher GET_USAGE_STATS allow"
 
 Write-Host ">>> [5/5] Locking authentic Google Pixel Launcher as primary home desktop..." -ForegroundColor Cyan
 & $AdbExe shell "cmd package set-home-activity 'com.google.android.apps.nexuslauncher/.NexusLauncherActivity'"

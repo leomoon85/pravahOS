@@ -19,7 +19,10 @@ import {
   EphemeralWindowManager,
   LivingDrawer,
   synthesizeIntentionOutcome,
-  resolveVistaBackgroundState
+  resolveVistaBackgroundState,
+  DEFAULT_APP_RELATIONS,
+  recordUserAppAction,
+  computeRecentAndRelatedApps
 } from '../shell/drawer.js';
 
 // Minimal DOM Mock Container for Headless Testing
@@ -521,5 +524,77 @@ test('VistaTheme: drawer.css synchronizes Intention Widget and children across b
     assert.ok(css.includes(`.living-drawer.${modeClass} .vista-intent-chip`), `Missing .vista-intent-chip rule for ${modeClass}`);
     assert.ok(css.includes(`.living-drawer.${modeClass} .vista-dag-step`), `Missing .vista-dag-step rule for ${modeClass}`);
     assert.ok(css.includes(`.living-drawer.${modeClass} .vista-intent-outcome`), `Missing .vista-intent-outcome rule for ${modeClass}`);
+  }
+});
+
+// ============================================================================
+// 8. Recent & Action-Learned Related Apps Prediction Engine Tests
+// ============================================================================
+
+test('AppPredictor: recordUserAppAction builds MRU history and learns App A -> App B transitions', () => {
+  let state = { lastKey: '', lastTs: 0, recent: [], transitions: {} };
+  state = recordUserAppAction(state, 'com.android.camera2', 10000);
+  state = recordUserAppAction(state, 'org.pravah.aurora', 15000);
+  state = recordUserAppAction(state, 'com.android.camera2', 20000);
+  state = recordUserAppAction(state, 'org.pravah.aurora', 25000);
+
+  assert.equal(state.lastKey, 'org.pravah.aurora');
+  assert.equal(state.recent[0].key, 'org.pravah.aurora');
+  assert.equal(state.recent[1].key, 'com.android.camera2');
+  assert.equal(state.transitions['com.android.camera2']['org.pravah.aurora'], 2);
+});
+
+test('AppPredictor: computeRecentAndRelatedApps surfaces Just Opened + Workflow Related + Learned Transitions', () => {
+  const sampleApps = [
+    { id: 'apk_cam', pkg: 'com.android.camera2', name: 'Camera', category: 'Android Native App', launchType: 'native_apk', tags: ['camera'] },
+    { id: 'apk_photos', pkg: 'com.google.android.apps.photos', name: 'Photos', category: 'Android Native App', launchType: 'native_apk', tags: ['photos'] },
+    { id: 'apk_aurora', pkg: 'org.pravah.aurora', name: 'Aurora Notes', category: 'PravahOS Native Zero-Tax APK', isPravah: true, launchType: 'native_apk', tags: ['notes'] },
+    { id: 'apk_vault', pkg: 'org.pravah.vault', name: 'Pravah Vault', category: 'PravahOS Native Zero-Tax APK', isPravah: true, launchType: 'native_apk', tags: ['vault'] },
+    { id: 'apk_shield', pkg: 'org.pravah.shield', name: 'Pravah Shield', category: 'PravahOS Native Zero-Tax APK', isPravah: true, launchType: 'native_apk', tags: ['shield'] },
+    { id: 'apk_calc', pkg: 'com.google.android.calculator', name: 'Calculator', category: 'Android Native App', launchType: 'native_apk', tags: ['calc'] },
+    { id: 'apk_yt', pkg: 'com.google.android.youtube', name: 'YouTube', category: 'Android Native App', launchType: 'native_apk', tags: ['video'] }
+  ];
+
+  // Open Camera once -> Camera becomes "Just opened" and Photos / Aurora Notes become "Related to Camera"
+  let usage = recordUserAppAction({}, 'com.android.camera2', 10000);
+  let picks = computeRecentAndRelatedApps(sampleApps, usage, 6);
+  assert.equal(picks.length, 6);
+  assert.equal(picks[0].app.pkg, 'com.android.camera2');
+  assert.equal(picks[0].reason, '↺ Just opened');
+  assert.ok(picks.slice(1).some(p => p.app.pkg === 'com.google.android.apps.photos' && p.reason.includes('Related to Camera')));
+
+  // Learn repeated action: Camera -> Calculator -> Camera
+  usage = recordUserAppAction(usage, 'com.google.android.calculator', 20000);
+  usage = recordUserAppAction(usage, 'com.android.camera2', 30000);
+  usage = recordUserAppAction(usage, 'com.google.android.calculator', 40000);
+  usage = recordUserAppAction(usage, 'com.android.camera2', 50000);
+
+  // Exclude calculator from top 3 recent by opening Chrome/Photos/Shield? Wait: calc is #2 recent here,
+  // so test with a fresh transition from Vault -> YouTube learned repeatedly!
+  let vUsage = recordUserAppAction({}, 'org.pravah.vault', 60000);
+  vUsage = recordUserAppAction(vUsage, 'com.google.android.youtube', 65000);
+  vUsage = recordUserAppAction(vUsage, 'org.pravah.vault', 70000);
+  vUsage = recordUserAppAction(vUsage, 'org.pravah.shield', 75000);
+  vUsage = recordUserAppAction(vUsage, 'com.google.android.apps.photos', 80000);
+  // Open Vault again -> top 3 recents are [Vault, Photos, Shield]; learned "Opened after Vault" YouTube must surface!
+  vUsage = recordUserAppAction(vUsage, 'org.pravah.vault', 90000);
+  const vPicks = computeRecentAndRelatedApps(sampleApps, vUsage, 6);
+  const ytPick = vPicks.find(p => p.app.pkg === 'com.google.android.youtube');
+  assert.ok(ytPick, 'Learned transition app YouTube should surface after Vault');
+  assert.equal(ytPick.role, 'learned');
+  assert.ok(ytPick.reason.includes('Opened after Pravah Vault'));
+});
+
+test('AppPredictor: LivingDrawer recordAppOpen dynamically refreshes Recent & Related Vista tiles', () => {
+  const container = new MockElement('living-drawer');
+  const drawer = new LivingDrawer({ container });
+  try {
+    drawer.recordAppOpen('camera_pro');
+    const html = drawer._renderVistaGlassRecentAndRelatedTilesHtml();
+    assert.ok(html.includes('vista-tile-recent'));
+    assert.ok(html.includes('Just opened'));
+    assert.ok(html.includes('vista-tile-related') || html.includes('vista-tile-learned'));
+  } finally {
+    drawer.stopLiveTickers();
   }
 });

@@ -432,6 +432,7 @@ public class IntentWidgetActivity extends Activity {
 
     private void launchTargetPackage(String pkg) {
         if (pkg == null || pkg.isEmpty()) return;
+        AppUsageTracker.recordAppLaunch(this, pkg);
         try {
             PackageManager pm = getPackageManager();
             Intent launch = pm.getLaunchIntentForPackage(pkg);
