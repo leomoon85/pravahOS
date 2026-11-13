@@ -900,6 +900,7 @@ export class LivingDrawer {
     this.searchQuery = '';
     this.activeFastJump = false;
     this.vistaTheme = this._loadInitialVistaTheme(options.vistaTheme);
+    this.vistaThemeOpen = false;
 
     // Callbacks
     this.onLaunchApp = options.onLaunchApp || null;
@@ -944,6 +945,10 @@ export class LivingDrawer {
     if (!this.container.querySelector('.drawer-scroll-body')) {
       this.render();
     } else {
+      const dragHeader = this.container.querySelector('#drawer-drag-header');
+      if (dragHeader && !this.container.querySelector('#btn-vista-theme-gear')) {
+        dragHeader.innerHTML = this._renderCompactHeaderInnerHtml();
+      }
       const scrollBody = this.container.querySelector('.drawer-scroll-body');
       if (scrollBody && typeof scrollBody.insertAdjacentHTML === 'function') {
         if (!this.container.querySelector('#vista-intent-widget')) {
@@ -994,7 +999,7 @@ export class LivingDrawer {
           isPravah,
           name: entry.label,
           category: isPravah ? 'PravahOS Native Zero-Tax APK' : 'Android Native App',
-          description: `${entry.pkg} • Direct Native Execution`,
+          description: '',
           icon: isPravah ? '🛡️' : '📱',
           iconDataUri: entry.icon || '',
           letter,
@@ -1071,28 +1076,35 @@ export class LivingDrawer {
   }
 
   /**
+   * Generates clean minimal header inner HTML (drag handle + Gear / Flip / Dismiss icon buttons).
+   */
+  _renderCompactHeaderInnerHtml() {
+    return `
+      <div class="drawer-handle-bar"></div>
+      <div class="drawer-header-actions">
+        <button class="drawer-icon-btn ${this.vistaThemeOpen ? 'active' : ''}" id="btn-vista-theme-gear" title="Vista Glass Theme &amp; Background" aria-label="Theme settings">⚙</button>
+        <button class="drawer-icon-btn" id="btn-flip-all" title="Flip live tiles">🔄</button>
+        <button class="drawer-btn-dismiss" id="btn-drawer-dismiss" title="Close Drawer">✕</button>
+      </div>
+    `;
+  }
+
+  /**
    * Main render pass.
    */
   render() {
     if (!this.container) return;
 
     this.container.innerHTML = `
-      <!-- Metro Drawer Handle & Header -->
+      <!-- Metro Drawer Handle & Compact Action Header -->
       <div class="drawer-drag-header" id="drawer-drag-header" title="Drag down to collapse">
-        <div class="drawer-handle-bar"></div>
-        <div class="drawer-header-meta">
-          <div class="drawer-brand">
-            <span class="drawer-logo">⊞</span>
-            <span class="drawer-title">Living Drawer</span>
-          </div>
-          <button class="drawer-btn-dismiss" id="btn-drawer-dismiss" title="Close Drawer">✕</button>
-        </div>
+        ${this._renderCompactHeaderInnerHtml()}
       </div>
 
       <!-- Scrollable Drawer Content Surface -->
       <div class="drawer-scroll-body" id="drawer-scroll-body">
 
-        <!-- Windows Vista Aero Glass Theme Selector -->
+        <!-- Windows Vista Aero Glass Theme Selector Pop-Up -->
         ${this._renderVistaThemeBarHtml()}
 
         <!-- Windows Vista Aero Glass Intention Capsule Widget -->
@@ -1100,10 +1112,6 @@ export class LivingDrawer {
 
         <!-- Top Section: Dynamic Glanceable Live Tiles -->
         <section class="drawer-live-tiles-section">
-          <div class="section-label-row">
-            <span class="section-title">GLANCEABLE LIVE TILES</span>
-            <button class="btn-flip-all" id="btn-flip-all" title="Flip all live tiles to reveal telemetry">🔄 Flip Tiles</button>
-          </div>
           <div class="live-tiles-grid" id="live-tiles-grid">
             ${this._renderLiveTilesHtml()}
           </div>
@@ -1111,10 +1119,7 @@ export class LivingDrawer {
 
         <!-- Bottom Section: Windows Phone / Metro Alphabetical A-Z List -->
         <section class="drawer-metro-list-section">
-          <div class="section-label-row">
-            <span class="section-title">CAPABILITY & APP CATALOG</span>
-            <span class="apps-count-badge" id="apps-count-badge">${this.apps.length} Capabilities</span>
-          </div>
+          <span class="apps-count-badge" id="apps-count-badge" style="display:none;">${this.apps.length} Capabilities</span>
 
           <!-- Instant Search Bar -->
           <div class="drawer-search-wrap">
@@ -1123,7 +1128,7 @@ export class LivingDrawer {
               type="text" 
               id="drawer-search-input" 
               class="drawer-search-input" 
-              placeholder="Search capabilities, apps, scenarios..."
+              placeholder="Search apps, actions, or goals..."
               value="${this.searchQuery}"
               autocomplete="off"
               spellcheck="false"
@@ -1412,16 +1417,12 @@ export class LivingDrawer {
     return pinned.map(app => `
       <div class="vista-glass-tile ${app.isPravah ? 'vista-tile-pravah' : ''}" data-app-id="${app.id}" data-pkg="${app.pkg || ''}">
         <div class="vista-aero-reflection" aria-hidden="true"></div>
-        <div class="vista-tile-top">
-          <div class="vista-tile-icon-wrap">
-            ${app.iconDataUri
-              ? `<img class="vista-tile-icon-img" src="${app.iconDataUri}" alt="${app.name}" />`
-              : `<span class="vista-tile-glyph">${app.icon || '✧'}</span>`}
-          </div>
-          <span class="vista-tile-badge">${app.isPravah ? 'PRAVAH' : 'AERO'}</span>
+        <div class="vista-tile-icon-wrap">
+          ${app.iconDataUri
+            ? `<img class="vista-tile-icon-img" src="${app.iconDataUri}" alt="${app.name}" />`
+            : `<span class="vista-tile-glyph">${app.icon || '✧'}</span>`}
         </div>
         <div class="vista-tile-title">${app.name}</div>
-        <div class="vista-tile-sub">${app.isPravah ? 'Native Glass App' : 'Direct Launch'}</div>
       </div>
     `).join('');
   }
@@ -1453,10 +1454,6 @@ export class LivingDrawer {
               <span class="metro-letter-char">${letter}</span>
               <span class="metro-letter-beacon" aria-hidden="true"></span>
             </button>
-            <div class="metro-letter-ribbon-info">
-              <span class="metro-letter-pill">${letterApps.length} ${letterApps.length === 1 ? 'capability' : 'capabilities'}</span>
-            </div>
-            <span class="metro-letter-count" style="display:none;">${letterApps.length} item${letterApps.length > 1 ? 's' : ''}</span>
           </div>
 
           <!-- Apps under this letter -->
@@ -1472,12 +1469,14 @@ export class LivingDrawer {
                 <div class="metro-app-content">
                   <div class="metro-app-primary">
                     <span class="metro-app-name">${app.name}</span>
-                    <span class="metro-launch-badge ${app.launchType === 'dag' ? 'badge-dag' : (app.launchType === 'stock_app' ? 'badge-stock' : 'badge-ephemeral')}">
-                      <span class="badge-dot"></span>
-                      ${app.launchType === 'dag' ? 'DAG' : (app.launchType === 'stock_app' ? 'FLAGSHIP' : (app.launchType === 'native_apk' ? (app.isPravah ? 'PRAVAH APK' : 'ANDROID') : 'ZERO-TAX'))}
-                    </span>
+                    ${app.launchType === 'native_apk' ? '' : `
+                      <span class="metro-launch-badge ${app.launchType === 'dag' ? 'badge-dag' : (app.launchType === 'stock_app' ? 'badge-stock' : 'badge-ephemeral')}">
+                        <span class="badge-dot"></span>
+                        ${app.launchType === 'dag' ? 'DAG' : (app.launchType === 'stock_app' ? 'FLAGSHIP' : 'ZERO-TAX')}
+                      </span>
+                    `}
                   </div>
-                  <div class="metro-app-desc">${app.description || ''}</div>
+                  ${app.description ? `<div class="metro-app-desc">${app.description}</div>` : ''}
                 </div>
                 <div class="metro-app-arrow" aria-hidden="true">›</div>
               </div>
@@ -1602,7 +1601,12 @@ export class LivingDrawer {
     });
     this._bindIntentOutcomeLaunch();
 
-    // 12. Vista Aero Glass Background Theme Selector
+    // 12. Vista Aero Glass Background Theme Selector Gear & Popover
+    const gearBtn = this.container.querySelector?.('#btn-vista-theme-gear');
+    gearBtn?.addEventListener('click', (e) => {
+      e?.stopPropagation?.();
+      this.toggleVistaThemePopover();
+    });
     const modeBtns = this.container.querySelectorAll?.('.vista-mode-btn') || [];
     modeBtns.forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -1747,16 +1751,24 @@ export class LivingDrawer {
     return resolved;
   }
 
+  toggleVistaThemePopover(forceState) {
+    this.vistaThemeOpen = typeof forceState === 'boolean' ? forceState : !this.vistaThemeOpen;
+    if (this.container) {
+      const bar = this.container.querySelector?.('#vista-theme-bar');
+      bar?.classList?.toggle('open', this.vistaThemeOpen);
+      const gearBtn = this.container.querySelector?.('#btn-vista-theme-gear');
+      gearBtn?.classList?.toggle('active', this.vistaThemeOpen);
+    }
+    return this.vistaThemeOpen;
+  }
+
   _renderVistaThemeBarHtml() {
     const resolved = resolveVistaBackgroundState(this.vistaTheme, this._detectSystemTheme());
     const sysLabel = resolved.systemTheme === 'light' ? 'White' : 'Black';
     return `
-      <section class="vista-theme-bar" id="vista-theme-bar">
+      <section class="vista-theme-bar vista-theme-popover ${this.vistaThemeOpen ? 'open' : ''}" id="vista-theme-bar">
         <div class="vista-aero-reflection" aria-hidden="true"></div>
-        <div class="vista-theme-header">
-          <span class="section-title">🎨 VISTA GLASS BACKGROUND</span>
-          <span class="vista-theme-badge" id="vista-theme-badge">${resolved.badge}</span>
-        </div>
+        <span class="vista-theme-badge" id="vista-theme-badge" style="display:none;">${resolved.badge}</span>
         <div class="vista-mode-row">
           <button class="vista-mode-btn ${resolved.mode === 'system' ? 'active' : ''}" data-vista-mode="system" id="vista-mode-system-label">◐ Auto (${sysLabel})</button>
           <button class="vista-mode-btn ${resolved.mode === 'wallpaper' ? 'active' : ''}" data-vista-mode="wallpaper">🖼 Wallpaper</button>
@@ -1764,7 +1776,7 @@ export class LivingDrawer {
           <button class="vista-mode-btn ${resolved.mode === 'black' ? 'active' : ''}" data-vista-mode="black">🌙 Black</button>
         </div>
         <div class="vista-color-row">
-          <span class="vista-color-label">Tint:</span>
+          <span class="vista-color-label">Glass Tint:</span>
           ${VISTA_COLOR_PRESETS.map((p) => `
             <button
               class="vista-color-swatch ${resolved.mode === 'custom' && resolved.customColor.toLowerCase() === p.color.toLowerCase() ? 'active' : ''}"
@@ -1775,7 +1787,7 @@ export class LivingDrawer {
             ></button>
           `).join('')}
           <label class="vista-custom-picker-pill" title="Pick any custom background color">
-            <span>Custom</span>
+            <span>🎨</span>
             <input type="color" id="vista-custom-color-input" class="vista-custom-color-input" value="${resolved.customColor}" />
           </label>
         </div>
@@ -1800,10 +1812,7 @@ export class LivingDrawer {
     return `
       <section class="vista-intent-widget" id="vista-intent-widget">
         <div class="vista-aero-reflection" aria-hidden="true"></div>
-        <div class="vista-intent-header">
-          <span class="section-title">✦ INTENTION CAPSULE WIDGET</span>
-          <span class="vista-intent-badge" id="vista-intent-badge">${res.badge}</span>
-        </div>
+        <span class="vista-intent-badge" id="vista-intent-badge" style="display:none;">${res.badge}</span>
         <div class="vista-intent-input-row">
           <input
             type="text"

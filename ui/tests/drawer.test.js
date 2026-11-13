@@ -107,6 +107,8 @@ class MockElement {
     if (sel.includes('#flight-countdown-val')) return new MockElement('flight-countdown-val');
     if (sel.includes('#battery-fuel-fill')) return new MockElement('battery-fuel-fill');
     if (sel.includes('#battery-pct-pill')) return new MockElement('battery-pct-pill');
+    if (sel.includes('#vista-theme-bar')) return new MockElement('vista-theme-bar');
+    if (sel.includes('#btn-vista-theme-gear')) return new MockElement('btn-vista-theme-gear');
     if (sel.includes('section-letter-')) {
       const el = new MockElement('section-letter');
       el.scrollIntoView = () => {};
@@ -497,6 +499,10 @@ test('VistaTheme: LivingDrawer setVistaTheme switches white, black, wallpaper, a
     drawer.setVistaTheme('custom', '#2b124c');
     assert.equal(container.classList.contains('vista-bg-custom'), true);
     assert.equal(container.style.getPropertyValue('--vista-custom-bg'), '#2b124c');
+
+    assert.equal(drawer.vistaThemeOpen, false);
+    assert.equal(drawer.toggleVistaThemePopover(), true);
+    assert.equal(drawer.toggleVistaThemePopover(), false);
   } finally {
     drawer.stopLiveTickers();
   }

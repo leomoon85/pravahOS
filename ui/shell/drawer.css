@@ -1758,10 +1758,11 @@
   position: relative;
   border-radius: 18px;
   padding: 12px 13px;
-  min-height: 112px;
+  min-height: 82px;
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  flex-direction: row;
+  align-items: center;
+  gap: 11px;
   overflow: hidden;
   cursor: pointer;
   user-select: none;
@@ -1863,13 +1864,14 @@
 .vista-tile-title {
   position: relative;
   z-index: 2;
-  margin-top: 8px;
+  margin-top: 0;
   font-size: 0.86rem;
   font-weight: 700;
   color: #f8fcff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75);
 }
 
@@ -1932,14 +1934,58 @@ body.native-metro-mode .living-drawer {
 }
 
 body.native-metro-mode .drawer-drag-header {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.22) 0%,
-    rgba(180, 232, 255, 0.08) 48%,
-    rgba(6, 22, 46, 0.78) 50%,
-    rgba(5, 18, 38, 0.9) 100%
-  ) !important;
-  border-bottom: 1px solid rgba(165, 232, 255, 0.35) !important;
+  padding: 8px 16px 6px !important;
+  background: transparent !important;
+  border-bottom: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+body.native-metro-mode .drawer-brand,
+body.native-metro-mode .section-label-row,
+body.native-metro-mode .metro-letter-ribbon-info {
+  display: none !important;
+}
+
+.drawer-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.drawer-icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(165, 232, 255, 0.42);
+  background: rgba(10, 28, 54, 0.68);
+  color: #e0f2fe;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, border-color 0.2s ease;
+}
+
+#btn-vista-theme-gear.active {
+  transform: rotate(90deg) scale(1.06);
+  background: rgba(14, 165, 233, 0.45);
+  border-color: #bae6fd;
+  color: #ffffff;
+}
+
+.living-drawer.vista-bg-white .drawer-icon-btn {
+  background: rgba(255, 255, 255, 0.78) !important;
+  border-color: rgba(14, 165, 233, 0.45) !important;
+  color: #0c4a6e !important;
+}
+
+.living-drawer.vista-bg-white #btn-vista-theme-gear.active {
+  background: linear-gradient(180deg, #7dd3fc 0%, #0284c7 100%) !important;
+  color: #ffffff !important;
 }
 
 body.native-metro-mode .live-tiles-grid {
@@ -2201,6 +2247,34 @@ body.native-metro-mode .live-tile.flipped .tile-front {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.62),
     0 8px 20px rgba(0, 0, 0, 0.45);
+}
+
+.vista-theme-bar.vista-theme-popover {
+  max-height: 0;
+  opacity: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-width: 0;
+  transform: translateY(-10px) scale(0.96);
+  transform-origin: top right;
+  pointer-events: none;
+  transition:
+    max-height 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+    margin-bottom 0.28s ease,
+    padding 0.28s ease;
+}
+
+.vista-theme-bar.vista-theme-popover.open {
+  max-height: 150px;
+  opacity: 1;
+  margin-bottom: 12px;
+  padding: 11px 13px;
+  border-width: 1px;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
 }
 
 .vista-theme-header {
