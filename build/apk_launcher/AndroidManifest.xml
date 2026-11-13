@@ -9,8 +9,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
     <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" />
 
     <queries>
         <intent>
@@ -72,7 +70,7 @@
         <service
             android:name=".PravahMetroService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:exported="true"
+            android:exported="false"
             android:label="Pravah Metro Swipe Bridge">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
