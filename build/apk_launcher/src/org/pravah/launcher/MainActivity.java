@@ -6,16 +6,21 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.os.BatteryManager;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Base64;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import java.io.ByteArrayOutputStream;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -23,6 +28,8 @@ import java.util.List;
 public class MainActivity extends Activity {
     private WebView webView;
     private boolean pageLoaded = false;
+    private String cachedInstalledAppsJson = null;
+    private int cachedAppsCount = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,6 +83,7 @@ public class MainActivity extends Activity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        overridePendingTransition(0, 0);
         if (pageLoaded && webView != null) {
             expandDrawer();
         }
@@ -84,6 +92,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        overridePendingTransition(0, 0);
         if (pageLoaded && webView != null) {
             expandDrawer();
         }
@@ -101,9 +110,40 @@ public class MainActivity extends Activity {
         );
     }
 
+    private void returnToPixelHome() {
+        try {
+            Intent homeIntent = new Intent(Intent.ACTION_MAIN);
+            homeIntent.addCategory(Intent.CATEGORY_HOME);
+            homeIntent.setPackage("com.google.android.apps.nexuslauncher");
+            homeIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+            startActivity(homeIntent);
+            overridePendingTransition(0, 0);
+        } catch (Exception e) {
+            moveTaskToBack(true);
+        }
+    }
+
     @Override
     public void onBackPressed() {
-        moveTaskToBack(true);
+        returnToPixelHome();
+    }
+
+    private static String drawableToDataUri(Drawable drawable) {
+        if (drawable == null) return "";
+        try {
+            int size = 96;
+            Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bitmap);
+            drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+            drawable.draw(canvas);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.PNG, 90, baos);
+            bitmap.recycle();
+            byte[] bytes = baos.toByteArray();
+            return "data:image/png;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP);
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     private static String escapeJson(String input) {
@@ -135,7 +175,7 @@ public class MainActivity extends Activity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    moveTaskToBack(true);
+                    returnToPixelHome();
                 }
             });
         }
@@ -219,6 +259,9 @@ public class MainActivity extends Activity {
             Intent intent = new Intent(Intent.ACTION_MAIN, null);
             intent.addCategory(Intent.CATEGORY_LAUNCHER);
             List<ResolveInfo> apps = pm.queryIntentActivities(intent, 0);
+            if (cachedInstalledAppsJson != null && apps.size() == cachedAppsCount) {
+                return cachedInstalledAppsJson;
+            }
             Collections.sort(apps, new Comparator<ResolveInfo>() {
                 @Override
                 public int compare(ResolveInfo a, ResolveInfo b) {
@@ -238,16 +281,24 @@ public class MainActivity extends Activity {
                 }
                 String label = String.valueOf(ri.loadLabel(pm));
                 boolean isPravah = pkg.startsWith("org.pravah.");
+                String iconDataUri = "";
+                try {
+                    Drawable iconDrawable = ri.loadIcon(pm);
+                    iconDataUri = drawableToDataUri(iconDrawable);
+                } catch (Exception ignored) {}
                 if (!first) sb.append(",");
                 first = false;
                 sb.append("{")
                   .append("\"label\":\"").append(escapeJson(label)).append("\",")
                   .append("\"pkg\":\"").append(escapeJson(pkg)).append("\",")
-                  .append("\"isPravah\":").append(isPravah)
+                  .append("\"isPravah\":").append(isPravah).append(",")
+                  .append("\"icon\":\"").append(escapeJson(iconDataUri)).append("\"")
                   .append("}");
             }
             sb.append("]");
-            return sb.toString();
+            cachedAppsCount = apps.size();
+            cachedInstalledAppsJson = sb.toString();
+            return cachedInstalledAppsJson;
         }
     }
 }

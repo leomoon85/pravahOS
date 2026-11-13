@@ -187,11 +187,14 @@ static void *swipe_watcher_thread(void *arg) {
     long long last_trigger_ms = 0;
 
     while (g_running && fgets(line, sizeof(line), pipe) != NULL) {
-        if (strstr(line, "LAUNCHER_ALLAPPS_OPEN_UP") != NULL) {
+        if (strstr(line, "LAUNCHER_ALLAPPS_OPEN_UP") != NULL ||
+            strstr(line, "LAUNCHER_GOOGLE_ALL_APPS_ENTRY") != NULL ||
+            strstr(line, "LAUNCHER_ALLAPPS_PERSONAL_SCROLLED") != NULL ||
+            strstr(line, "LAUNCHER_ALLAPPS_SCROLLED") != NULL) {
             long long now = monotonic_ms();
-            if (now - last_trigger_ms >= 1500) {
+            if (now - last_trigger_ms >= 800) {
                 last_trigger_ms = now;
-                system("am start -n org.pravah.launcher/.MainActivity --ez auto_expand true >/dev/null 2>&1");
+                system("am start --activity-no-animation -n org.pravah.launcher/.MainActivity --ez auto_expand true >/dev/null 2>&1");
             }
         }
     }

@@ -1752,10 +1752,148 @@
 }
 
 /* ========================================================================== */
-/* Native Android APK Mode (Full-Screen Metro Drawer without Web Desktop Tax) */
+/* Native Android APK Mode & Windows Vista Aero Glass Tiles                   */
 /* ========================================================================== */
+.vista-glass-tile {
+  position: relative;
+  border-radius: 18px;
+  padding: 12px 13px;
+  min-height: 112px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  background: linear-gradient(
+    176deg,
+    rgba(255, 255, 255, 0.30) 0%,
+    rgba(255, 255, 255, 0.10) 46%,
+    rgba(10, 28, 54, 0.72) 47%,
+    rgba(6, 18, 38, 0.88) 100%
+  );
+  border: 1px solid rgba(165, 232, 255, 0.48);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    inset 0 0 16px rgba(100, 210, 255, 0.16),
+    0 8px 20px rgba(0, 0, 0, 0.5);
+  transition: transform 0.16s ease, border-color 0.2s ease;
+}
+
+.vista-glass-tile.vista-tile-pravah {
+  border-color: rgba(56, 232, 255, 0.65);
+  background: linear-gradient(
+    176deg,
+    rgba(125, 240, 255, 0.32) 0%,
+    rgba(56, 189, 248, 0.14) 46%,
+    rgba(8, 32, 60, 0.78) 47%,
+    rgba(5, 20, 42, 0.92) 100%
+  );
+}
+
+.vista-glass-tile:active {
+  transform: scale(0.97);
+}
+
+.vista-aero-reflection {
+  position: absolute;
+  top: -28%;
+  left: -18%;
+  width: 136%;
+  height: 76%;
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.34) 0%,
+    rgba(255, 255, 255, 0.08) 58%,
+    rgba(255, 255, 255, 0) 60%
+  );
+  transform: rotate(-7deg);
+  pointer-events: none;
+}
+
+.vista-tile-top {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.vista-tile-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(190, 238, 255, 0.5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 4px 10px rgba(0, 0, 0, 0.35);
+  flex-shrink: 0;
+}
+
+.vista-tile-icon-img,
+.metro-native-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 9px;
+  display: block;
+}
+
+.vista-tile-glyph {
+  font-size: 1.35rem;
+}
+
+.vista-tile-badge {
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  color: #dff6ff;
+  background: rgba(0, 175, 240, 0.24);
+  border: 1px solid rgba(160, 230, 255, 0.45);
+  border-radius: 999px;
+  padding: 2px 7px;
+  text-transform: uppercase;
+}
+
+.vista-tile-title {
+  position: relative;
+  z-index: 2;
+  margin-top: 8px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #f8fcff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75);
+}
+
+.vista-tile-sub {
+  position: relative;
+  z-index: 2;
+  font-size: 0.64rem;
+  color: rgba(198, 232, 252, 0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metro-app-icon-box.has-native-icon {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(190, 238, 255, 0.48) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  padding: 4px !important;
+}
+
 body.native-metro-mode {
-  background: #080e1a !important;
+  background: #041022 !important;
   overflow: hidden !important;
 }
 
@@ -1780,7 +1918,10 @@ body.native-metro-mode .living-drawer {
   max-height: 100vh !important;
   border-radius: 0 !important;
   border-top: none !important;
-  background: #080e1a !important;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(0, 212, 255, 0.28) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 18%, rgba(16, 185, 129, 0.22) 0%, transparent 50%),
+    linear-gradient(165deg, #051329 0%, #0a2342 38%, #071930 72%, #030b17 100%) !important;
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
   box-shadow: none !important;
@@ -1788,11 +1929,38 @@ body.native-metro-mode .living-drawer {
   transition: none !important;
 }
 
-body.native-metro-mode .live-tiles-grid,
+body.native-metro-mode .drawer-drag-header {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.22) 0%,
+    rgba(180, 232, 255, 0.08) 48%,
+    rgba(6, 22, 46, 0.78) 50%,
+    rgba(5, 18, 38, 0.9) 100%
+  ) !important;
+  border-bottom: 1px solid rgba(165, 232, 255, 0.35) !important;
+}
+
+body.native-metro-mode .live-tiles-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  perspective: none !important;
+  transform-style: flat !important;
+}
+
 body.native-metro-mode .live-tile {
   perspective: none !important;
   transform-style: flat !important;
   transform: none !important;
+}
+
+body.native-metro-mode .live-tile.tile-wide,
+body.native-metro-mode .live-tile.tile-hero-2x1 {
+  grid-column: span 2 !important;
+}
+
+body.native-metro-mode .live-tile.tile-medium,
+body.native-metro-mode .vista-glass-tile {
+  grid-column: span 1 !important;
 }
 
 body.native-metro-mode .live-tile::after {
@@ -1803,7 +1971,32 @@ body.native-metro-mode .tile-face {
   backface-visibility: visible !important;
   -webkit-backface-visibility: visible !important;
   transform: none !important;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45) !important;
+  border: 1px solid rgba(170, 232, 255, 0.5) !important;
+  background-image: linear-gradient(
+    176deg,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(255, 255, 255, 0.08) 46%,
+    rgba(10, 28, 54, 0.68) 47%,
+    rgba(6, 18, 38, 0.84) 100%
+  ) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 0 16px rgba(100, 210, 255, 0.15),
+    0 8px 20px rgba(0, 0, 0, 0.5) !important;
+}
+
+body.native-metro-mode .metro-app-item {
+  background: linear-gradient(
+    176deg,
+    rgba(255, 255, 255, 0.22) 0%,
+    rgba(255, 255, 255, 0.07) 46%,
+    rgba(8, 24, 48, 0.72) 47%,
+    rgba(5, 16, 36, 0.88) 100%
+  ) !important;
+  border: 1px solid rgba(160, 226, 255, 0.36) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 6px 16px rgba(0, 0, 0, 0.45) !important;
 }
 
 body.native-metro-mode .live-tile:not(.flipped) .tile-back {

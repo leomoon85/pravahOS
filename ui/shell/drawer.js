@@ -816,44 +816,51 @@ export class LivingDrawer {
       const installed = JSON.parse(raw || '[]');
       if (!Array.isArray(installed) || installed.length === 0) return;
 
-      const existingIds = new Set(this.apps.map(a => a.id));
-      let added = 0;
+      const seenPkgs = new Set();
+      const nativeApps = [];
       for (const entry of installed) {
         if (!entry || !entry.pkg || !entry.label) continue;
-        const id = `apk_${entry.pkg}`;
-        if (existingIds.has(id)) continue;
-        existingIds.add(id);
+        if (seenPkgs.has(entry.pkg)) continue;
+        seenPkgs.add(entry.pkg);
         const firstChar = String(entry.label).trim().charAt(0).toUpperCase();
         const letter = /^[A-Z]$/.test(firstChar) ? firstChar : '#';
         const isPravah = Boolean(entry.isPravah || entry.pkg.startsWith('org.pravah.'));
-        this.apps.push({
-          id,
+        nativeApps.push({
+          id: `apk_${entry.pkg}`,
           pkg: entry.pkg,
           isPravah,
           name: entry.label,
           category: isPravah ? 'PravahOS Native Zero-Tax APK' : 'Android Native App',
           description: `${entry.pkg} • Direct Native Execution`,
           icon: isPravah ? '🛡️' : '📱',
+          iconDataUri: entry.icon || '',
           letter,
-          accent: isPravah ? '#38bdf8' : '#a8c7fa',
+          accent: isPravah ? '#38bdf8' : '#7dd3fc',
           launchType: 'native_apk',
           tags: [entry.label.toLowerCase(), entry.pkg.toLowerCase(), 'android', 'apk', isPravah ? 'pravah' : '']
         });
-        added++;
       }
 
-      if (added > 0 && this.container) {
-        this.refreshList();
-        const jumpGrid = this.container.querySelector('#metro-jump-grid');
-        if (jumpGrid) {
-          jumpGrid.innerHTML = this._renderFastJumpGridHtml();
-          const jumpTiles = this.container.querySelectorAll('.metro-jump-tile.tile-active');
-          jumpTiles.forEach((tile) => {
-            tile.addEventListener('click', () => {
-              const letter = tile.getAttribute('data-letter');
-              this.jumpToLetter(letter);
+      if (nativeApps.length > 0) {
+        this.apps = nativeApps;
+        if (this.container) {
+          this.refreshList();
+          const tilesGrid = this.container.querySelector('.live-tiles-grid');
+          if (tilesGrid) {
+            tilesGrid.innerHTML = this._renderLiveTilesHtml();
+            this._bindLiveTileEvents();
+          }
+          const jumpGrid = this.container.querySelector('#metro-jump-grid');
+          if (jumpGrid) {
+            jumpGrid.innerHTML = this._renderFastJumpGridHtml();
+            const jumpTiles = this.container.querySelectorAll('.metro-jump-tile.tile-active');
+            jumpTiles.forEach((tile) => {
+              tile.addEventListener('click', () => {
+                const letter = tile.getAttribute('data-letter');
+                this.jumpToLetter(letter);
+              });
             });
-          });
+          }
         }
       }
     } catch (err) {
@@ -1189,7 +1196,65 @@ export class LivingDrawer {
           </div>
         </div>
       </div>
+      ${this._renderVistaGlassPinnedTilesHtml()}
     `;
+  }
+
+  /**
+   * Generates Windows Vista Aero Glass Pinned App Tiles using real Android app icons.
+   */
+  _renderVistaGlassPinnedTilesHtml() {
+    const nativeApps = this.apps.filter(a => a.launchType === 'native_apk' && a.pkg);
+    const priorityOrder = [
+      'org.pravah.shield',
+      'org.pravah.vault',
+      'org.pravah.store',
+      'org.pravah.aurora',
+      'com.android.chrome',
+      'com.google.android.gm',
+      'com.google.android.youtube',
+      'com.google.android.apps.photos',
+      'com.google.android.apps.maps',
+      'com.android.camera2',
+      'com.google.android.dialer',
+      'com.google.android.apps.messaging',
+      'com.android.settings',
+      'com.google.android.deskclock',
+      'com.google.android.calendar',
+      'com.google.android.apps.nbu.files'
+    ];
+
+    let pinned = [];
+    if (nativeApps.length > 0) {
+      for (const pkg of priorityOrder) {
+        const match = nativeApps.find(a => a.pkg === pkg);
+        if (match) pinned.push(match);
+      }
+      for (const app of nativeApps) {
+        if (pinned.length >= 12) break;
+        if (!pinned.some(p => p.pkg === app.pkg)) {
+          pinned.push(app);
+        }
+      }
+    } else {
+      pinned = this.apps.slice(0, 8);
+    }
+
+    return pinned.map(app => `
+      <div class="vista-glass-tile ${app.isPravah ? 'vista-tile-pravah' : ''}" data-app-id="${app.id}" data-pkg="${app.pkg || ''}">
+        <div class="vista-aero-reflection" aria-hidden="true"></div>
+        <div class="vista-tile-top">
+          <div class="vista-tile-icon-wrap">
+            ${app.iconDataUri
+              ? `<img class="vista-tile-icon-img" src="${app.iconDataUri}" alt="${app.name}" />`
+              : `<span class="vista-tile-glyph">${app.icon || '✧'}</span>`}
+          </div>
+          <span class="vista-tile-badge">${app.isPravah ? 'PRAVAH' : 'AERO'}</span>
+        </div>
+        <div class="vista-tile-title">${app.name}</div>
+        <div class="vista-tile-sub">${app.isPravah ? 'Native Glass App' : 'Direct Launch'}</div>
+      </div>
+    `).join('');
   }
 
   /**
@@ -1229,8 +1294,10 @@ export class LivingDrawer {
           <div class="metro-app-items-group">
             ${letterApps.map(app => `
               <div class="metro-app-item" data-app-id="${app.id}" data-launch-type="${app.launchType}" tabindex="0">
-                <div class="metro-app-icon-box" style="background:${app.accent || '#00e5ff'};">
-                  <span class="metro-glyph-inner">${app.icon || '✧'}</span>
+                <div class="metro-app-icon-box ${app.iconDataUri ? 'has-native-icon' : ''}" style="${app.iconDataUri ? '' : `background:${app.accent || '#00e5ff'};`}">
+                  ${app.iconDataUri
+                    ? `<img class="metro-native-icon-img" src="${app.iconDataUri}" alt="${app.name}" loading="lazy" />`
+                    : `<span class="metro-glyph-inner">${app.icon || '✧'}</span>`}
                   <div class="icon-specular-sheen" aria-hidden="true"></div>
                 </div>
                 <div class="metro-app-content">
@@ -1284,7 +1351,7 @@ export class LivingDrawer {
     // 1. Dismiss button
     const btnDismiss = this.container.querySelector('#btn-drawer-dismiss');
     btnDismiss?.addEventListener('click', () => {
-      this.collapse();
+      this.dismissToHome();
       try {
         haptics?.lightTap();
       } catch (_) {}
@@ -1308,31 +1375,13 @@ export class LivingDrawer {
       searchInput?.focus();
     });
 
-    // 3. Tile flip buttons
-    const flipBtns = this.container.querySelectorAll('.tile-flip-btn');
-    flipBtns.forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const tileId = btn.getAttribute('data-tile');
-        this.flipTile(tileId);
-      });
-    });
+    // 3 & 5. Live tiles & Vista glass tiles
+    this._bindLiveTileEvents();
 
     // 4. Flip All button
     const btnFlipAll = this.container.querySelector('#btn-flip-all');
     btnFlipAll?.addEventListener('click', () => {
       this.flipAll();
-    });
-
-    // 5. Tile direct tap launch
-    const tiles = this.container.querySelectorAll('.live-tile');
-    tiles.forEach((tile) => {
-      tile.addEventListener('click', (e) => {
-        // If clicking flip button directly, ignore
-        if (e.target.closest && e.target.closest('.tile-flip-btn')) return;
-        const tileId = tile.getAttribute ? tile.getAttribute('data-tile-id') : null;
-        if (tileId) this.handleTileClick(tileId);
-      });
     });
 
     // 6. Holographic 3D parallax tilt & specular light sheen on tiles
@@ -1363,6 +1412,45 @@ export class LivingDrawer {
 
     // 10. App list item launch clicks
     this._bindAppItemClicks();
+  }
+
+  /**
+   * Bind click and flip handlers for telemetry live tiles and Vista Glass pinned app tiles.
+   */
+  _bindLiveTileEvents() {
+    if (!this.container) return;
+
+    const flipBtns = this.container.querySelectorAll('.tile-flip-btn');
+    flipBtns.forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const tileId = btn.getAttribute('data-tile');
+        this.flipTile(tileId);
+      });
+    });
+
+    const tiles = this.container.querySelectorAll('.live-tile');
+    tiles.forEach((tile) => {
+      tile.addEventListener('click', (e) => {
+        if (e.target.closest && e.target.closest('.tile-flip-btn')) return;
+        const tileId = tile.getAttribute ? tile.getAttribute('data-tile-id') : null;
+        if (tileId) this.handleTileClick(tileId);
+      });
+    });
+
+    const vistaTiles = this.container.querySelectorAll('.vista-glass-tile');
+    vistaTiles.forEach((tile) => {
+      tile.addEventListener('click', () => {
+        const appId = tile.getAttribute('data-app-id');
+        const pkg = tile.getAttribute('data-pkg');
+        const app = this.apps.find(a => a.id === appId || (pkg && a.pkg === pkg));
+        if (app) {
+          this.launchApp(app, tile);
+        } else if (pkg && typeof window !== 'undefined' && window.PravahNative?.launchApp) {
+          window.PravahNative.launchApp(pkg);
+        }
+      });
+    });
   }
 
   /**
@@ -1506,14 +1594,20 @@ export class LivingDrawer {
    * Handles tap on Live Tiles.
    */
   handleTileClick(tileId) {
+    const isNativeHost = typeof window !== 'undefined' && Boolean(window.PravahNative);
     switch (tileId) {
       case TileId.SPOTIFY: {
-        const app = this.apps.find(a => a.id === 'spotify_audio');
+        const nativeMedia = this.apps.find(a => a.pkg === 'com.google.android.apps.youtube.music' || a.pkg === 'com.google.android.youtube' || a.pkg === 'com.spotify.music');
+        const app = nativeMedia || this.apps.find(a => a.id === 'spotify_audio');
         if (app) this.launchApp(app);
+        else if (isNativeHost) this.flipTile(tileId);
         break;
       }
       case TileId.FLIGHT: {
-        // Trigger flight scenario
+        if (isNativeHost) {
+          this.flipTile(tileId);
+          break;
+        }
         if (this.onLaunchApp) {
           this.onLaunchApp({ id: 'flight', name: 'Flight AI-202 Tracker', launchType: 'dag', scenario: 'flight' }, 'dag');
         }
@@ -1521,13 +1615,17 @@ export class LivingDrawer {
         break;
       }
       case TileId.BATTERY: {
-        const app = this.apps.find(a => a.id === 'memory_compactor');
+        const nativePower = this.apps.find(a => a.pkg === 'org.pravah.vault' || a.pkg === 'com.android.settings');
+        const app = nativePower || this.apps.find(a => a.id === 'memory_compactor');
         if (app) this.launchApp(app);
+        else if (isNativeHost) this.flipTile(tileId);
         break;
       }
       case TileId.AIRGAP: {
-        const app = this.apps.find(a => a.id === 'airgap_app');
+        const nativeShield = this.apps.find(a => a.pkg === 'org.pravah.shield');
+        const app = nativeShield || this.apps.find(a => a.id === 'airgap_app');
         if (app) this.launchApp(app);
+        else if (isNativeHost) this.flipTile(tileId);
         break;
       }
       default:
@@ -1733,6 +1831,13 @@ export class LivingDrawer {
     try {
       haptics?.lightTap();
     } catch (_) {}
+  }
+
+  /**
+   * Explicitly dismisses the Metro drawer back to Pixel Home (or collapses in web shell).
+   */
+  dismissToHome() {
+    this.collapse();
     if (typeof window !== 'undefined' && window.PravahNative?.closeMetroDrawer) {
       window.PravahNative.closeMetroDrawer();
     }
@@ -1785,7 +1890,7 @@ export class LivingDrawer {
 
       // Dismiss condition: pulled down > 120px or fling velocity > 500px/s
       if (deltaY > 120 || velocity > 500) {
-        this.collapse();
+        this.dismissToHome();
       } else {
         this.expand();
       }
