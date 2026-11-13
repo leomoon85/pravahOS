@@ -14,7 +14,8 @@ import {
   formatCountdown,
   generateEqualizerBars,
   EphemeralWindowManager,
-  LivingDrawer
+  LivingDrawer,
+  synthesizeIntentionOutcome
 } from '../shell/drawer.js';
 
 // Minimal DOM Mock Container for Headless Testing
@@ -427,4 +428,34 @@ test('FastJump: jumpToLetter closes modal and scrolls to section', () => {
   assert.equal(drawer.activeFastJump, false);
 
   drawer.stopLiveTickers();
+});
+
+// ============================================================================
+// 6. Intention Widget Tests
+// ============================================================================
+
+test('IntentionWidget: synthesizeIntentionOutcome resolves flight and custom queries locally', () => {
+  const flight = synthesizeIntentionOutcome('', 'flight');
+  assert.equal(flight.scenario, 'flight');
+  assert.ok(flight.headline.includes('Flight'));
+  assert.equal(flight.dagSteps.length, 3);
+
+  const custom = synthesizeIntentionOutcome('Backup encrypted vault offline', '');
+  assert.equal(custom.scenario, 'custom');
+  assert.ok(custom.summary.includes('Backup encrypted vault offline'));
+  assert.equal(custom.targetPkg, 'org.pravah.store');
+});
+
+test('IntentionWidget: runIntentWidget updates outcome state and renders widget markup', () => {
+  const container = new MockElement('living-drawer');
+  const drawer = new LivingDrawer({ container });
+  try {
+    assert.ok(container.innerHTML.includes('vista-intent-widget'));
+    const outcome = drawer.runIntentWidget('', 'crypto');
+    assert.equal(outcome.scenario, 'crypto');
+    assert.equal(drawer.activeIntentResult.targetPkg, 'org.pravah.vault');
+    assert.ok(drawer.activeIntentResult.pills.includes('250 USDC'));
+  } finally {
+    drawer.stopLiveTickers();
+  }
 });

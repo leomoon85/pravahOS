@@ -181,6 +181,21 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void syncIntentWidget(String prompt, String outcome, String badge) {
+            PravahIntentWidgetProvider.updateAllWidgets(MainActivity.this, prompt, outcome, badge);
+        }
+
+        @JavascriptInterface
+        public void openFloatingIntentWidget(String scenario) {
+            Intent intent = new Intent(MainActivity.this, IntentWidgetActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+            if (scenario != null && !scenario.isEmpty()) {
+                intent.putExtra("extra_scenario", scenario);
+            }
+            startActivity(intent);
+        }
+
+        @JavascriptInterface
         public void launchApp(String packageName) {
             if (packageName == null || packageName.isEmpty()) return;
             PackageManager pm = getPackageManager();

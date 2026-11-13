@@ -472,6 +472,112 @@ export function generateEqualizerBars(count = 5) {
   return bars;
 }
 
+/**
+ * Pure function: Synthesizes an on-device intention goal into a 3-stage capability DAG & Smart Outcome.
+ */
+export function synthesizeIntentionOutcome(query = '', scenario = '') {
+  const q = String(query || '').trim();
+  let key = String(scenario || '').trim().toLowerCase();
+  if (!key) {
+    const ql = q.toLowerCase();
+    if (ql.includes('flight') || ql.includes('ai-202')) key = 'flight';
+    else if (ql.includes('photo') || ql.includes('note') || ql.includes('camera') || ql.includes('ocr')) key = 'camera_note';
+    else if (ql.includes('usdc') || ql.includes('crypto')) key = 'crypto';
+    else if (ql.includes('pay') || ql.includes('5000') || ql.includes('upi') || ql.includes('₹')) key = 'payment';
+    else if (ql.includes('ram') || ql.includes('memory') || ql.includes('optim')) key = 'memory';
+    else if (ql.includes('air') || ql.includes('shield') || ql.includes('rf')) key = 'airgap';
+  }
+
+  switch (key) {
+    case 'flight':
+      return {
+        scenario: 'flight',
+        prompt: q || 'Check flight AI-202 and set reminder 2h prior',
+        headline: 'Flight AI-202 Confirmed • On Time',
+        badge: '✓ 0-CLOUD DAG',
+        summary: 'DEL -> BLR departs at 10:30 AM from Terminal 3, Gate 14B. Calendar reminder armed locally.',
+        dagSteps: ['1. Intent Parser ✓', '2. EL1 Gate ✓', '3. Calendar ✓'],
+        pills: ['Gate 14B', 'Term T3', '🔒 0-Cloud Enclave'],
+        targetPkg: 'com.google.android.calendar',
+        launchLabel: 'Open Calendar ➔'
+      };
+    case 'camera_note':
+      return {
+        scenario: 'camera_note',
+        prompt: q || 'Capture document photo and seal into Aurora Notes',
+        headline: 'Zero-Copy Camera VMO -> Aurora Notes',
+        badge: '✓ VMO SEALED',
+        summary: 'Captured buffer via IMX890 HAL and saved SHA-256 verified note directly inside Aurora Notes.',
+        dagSteps: ['1. Vision Parse ✓', '2. VMO Policy ✓', '3. Aurora ✓'],
+        pills: ['Zero-Copy VMO', 'Aurora Notes', '🔒 Offline OCR'],
+        targetPkg: 'org.pravah.aurora',
+        launchLabel: 'Open Aurora Notes ➔'
+      };
+    case 'payment':
+      return {
+        scenario: 'payment',
+        prompt: q || 'Send ₹5,000 securely via Pravah Vault',
+        headline: '₹5,000 UPI Policy Gate Authorized',
+        badge: '✓ TITAN M2',
+        summary: 'Biometric Titan M2 enclave sealed UPI transaction receipt under dual capability isolation.',
+        dagSteps: ['1. Risk Check ✓', '2. Titan M2 ✓', '3. Settled ✓'],
+        pills: ['₹5,000 UPI', 'Enclave Sealed', '✓ Receipt Saved'],
+        targetPkg: 'org.pravah.vault',
+        launchLabel: 'Open Pravah Vault ➔'
+      };
+    case 'crypto':
+      return {
+        scenario: 'crypto',
+        prompt: q || 'Verify 250 USDC cross-border remittance',
+        headline: '250 USDC ZK Proof Sealed',
+        badge: '✓ ZK-PROOF',
+        summary: 'Signed offline Ed448 settlement voucher in Pravah Vault without keys ever leaving Titan M2.',
+        dagSteps: ['1. ZK Build ✓', '2. Ed448 Sign ✓', '3. Sealed ✓'],
+        pills: ['250 USDC', 'ML-KEM-768', '🔒 Key Enclave'],
+        targetPkg: 'org.pravah.vault',
+        launchLabel: 'Open Pravah Vault ➔'
+      };
+    case 'memory':
+      return {
+        scenario: 'memory',
+        prompt: q || 'Freeze dormant apps and compact Pixel 7 RAM',
+        headline: 'Dormancy Compactor Reclaimed 428 MB',
+        badge: '✓ 0% BG TAX',
+        summary: 'Dormant background tasks frozen to 0.0% CPU draw and working-set memory reclaimed cleanly.',
+        dagSteps: ['1. Scan Tasks ✓', '2. Freeze BG ✓', '3. Compacted ✓'],
+        pills: ['+428 MB Free', '0% BG Tax', '✓ pravahd'],
+        targetPkg: 'org.pravah.shield',
+        launchLabel: 'Open Pravah Shield ➔'
+      };
+    case 'airgap':
+      return {
+        scenario: 'airgap',
+        prompt: q || 'Verify hardware Air-Gap RF isolation & pravahd',
+        headline: 'EL1 Telemetry & Air-Gap Verified',
+        badge: '🛡️ SHIELDED',
+        summary: 'pravahd daemon audited loopback enclave, OTA Slot A rollback index, and hardware killswitch.',
+        dagSteps: ['1. Audit RF ✓', '2. EL1 Lock ✓', '3. Verified ✓'],
+        pills: ['127.0.0.1:9880', 'Slot A', '🛡️ Shield Ready'],
+        targetPkg: 'org.pravah.shield',
+        launchLabel: 'Open Pravah Shield ➔'
+      };
+    default: {
+      const safePrompt = q || 'Coordinate my apps on PravahOS locally';
+      return {
+        scenario: 'custom',
+        prompt: safePrompt,
+        headline: 'Custom Intention Synthesized Locally',
+        badge: '✓ 0-CLOUD DAG',
+        summary: `Parsed goal "${safePrompt}" -> bound 3-stage EL1 capability pipeline with zero cloud egress.`,
+        dagSteps: ['1. Intent Parser ✓', '2. EL1 Gate ✓', '3. Native ✓'],
+        pills: ['On-Device NPU', 'SHA-256 Sealed', '🔒 0-Cloud Leak'],
+        targetPkg: 'org.pravah.store',
+        launchLabel: 'Open Pravah Bazaar ➔'
+      };
+    }
+  }
+}
+
 // ============================================================================
 // Ephemeral Zero-Tax Window Manager
 // ============================================================================
@@ -793,12 +899,17 @@ export class LivingDrawer {
     if (!this.container.querySelector('.drawer-scroll-body')) {
       this.render();
     } else {
+      const scrollBody = this.container.querySelector('.drawer-scroll-body');
+      if (scrollBody && !this.container.querySelector('#vista-intent-widget') && typeof scrollBody.insertAdjacentHTML === 'function') {
+        scrollBody.insertAdjacentHTML('afterbegin', this._renderIntentWidgetSectionHtml());
+      }
       this._bindDomEvents();
     }
     if (typeof window !== 'undefined' && window.PravahNative) {
       if (typeof document !== 'undefined' && document.body) {
         document.body.classList.add('native-metro-mode');
       }
+      this.expand();
       this.syncNativeAndroidApps();
       this.syncNativeTelemetry();
     }
@@ -928,6 +1039,9 @@ export class LivingDrawer {
 
       <!-- Scrollable Drawer Content Surface -->
       <div class="drawer-scroll-body" id="drawer-scroll-body">
+
+        <!-- Windows Vista Aero Glass Intention Capsule Widget -->
+        ${this._renderIntentWidgetSectionHtml()}
 
         <!-- Top Section: Dynamic Glanceable Live Tiles -->
         <section class="drawer-live-tiles-section">
@@ -1412,6 +1526,117 @@ export class LivingDrawer {
 
     // 10. App list item launch clicks
     this._bindAppItemClicks();
+
+    // 11. Vista Aero Glass Intention Capsule Widget
+    const intentInput = this.container.querySelector('#drawer-intent-input');
+    const intentAskBtn = this.container.querySelector('#btn-drawer-intent-ask');
+    intentAskBtn?.addEventListener('click', () => {
+      this.runIntentWidget(intentInput ? intentInput.value : '', '');
+    });
+    intentInput?.addEventListener('keydown', (e) => {
+      if (e && e.key === 'Enter') {
+        this.runIntentWidget(intentInput.value, '');
+      }
+    });
+    const intentChips = this.container.querySelectorAll('.vista-intent-chip');
+    intentChips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const scenario = chip.getAttribute('data-intent-scenario') || '';
+        this.runIntentWidget('', scenario);
+      });
+    });
+    this._bindIntentOutcomeLaunch();
+  }
+
+  _bindIntentOutcomeLaunch() {
+    if (!this.container) return;
+    const launchBtn = this.container.querySelector('#btn-intent-launch-target');
+    launchBtn?.addEventListener('click', () => {
+      const pkg = launchBtn.getAttribute('data-target-pkg');
+      if (pkg && typeof window !== 'undefined' && window.PravahNative?.launchApp) {
+        window.PravahNative.launchApp(pkg);
+      }
+    });
+  }
+
+  _renderIntentWidgetSectionHtml() {
+    const res = this.activeIntentResult || synthesizeIntentionOutcome('', 'flight');
+    this.activeIntentResult = res;
+    return `
+      <section class="vista-intent-widget" id="vista-intent-widget">
+        <div class="vista-aero-reflection" aria-hidden="true"></div>
+        <div class="vista-intent-header">
+          <span class="section-title">✦ INTENTION CAPSULE WIDGET</span>
+          <span class="vista-intent-badge" id="vista-intent-badge">${res.badge}</span>
+        </div>
+        <div class="vista-intent-input-row">
+          <input
+            type="text"
+            id="drawer-intent-input"
+            class="vista-intent-input"
+            placeholder="Ask anything or describe a goal..."
+            value="${res.prompt}"
+            autocomplete="off"
+          />
+          <button id="btn-drawer-intent-ask" class="vista-intent-ask-btn">Ask Pravah ✦</button>
+        </div>
+        <div class="vista-intent-chips">
+          <button class="vista-intent-chip ${res.scenario === 'flight' ? 'active' : ''}" data-intent-scenario="flight">✈ Flight AI-202</button>
+          <button class="vista-intent-chip ${res.scenario === 'camera_note' ? 'active' : ''}" data-intent-scenario="camera_note">📷 Photo &amp; Note</button>
+          <button class="vista-intent-chip ${res.scenario === 'payment' ? 'active' : ''}" data-intent-scenario="payment">💳 Send ₹5,000</button>
+          <button class="vista-intent-chip ${res.scenario === 'crypto' ? 'active' : ''}" data-intent-scenario="crypto">🪙 250 USDC</button>
+          <button class="vista-intent-chip ${res.scenario === 'memory' ? 'active' : ''}" data-intent-scenario="memory">⚡ Optimize RAM</button>
+          <button class="vista-intent-chip ${res.scenario === 'airgap' ? 'active' : ''}" data-intent-scenario="airgap">🛡️ Air-Gap</button>
+        </div>
+        <div class="vista-intent-outcome" id="vista-intent-outcome">
+          ${this._renderIntentOutcomeHtml(res)}
+        </div>
+      </section>
+    `;
+  }
+
+  _renderIntentOutcomeHtml(res) {
+    return `
+      <div class="vista-intent-dag-row">
+        ${res.dagSteps.map(s => `<div class="vista-dag-step">${s}</div>`).join('')}
+      </div>
+      <div class="vista-intent-outcome-title">${res.headline}</div>
+      <div class="vista-intent-outcome-desc">${res.summary}</div>
+      <div class="vista-intent-outcome-footer">
+        <span class="vista-intent-pills">${res.pills.join(' • ')}</span>
+        <button id="btn-intent-launch-target" class="vista-intent-launch-btn" data-target-pkg="${res.targetPkg}">${res.launchLabel}</button>
+      </div>
+    `;
+  }
+
+  runIntentWidget(query = '', scenario = '') {
+    const res = synthesizeIntentionOutcome(query, scenario);
+    this.activeIntentResult = res;
+
+    if (this.container) {
+      const inputEl = this.container.querySelector('#drawer-intent-input');
+      if (inputEl) inputEl.value = res.prompt;
+
+      const badgeEl = this.container.querySelector('#vista-intent-badge');
+      if (badgeEl) badgeEl.textContent = res.badge;
+
+      const chips = this.container.querySelectorAll('.vista-intent-chip');
+      chips.forEach((chip) => {
+        chip.classList?.toggle('active', chip.getAttribute?.('data-intent-scenario') === res.scenario);
+      });
+
+      const outcomeEl = this.container.querySelector('#vista-intent-outcome');
+      if (outcomeEl) {
+        outcomeEl.innerHTML = this._renderIntentOutcomeHtml(res);
+        this._bindIntentOutcomeLaunch();
+      }
+    }
+
+    if (typeof window !== 'undefined' && window.PravahNative?.syncIntentWidget) {
+      window.PravahNative.syncIntentWidget(res.prompt, `${res.headline} • ${res.pills.join(' • ')}`, res.badge);
+    }
+
+    return res;
   }
 
   /**

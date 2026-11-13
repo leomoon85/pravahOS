@@ -2006,3 +2006,175 @@ body.native-metro-mode .live-tile:not(.flipped) .tile-back {
 body.native-metro-mode .live-tile.flipped .tile-front {
   display: none !important;
 }
+
+/* ========================================================================== */
+/* Windows Vista Aero Glass Intention Capsule Widget                           */
+/* ========================================================================== */
+.vista-intent-widget {
+  position: relative;
+  margin-bottom: 18px;
+  padding: 14px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: linear-gradient(
+    176deg,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(125, 211, 252, 0.12) 45%,
+    rgba(7, 25, 48, 0.84) 46%,
+    rgba(4, 14, 30, 0.94) 100%
+  );
+  border: 1px solid rgba(165, 232, 255, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    inset 0 0 18px rgba(56, 189, 248, 0.16),
+    0 10px 24px rgba(0, 0, 0, 0.55);
+}
+
+.vista-intent-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.vista-intent-badge {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  color: #4ade80;
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(74, 222, 128, 0.45);
+}
+
+.vista-intent-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(6, 19, 38, 0.78);
+  border: 1px solid rgba(125, 211, 252, 0.45);
+  border-radius: 14px;
+  padding: 6px 6px 6px 12px;
+}
+
+.vista-intent-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #f8fafc;
+  font-size: 0.84rem;
+}
+
+.vista-intent-input::placeholder {
+  color: rgba(186, 230, 253, 0.65);
+}
+
+.vista-intent-ask-btn {
+  border: 1px solid rgba(186, 230, 253, 0.65);
+  background: linear-gradient(180deg, #7dd3fc 0%, #0ea5e9 100%);
+  color: #031326;
+  font-size: 0.74rem;
+  font-weight: 800;
+  border-radius: 10px;
+  padding: 7px 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.vista-intent-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.vista-intent-chip {
+  background: rgba(12, 38, 72, 0.8);
+  border: 1px solid rgba(125, 211, 252, 0.42);
+  color: #e0f2fe;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 5px 9px;
+  cursor: pointer;
+}
+
+.vista-intent-chip.active {
+  background: rgba(14, 165, 233, 0.34);
+  border-color: #7dd3fc;
+  color: #ffffff;
+}
+
+.vista-intent-outcome {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(6, 22, 42, 0.82);
+  border: 1px solid rgba(74, 222, 128, 0.38);
+}
+
+.vista-intent-dag-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.vista-dag-step {
+  text-align: center;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #bae6fd;
+  background: rgba(15, 45, 78, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 8px;
+  padding: 4px 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vista-intent-outcome-title {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #4ade80;
+}
+
+.vista-intent-outcome-desc {
+  margin-top: 3px;
+  font-size: 0.74rem;
+  color: #cbd5e1;
+  line-height: 1.35;
+}
+
+.vista-intent-outcome-footer {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.vista-intent-pills {
+  font-size: 0.65rem;
+  color: #7dd3fc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vista-intent-launch-btn {
+  border: 1px solid rgba(187, 247, 208, 0.7);
+  background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%);
+  color: #03150b;
+  font-size: 0.68rem;
+  font-weight: 800;
+  border-radius: 8px;
+  padding: 5px 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
